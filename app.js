@@ -506,7 +506,7 @@ function renderTabelle() {
 
         tr.innerHTML = `
             <td class="no-print"><input type="checkbox" class="bulk-cb bulk-item-cb" data-id="${e.id}" onchange="bulkUpdateCount()"></td>
-            <td>${formatDatum(e.datum)}${e.status && e.status !== 'geplant' ? '<br><span class="status-badge status-' + e.status + '">' + escapeHtml(STATUS_LABELS[e.status] || e.status) + '</span>' : ''}</td>
+            <td><span class="ampel" style="background:${getEinsatzAmpel(e).farbe}" title="${getEinsatzAmpel(e).label}"></span>${formatDatum(e.datum)}${e.status && e.status !== 'geplant' ? '<br><span class="status-badge status-' + e.status + '">' + escapeHtml(STATUS_LABELS[e.status] || e.status) + '</span>' : ''}</td>
             <td><span class="obj-farbe" style="background:${getObjektFarbe(e.objekt)}"></span>${escapeHtml(e.objekt)}</td>
             <td>${escapeHtml(e.mitarbeiter || '\u2014')}</td>
             <td>${e.zeitVon}</td>
@@ -1046,6 +1046,9 @@ function updateDashboard() {
 
     // Monats-Heatmap
     renderHeatmap(filterM);
+
+    // Zeitvergleich
+    renderZeitvergleich(filterM);
 
     // Konflikterkennung
     renderKonflikte();
@@ -5352,6 +5355,150 @@ function archiviereEinsaetze() {
     updateSpeicherStats();
 
     alert(`${zuArchivieren.length} Einsätze archiviert und exportiert.`);
+}
+
+// =============================================
+// EINSATZ-AMPEL
+// =============================================
+function getEinsatzAmpel(einsatz) {
+    // Grün = bestätigt + MA zugewiesen, Gelb = geplant, Rot = kein MA oder storniert
+    const status = einsatz.status || 'geplant';
+    if (status === 'storniert') return { farbe: '#a0aec0', label: 'Storniert' };
+    if (status === 'abgeschlossen') return { farbe: '#48bb78', label: 'OK' };
+    if (!einsatz.mitarbeiter) return { farbe: '#e53e3e', label: 'Kein MA' };
+    if (status === 'bestaetigt') return { farbe: '#48bb78', label: 'OK' };
+
+    // Check Objekt-Anforderungen
+    const obj = objekte.find(o => o.name === einsatz.objekt);
+    if (obj && obj.mindestQual) {
+        const ma = mitarbeiterListe_.find(m => m.name === einsatz.mitarbeiter);
+        const qualRang = { 'unterrichtung': 1, '34a': 2, 'fachkraft': 3, 'meister': 4, 'sonstige': 0 };
+        if (ma && (qualRang[ma.qualifikation] || 0) < (qualRang[obj.mindestQual] || 0)) {
+            return { farbe: '#d69e2e', label: 'Qual.!' };
+        }
+    }
+
+    return { farbe: '#d69e2e', label: 'Geplant' };
+}
+
+// =============================================
+// KEYBOARD SHORTCUTS
+// =============================================
+document.addEventListener('keydown', function (ev) {
+    // Ignoriere wenn in Eingabefeld
+    if (ev.target.tagName === 'INPUT' || ev.target.tagName === 'TEXTAREA' || ev.target.tagName === 'SELECT') return;
+
+    if (ev.key === 'n' || ev.key === 'N') {
+        ev.preventDefault();
+        schnellNeuerEinsatz();
+    } else if (ev.key === 'h' || ev.key === 'H') {
+        ev.preventDefault();
+        schnellHeuteAnzeigen();
+    } else if (ev.key === 'd' || ev.key === 'D') {
+        ev.preventDefault();
+        schnellDienstplan();
+    } else if (ev.key === 'b' || ev.key === 'B') {
+        ev.preventDefault();
+        erstelleBackup();
+    } else if (ev.key === '1') {
+        navigiereTab('erfassung');
+    } else if (ev.key === '2') {
+        navigiereTab('kalender');
+    } else if (ev.key === '3') {
+        navigiereTab('abrechnung');
+    } else if (ev.key === '4') {
+        navigiereTab('dashboard');
+    } else if (ev.key === '5') {
+        navigiereTab('objekte');
+    } else if (ev.key === '6') {
+        navigiereTab('mitarbeiter');
+    } else if (ev.key === 'Escape') {
+        schliesseModal();
+    }
+});
+
+function navigiereTab(tab) {
+    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+    const btn = document.querySelector(`.nav-btn[data-tab="${tab}"]`);
+    if (btn) btn.classList.add('active');
+    const tabEl = document.getElementById('tab-' + tab);
+    if (tabEl) tabEl.classList.add('active');
+
+    if (tab === 'dashboard') updateDashboard();
+    if (tab === 'kalender') { renderKalender(); renderDienstplan(); }
+    if (tab === 'abrechnung') updateAbrechnung();
+    if (tab === 'mitarbeiter') { renderMitarbeiter(); renderDokumente(); renderUeberstunden(); renderKontaktliste(); renderUrlaubskonto(); renderArbeitszeitkonto(); renderQualMatrix(); }
+    if (tab === 'objekte') { renderObjekte(); renderVertraege(); renderObjektAuslastung(); updateChecklisteObjekte(); }
+}
+
+// =============================================
+// DASHBOARD ZEITVERGLEICH
+// =============================================
+function renderZeitvergleich(filterM) {
+    const el = document.getElementById('zeitvergleichContent');
+    if (!el) return;
+
+    if (!filterM) {
+        const jetzt = new Date();
+        filterM = `${jetzt.getFullYear()}-${String(jetzt.getMonth() + 1).padStart(2, '0')}`;
+    }
+
+    const [j, m] = filterM.split('-').map(Number);
+    const prevMonat = m === 1 ? `${j - 1}-12` : `${j}-${String(m - 1).padStart(2, '0')}`;
+
+    const aktE = einsaetze.filter(e => e.datum.substring(0, 7) === filterM);
+    const prevE = einsaetze.filter(e => e.datum.substring(0, 7) === prevMonat);
+
+    if (prevE.length === 0) {
+        el.innerHTML = '<p style="color:#a0aec0;font-size:0.8rem">Kein Vormonat zum Vergleichen.</p>';
+        return;
+    }
+
+    function metriken(arr) {
+        return {
+            einsaetze: arr.length,
+            stunden: arr.reduce((s, e) => s + e.stunden, 0),
+            umsatz: arr.reduce((s, e) => s + e.gesamt, 0),
+            zuschlaege: arr.reduce((s, e) => s + e.zuschlagBetrag, 0),
+            ma: new Set(arr.filter(e => e.mitarbeiter).map(e => e.mitarbeiter)).size
+        };
+    }
+
+    const akt = metriken(aktE);
+    const prev = metriken(prevE);
+
+    function vergleichsZelle(label, aktVal, prevVal, format) {
+        const diff = aktVal - prevVal;
+        const pct = prevVal > 0 ? ((diff / prevVal) * 100).toFixed(1) : '0.0';
+        const cls = diff > 0 ? 'zv-up' : diff < 0 ? 'zv-down' : 'zv-gleich';
+        const arrow = diff > 0 ? '\u2191' : diff < 0 ? '\u2193' : '=';
+        const formatted = format === 'euro' ? formatEuro(aktVal) : format === 'zahl' ? formatZahl(aktVal) : aktVal;
+        const prevFormatted = format === 'euro' ? formatEuro(prevVal) : format === 'zahl' ? formatZahl(prevVal) : prevVal;
+        return `<div class="zv-item">
+            <div class="zv-label">${label}</div>
+            <div class="zv-wert">${formatted}</div>
+            <div class="zv-prev">Vormonat: ${prevFormatted}</div>
+            <div class="${cls}">${arrow} ${pct}%</div>
+        </div>`;
+    }
+
+    let html = '<div class="zv-grid">';
+    html += vergleichsZelle('Einsätze', akt.einsaetze, prev.einsaetze, 'num');
+    html += vergleichsZelle('Stunden', akt.stunden, prev.stunden, 'zahl');
+    html += vergleichsZelle('Umsatz', akt.umsatz, prev.umsatz, 'euro');
+    html += vergleichsZelle('Zuschläge', akt.zuschlaege, prev.zuschlaege, 'euro');
+    html += vergleichsZelle('Mitarbeiter', akt.ma, prev.ma, 'num');
+    html += '</div>';
+
+    el.innerHTML = html;
+}
+
+// =============================================
+// ENHANCED PRINT
+// =============================================
+function printHeader() {
+    return `<div class="bericht-header"><h1>B.B. Protect</h1><p>Sicherheitseinsatz-Planer</p></div>`;
 }
 
 // =============================================

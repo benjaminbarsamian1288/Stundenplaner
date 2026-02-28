@@ -4506,6 +4506,99 @@ body.dark-mode .archiv-info {
     color: #f0e68c;
 }
 
+/* -- Einsatz-Ampel -- */
+.ampel {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin-right: 0.3rem;
+    vertical-align: middle;
+}
+
+/* -- Zeitvergleich -- */
+.zv-grid {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.zv-item {
+    flex: 1;
+    min-width: 100px;
+    background: #f7fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 0.5rem;
+    text-align: center;
+}
+
+.zv-label {
+    font-size: 0.7rem;
+    color: #718096;
+    margin-bottom: 0.2rem;
+}
+
+.zv-wert {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #2d3748;
+}
+
+.zv-prev {
+    font-size: 0.65rem;
+    color: #a0aec0;
+    margin: 0.1rem 0;
+}
+
+.zv-up {
+    color: #38a169;
+    font-weight: 600;
+    font-size: 0.8rem;
+}
+
+.zv-down {
+    color: #e53e3e;
+    font-weight: 600;
+    font-size: 0.8rem;
+}
+
+.zv-gleich {
+    color: #718096;
+    font-size: 0.8rem;
+}
+
+/* -- Shortcuts Hint -- */
+.shortcuts-hint {
+    font-size: 0.7rem;
+    color: #a0aec0;
+    margin-top: 0.3rem;
+}
+
+.shortcuts-hint kbd {
+    background: #edf2f7;
+    border: 1px solid #cbd5e0;
+    border-radius: 3px;
+    padding: 0.1rem 0.3rem;
+    font-size: 0.65rem;
+    font-family: inherit;
+}
+
+body.dark-mode .zv-item {
+    background: #161b22;
+    border-color: #30363d;
+}
+
+body.dark-mode .zv-wert {
+    color: #c9d1d9;
+}
+
+body.dark-mode .shortcuts-hint kbd {
+    background: #21262d;
+    border-color: #30363d;
+    color: #c9d1d9;
+}
+
 body.dark-mode .auto-plan {
     background: #0d1117;
     border-color: #30363d;
