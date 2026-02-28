@@ -1614,6 +1614,230 @@ tbody tr:hover {
     color: #38a169;
 }
 
+/* Urlaubskonto */
+.urlaub-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+
+.urlaub-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.4rem 0;
+    border-bottom: 1px solid #f0f2f5;
+}
+
+.urlaub-name {
+    width: 140px;
+    font-weight: 600;
+    font-size: 0.85rem;
+    flex-shrink: 0;
+}
+
+.urlaub-bar-bg {
+    flex: 1;
+    height: 10px;
+    background: #e2e8f0;
+    border-radius: 5px;
+    min-width: 80px;
+}
+
+.urlaub-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #2b6cb0, #4299e1);
+    border-radius: 5px;
+    transition: width 0.3s;
+}
+
+.urlaub-bar-fill.urlaub-wenig {
+    background: linear-gradient(90deg, #d69e2e, #ecc94b);
+}
+
+.urlaub-bar-fill.urlaub-aufgebraucht {
+    background: linear-gradient(90deg, #c53030, #fc8181);
+}
+
+.urlaub-werte {
+    width: 180px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.8rem;
+    flex-shrink: 0;
+}
+
+/* Personalkosten-Trend */
+.pk-chart {
+    display: flex;
+    gap: 0.5rem;
+    align-items: flex-end;
+    height: 180px;
+    padding-top: 0.5rem;
+}
+
+.pk-spalte {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    height: 100%;
+}
+
+.pk-werte {
+    text-align: center;
+    margin-bottom: 0.3rem;
+    min-height: 40px;
+}
+
+.pk-gesamt {
+    font-weight: 700;
+    font-size: 0.8rem;
+}
+
+.pk-detail {
+    font-size: 0.6rem;
+    color: #718096;
+}
+
+.pk-bar-container {
+    flex: 1;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+}
+
+.pk-bar-grund {
+    width: 100%;
+    background: linear-gradient(180deg, #2b6cb0, #4299e1);
+    border-radius: 0 0 4px 4px;
+    min-height: 2px;
+    transition: height 0.5s;
+}
+
+.pk-bar-zuschlag {
+    width: 100%;
+    background: linear-gradient(180deg, #d69e2e, #ecc94b);
+    border-radius: 4px 4px 0 0;
+    transition: height 0.5s;
+}
+
+.pk-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    margin-top: 0.3rem;
+    color: #4a5568;
+}
+
+.pk-legende {
+    display: flex;
+    justify-content: center;
+    gap: 1.5rem;
+    margin-top: 0.5rem;
+    font-size: 0.75rem;
+    color: #718096;
+}
+
+.pk-leg-item {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+}
+
+.pk-leg-color {
+    width: 12px;
+    height: 12px;
+    border-radius: 3px;
+}
+
+.pk-leg-grund {
+    background: #2b6cb0;
+}
+
+.pk-leg-zuschlag {
+    background: #d69e2e;
+}
+
+.pk-summary {
+    display: flex;
+    justify-content: center;
+    gap: 1.5rem;
+    margin-top: 0.75rem;
+    font-size: 0.8rem;
+    color: #718096;
+    flex-wrap: wrap;
+}
+
+/* Einsatz-Timeline */
+.tl-container {
+    position: relative;
+    padding: 0.5rem 0;
+}
+
+.tl-stunden {
+    position: relative;
+    height: 20px;
+    border-bottom: 1px solid #e2e8f0;
+    margin-bottom: 0.3rem;
+}
+
+.tl-h {
+    position: absolute;
+    font-size: 0.55rem;
+    color: #a0aec0;
+    transform: translateX(-50%);
+    top: 0;
+}
+
+.tl-h::after {
+    content: '';
+    position: absolute;
+    bottom: -4px;
+    left: 50%;
+    width: 1px;
+    height: 4px;
+    background: #e2e8f0;
+}
+
+.tl-tracks {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.tl-track {
+    position: relative;
+    height: 24px;
+    background: #f7fafc;
+    border-radius: 4px;
+}
+
+.tl-bar {
+    position: absolute;
+    height: 100%;
+    border-radius: 4px;
+    min-width: 2px;
+    display: flex;
+    align-items: center;
+    padding: 0 4px;
+    cursor: default;
+    transition: opacity 0.15s;
+}
+
+.tl-bar:hover {
+    opacity: 0.85;
+}
+
+.tl-label {
+    color: #fff;
+    font-size: 0.6rem;
+    font-weight: 700;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
 /* =============================================
    DARK MODE
    ============================================= */
@@ -3086,6 +3310,62 @@ body.dark-mode .dp-plus:hover {
     color: #3fb950;
 }
 
+body.dark-mode .urlaub-row {
+    border-bottom-color: #21262d;
+}
+
+body.dark-mode .urlaub-name {
+    color: #c9d1d9;
+}
+
+body.dark-mode .urlaub-bar-bg {
+    background: #21262d;
+}
+
+body.dark-mode .urlaub-bar-fill {
+    background: linear-gradient(90deg, #1f6feb, #388bfd);
+}
+
+body.dark-mode .pk-gesamt {
+    color: #c9d1d9;
+}
+
+body.dark-mode .pk-bar-grund {
+    background: linear-gradient(180deg, #1f6feb, #388bfd);
+}
+
+body.dark-mode .pk-bar-zuschlag {
+    background: linear-gradient(180deg, #d29922, #e3b341);
+}
+
+body.dark-mode .pk-label {
+    color: #8b949e;
+}
+
+body.dark-mode .pk-leg-grund {
+    background: #1f6feb;
+}
+
+body.dark-mode .pk-leg-zuschlag {
+    background: #d29922;
+}
+
+body.dark-mode .tl-stunden {
+    border-bottom-color: #30363d;
+}
+
+body.dark-mode .tl-h {
+    color: #484f58;
+}
+
+body.dark-mode .tl-h::after {
+    background: #30363d;
+}
+
+body.dark-mode .tl-track {
+    background: #0d1117;
+}
+
 footer {
     text-align: center;
     padding: 2rem 1rem;
@@ -3265,5 +3545,35 @@ footer {
         flex-direction: column;
         align-items: flex-start;
         gap: 0.15rem;
+    }
+
+    .urlaub-row {
+        flex-wrap: wrap;
+    }
+
+    .urlaub-name {
+        width: 100%;
+    }
+
+    .urlaub-werte {
+        width: 100%;
+    }
+
+    .pk-chart {
+        height: 140px;
+    }
+
+    .pk-gesamt {
+        font-size: 0.65rem;
+    }
+
+    .pk-summary {
+        flex-direction: column;
+        align-items: center;
+        gap: 0.3rem;
+    }
+
+    .tl-label {
+        font-size: 0.5rem;
     }
 }

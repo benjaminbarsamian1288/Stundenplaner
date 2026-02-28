@@ -11,6 +11,7 @@ let verfuegbarkeit = JSON.parse(localStorage.getItem('bbprotect_verfuegbarkeit')
 let vorfaelle = JSON.parse(localStorage.getItem('bbprotect_vorfaelle') || '[]');
 let wachbuch = JSON.parse(localStorage.getItem('bbprotect_wachbuch') || '[]');
 let dokumente = JSON.parse(localStorage.getItem('bbprotect_dokumente') || '[]');
+let wochenvorlagen = JSON.parse(localStorage.getItem('bbprotect_wochenvorlagen') || '[]');
 
 // Jahresübersicht-State
 let jahresJahr = new Date().getFullYear();
@@ -71,7 +72,7 @@ document.querySelectorAll('.nav-btn').forEach(btn => {
         if (this.dataset.tab === 'objekte') { renderObjekte(); renderVertraege(); renderObjektAuslastung(); }
         if (this.dataset.tab === 'kalender') { renderKalender(); renderDienstplan(); renderJahresuebersicht(); }
         if (this.dataset.tab === 'abrechnung') updateAbrechnung();
-        if (this.dataset.tab === 'mitarbeiter') { renderMitarbeiter(); renderDokumente(); renderUeberstunden(); renderKontaktliste(); }
+        if (this.dataset.tab === 'mitarbeiter') { renderMitarbeiter(); renderDokumente(); renderUeberstunden(); renderKontaktliste(); renderUrlaubskonto(); }
         if (this.dataset.tab === 'vorfaelle') renderVorfaelle();
         if (this.dataset.tab === 'wachbuch') renderWachbuch();
         if (this.dataset.tab === 'einstellungen') updateDatenStats();
@@ -496,6 +497,7 @@ function renderTabelle() {
             <td class="no-print">
                 <button class="btn-edit" onclick="bearbeiteEinsatz(${e.id})">Bearb.</button>
                 <button class="btn-secondary btn-small" onclick="dupliziereEinsatz(${e.id})">Dupl.</button>
+                ${e.mitarbeiter ? '<button class="btn-secondary btn-small" onclick="tauscheSchicht(' + e.id + ')">Tausch</button>' : ''}
                 <button class="btn-delete" onclick="loescheEinsatz(${e.id})">X</button>
             </td>
         `;
@@ -1008,6 +1010,9 @@ function updateDashboard() {
 
     // MA-Leistungsübersicht
     renderMALeistung(filterM);
+
+    // Personalkosten-Trend
+    renderPersonalkostenTrend();
 }
 
 function renderMonatsVergleich(aktuellerMonat) {
@@ -1398,13 +1403,14 @@ document.getElementById('mitarbeiterForm').addEventListener('submit', function (
     const stundensatz = parseFloat(document.getElementById('maStundensatz').value) || 0;
     const qualAblauf = document.getElementById('maQualAblauf').value;
     const sollStunden = parseFloat(document.getElementById('maSollStunden').value) || 0;
+    const urlaubstage = parseInt(document.getElementById('maUrlaubstage').value) || 0;
     const bemerkung = document.getElementById('maBemerkung').value.trim();
 
     if (!vorname || !nachname) return;
 
     const vollname = `${vorname} ${nachname}`;
     const idx = mitarbeiterListe_.findIndex(m => m.name === vollname);
-    const ma = { name: vollname, vorname, nachname, telefon, email, qualifikation, stundensatz, qualAblauf, sollStunden, bemerkung };
+    const ma = { name: vollname, vorname, nachname, telefon, email, qualifikation, stundensatz, qualAblauf, sollStunden, urlaubstage, bemerkung };
 
     if (idx !== -1) mitarbeiterListe_[idx] = ma; else mitarbeiterListe_.push(ma);
 
@@ -1479,7 +1485,7 @@ function loescheMitarbeiter(index) {
 // =============================================
 function erstelleBackup() {
     const backup = {
-        version: 6,
+        version: 7,
         datum: new Date().toISOString(),
         einsaetze,
         objekte,
@@ -1488,7 +1494,8 @@ function erstelleBackup() {
         verfuegbarkeit,
         vorfaelle,
         wachbuch,
-        dokumente
+        dokumente,
+        wochenvorlagen
     };
 
     const json = JSON.stringify(backup, null, 2);
@@ -1521,6 +1528,7 @@ function stelleWiederHer(event) {
             vorfaelle = data.vorfaelle || [];
             wachbuch = data.wachbuch || [];
             dokumente = data.dokumente || [];
+            wochenvorlagen = data.wochenvorlagen || [];
 
             speichern();
             localStorage.setItem('bbprotect_objekte', JSON.stringify(objekte));
@@ -1530,6 +1538,7 @@ function stelleWiederHer(event) {
             localStorage.setItem('bbprotect_vorfaelle', JSON.stringify(vorfaelle));
             localStorage.setItem('bbprotect_wachbuch', JSON.stringify(wachbuch));
             localStorage.setItem('bbprotect_dokumente', JSON.stringify(dokumente));
+            localStorage.setItem('bbprotect_wochenvorlagen', JSON.stringify(wochenvorlagen));
 
             renderTabelle();
             updateAlleFilter();
@@ -1560,6 +1569,7 @@ function loescheAlleDaten() {
     vorfaelle = [];
     wachbuch = [];
     dokumente = [];
+    wochenvorlagen = [];
 
     localStorage.removeItem('bbprotect_einsaetze');
     localStorage.removeItem('bbprotect_objekte');
@@ -1569,6 +1579,7 @@ function loescheAlleDaten() {
     localStorage.removeItem('bbprotect_vorfaelle');
     localStorage.removeItem('bbprotect_wachbuch');
     localStorage.removeItem('bbprotect_dokumente');
+    localStorage.removeItem('bbprotect_wochenvorlagen');
 
     renderTabelle();
     updateAlleFilter();
@@ -1595,6 +1606,7 @@ function updateDatenStats() {
             <div class="daten-stat"><strong>${vorfaelle.length}</strong><span>Vorfälle</span></div>
             <div class="daten-stat"><strong>${wachbuch.length}</strong><span>Wachbuch</span></div>
             <div class="daten-stat"><strong>${dokumente.length}</strong><span>Dokumente</span></div>
+            <div class="daten-stat"><strong>${wochenvorlagen.length}</strong><span>KW-Vorlagen</span></div>
             <div class="daten-stat"><strong>${formatZahl(totalStd)}</strong><span>Stunden gesamt</span></div>
             <div class="daten-stat"><strong>${formatEuro(totalGesamt)}</strong><span>Umsatz gesamt</span></div>
         </div>
@@ -2131,6 +2143,33 @@ function zeigeTagesDetail(datumStr) {
     } else {
         const totalStd = tagesE.reduce((s, e) => s + e.stunden, 0);
         const totalGesamt = tagesE.reduce((s, e) => s + e.gesamt, 0);
+
+        // Timeline
+        html += '<div class="modal-abschnitt"><h3>Timeline</h3><div class="tl-container">';
+        html += '<div class="tl-stunden">';
+        for (let h = 0; h < 24; h++) {
+            html += `<span class="tl-h" style="left:${(h / 24) * 100}%">${String(h).padStart(2, '0')}</span>`;
+        }
+        html += '</div><div class="tl-tracks">';
+
+        const farben = ['#2b6cb0', '#38a169', '#d69e2e', '#c53030', '#805ad5', '#dd6b20'];
+        tagesE.forEach((e, idx) => {
+            const [svh, svm] = e.zeitVon.split(':').map(Number);
+            const [evh, evm] = e.zeitBis.split(':').map(Number);
+            let startPct = ((svh * 60 + svm) / 1440) * 100;
+            let endPct = ((evh * 60 + evm) / 1440) * 100;
+            if (endPct <= startPct) endPct = 100;
+            const widthPct = endPct - startPct;
+            const farbe = farben[idx % farben.length];
+
+            html += `<div class="tl-track">
+                <div class="tl-bar" style="left:${startPct}%;width:${widthPct}%;background:${farbe}" title="${e.zeitVon}-${e.zeitBis} ${escapeHtml(e.objekt)} (${escapeHtml(e.mitarbeiter || '')})">
+                    <span class="tl-label">${escapeHtml(e.mitarbeiter ? e.mitarbeiter.split(' ')[0] : e.objekt)}</span>
+                </div>
+            </div>`;
+        });
+
+        html += '</div></div></div>';
 
         html += `<div class="modal-abschnitt"><h3>Einsätze (${tagesE.length})</h3>
             <div class="modal-stats">
@@ -3130,6 +3169,340 @@ function schnellerfassungDienstplan(name, datum) {
 }
 
 // =============================================
+// SCHICHT-TAUSCH
+// =============================================
+function tauscheSchicht(id) {
+    const einsatz = einsaetze.find(e => e.id === id);
+    if (!einsatz || !einsatz.mitarbeiter) return;
+
+    // Alle MA sammeln die nicht dieser MA sind
+    const andereMa = new Set();
+    mitarbeiterListe_.forEach(m => { if (m.name !== einsatz.mitarbeiter) andereMa.add(m.name); });
+    einsaetze.forEach(e => { if (e.mitarbeiter && e.mitarbeiter !== einsatz.mitarbeiter) andereMa.add(e.mitarbeiter); });
+
+    if (andereMa.size === 0) {
+        alert('Kein anderer Mitarbeiter verfügbar für den Tausch.');
+        return;
+    }
+
+    const maList = Array.from(andereMa).sort();
+    const auswahl = prompt(
+        `Schicht von ${einsatz.mitarbeiter} am ${formatDatum(einsatz.datum)} (${einsatz.zeitVon}-${einsatz.zeitBis}) tauschen mit:\n\n` +
+        maList.map((m, i) => `${i + 1}. ${m}`).join('\n') +
+        '\n\nBitte Nummer eingeben:'
+    );
+
+    if (!auswahl) return;
+    const idx = parseInt(auswahl) - 1;
+    if (isNaN(idx) || idx < 0 || idx >= maList.length) {
+        alert('Ungültige Auswahl.');
+        return;
+    }
+
+    const zielMA = maList[idx];
+    const origMA = einsatz.mitarbeiter;
+
+    // Prüfen ob der Ziel-MA an dem Tag auch einen Einsatz hat
+    const zielEinsatz = einsaetze.find(e =>
+        e.mitarbeiter === zielMA && e.datum === einsatz.datum && e.id !== id
+    );
+
+    if (zielEinsatz) {
+        if (!confirm(`Schichten tauschen:\n\n${origMA}: ${einsatz.zeitVon}-${einsatz.zeitBis} (${einsatz.objekt})\n${zielMA}: ${zielEinsatz.zeitVon}-${zielEinsatz.zeitBis} (${zielEinsatz.objekt})\n\nMitarbeiter tauschen?`)) return;
+        einsatz.mitarbeiter = zielMA;
+        zielEinsatz.mitarbeiter = origMA;
+    } else {
+        if (!confirm(`Schicht am ${formatDatum(einsatz.datum)} (${einsatz.zeitVon}-${einsatz.zeitBis}):\n${origMA} → ${zielMA}\n\nÜbertragen?`)) return;
+        einsatz.mitarbeiter = zielMA;
+    }
+
+    speichern();
+    renderTabelle();
+    alert('Schicht erfolgreich getauscht!');
+}
+
+// =============================================
+// URLAUBSKONTO
+// =============================================
+function renderUrlaubskonto() {
+    const el = document.getElementById('urlaubskontoContent');
+    if (!el) return;
+
+    // Jahr-Select befüllen
+    const jahrSelect = document.getElementById('urlaubJahr');
+    const aktJahr = new Date().getFullYear();
+    const verfJahre = new Set();
+    verfJahre.add(aktJahr);
+    verfuegbarkeit.forEach(v => {
+        if (v.typ === 'urlaub') {
+            verfJahre.add(parseInt(v.von.substring(0, 4)));
+        }
+    });
+
+    const currentVal = jahrSelect.value;
+    jahrSelect.innerHTML = '';
+    Array.from(verfJahre).sort().reverse().forEach(j => {
+        const opt = document.createElement('option');
+        opt.value = j;
+        opt.textContent = j;
+        jahrSelect.appendChild(opt);
+    });
+    jahrSelect.value = currentVal || aktJahr;
+    const selJahr = parseInt(jahrSelect.value) || aktJahr;
+
+    const maList = mitarbeiterListe_.filter(m => m.urlaubstage > 0);
+
+    if (maList.length === 0) {
+        el.innerHTML = '<p style="color:#a0aec0">Keine Mitarbeiter mit Urlaubstagen definiert. Tragen Sie Urlaubstage in der Mitarbeiter-Verwaltung ein.</p>';
+        return;
+    }
+
+    let html = '<div class="urlaub-grid">';
+    maList.forEach(ma => {
+        // Urlaubstage zählen: Werktage (Mo-Fr) in allen Urlaubs-Einträgen des Jahres
+        const urlaubEintraege = verfuegbarkeit.filter(v =>
+            v.mitarbeiter === ma.name && v.typ === 'urlaub' &&
+            v.von.substring(0, 4) === String(selJahr)
+        );
+
+        let genutzteTage = 0;
+        urlaubEintraege.forEach(u => {
+            const von = new Date(u.von);
+            const bis = new Date(u.bis);
+            for (let d = new Date(von); d <= bis; d.setDate(d.getDate() + 1)) {
+                const wt = d.getDay();
+                if (wt !== 0 && wt !== 6) genutzteTage++;
+            }
+        });
+
+        const restTage = ma.urlaubstage - genutzteTage;
+        const pct = Math.min((genutzteTage / ma.urlaubstage) * 100, 100);
+
+        let barCls = 'urlaub-bar-fill';
+        if (restTage <= 0) barCls += ' urlaub-aufgebraucht';
+        else if (restTage <= 5) barCls += ' urlaub-wenig';
+
+        html += `<div class="urlaub-row">
+            <div class="urlaub-name">${escapeHtml(ma.name)}</div>
+            <div class="urlaub-bar-bg">
+                <div class="${barCls}" style="width:${pct}%"></div>
+            </div>
+            <div class="urlaub-werte">
+                <span>${genutzteTage} / ${ma.urlaubstage} Tage</span>
+                <span class="${restTage >= 0 ? 'trend-up' : 'trend-down'}">Rest: ${restTage}</span>
+            </div>
+        </div>`;
+    });
+    html += '</div>';
+
+    el.innerHTML = html;
+}
+
+// =============================================
+// DIENSTPLAN-WOCHENVORLAGEN
+// =============================================
+function speichereWochenvorlage() {
+    const montag = getMontag(dienstplanJahr, dienstplanKW);
+    const tage = [];
+    for (let i = 0; i < 7; i++) {
+        const d = new Date(montag);
+        d.setUTCDate(d.getUTCDate() + i);
+        tage.push(d.toISOString().split('T')[0]);
+    }
+
+    // Alle Einsätze dieser Woche sammeln
+    const wochenEinsaetze = einsaetze.filter(e => tage.includes(e.datum));
+    if (wochenEinsaetze.length === 0) {
+        alert('Keine Einsätze in dieser Woche zum Speichern.');
+        return;
+    }
+
+    const name = prompt(`Vorlage für KW ${dienstplanKW}/${dienstplanJahr} speichern als:`, `KW ${dienstplanKW} Vorlage`);
+    if (!name) return;
+
+    // Einsätze als relative Tage speichern (0=Mo, 6=So)
+    const vorlageEinsaetze = wochenEinsaetze.map(e => {
+        const tagIdx = tage.indexOf(e.datum);
+        return {
+            wochentag: tagIdx,
+            objekt: e.objekt,
+            zeitVon: e.zeitVon,
+            zeitBis: e.zeitBis,
+            stundensatz: e.stundensatz,
+            mitarbeiter: e.mitarbeiter || '',
+            bemerkung: e.bemerkung || ''
+        };
+    });
+
+    wochenvorlagen.push({
+        id: Date.now(),
+        name,
+        erstellt: new Date().toISOString().split('T')[0],
+        einsaetze: vorlageEinsaetze
+    });
+
+    localStorage.setItem('bbprotect_wochenvorlagen', JSON.stringify(wochenvorlagen));
+    alert(`Vorlage "${name}" mit ${vorlageEinsaetze.length} Einsätzen gespeichert!`);
+}
+
+function ladeWochenvorlage() {
+    if (wochenvorlagen.length === 0) {
+        alert('Keine gespeicherten Wochenvorlagen vorhanden.');
+        return;
+    }
+
+    const auswahl = prompt(
+        'Gespeicherte Wochenvorlagen:\n\n' +
+        wochenvorlagen.map((v, i) => `${i + 1}. ${v.name} (${v.einsaetze.length} Einsätze, ${formatDatum(v.erstellt)})`).join('\n') +
+        '\n\n0 = Vorlage löschen\n\nBitte Nummer eingeben:'
+    );
+
+    if (!auswahl) return;
+    const idx = parseInt(auswahl) - 1;
+
+    if (parseInt(auswahl) === 0) {
+        // Lösch-Dialog
+        const delAuswahl = prompt(
+            'Welche Vorlage löschen?\n\n' +
+            wochenvorlagen.map((v, i) => `${i + 1}. ${v.name}`).join('\n') +
+            '\n\nBitte Nummer eingeben:'
+        );
+        if (!delAuswahl) return;
+        const delIdx = parseInt(delAuswahl) - 1;
+        if (delIdx >= 0 && delIdx < wochenvorlagen.length) {
+            if (confirm(`Vorlage "${wochenvorlagen[delIdx].name}" löschen?`)) {
+                wochenvorlagen.splice(delIdx, 1);
+                localStorage.setItem('bbprotect_wochenvorlagen', JSON.stringify(wochenvorlagen));
+                alert('Vorlage gelöscht.');
+            }
+        }
+        return;
+    }
+
+    if (isNaN(idx) || idx < 0 || idx >= wochenvorlagen.length) {
+        alert('Ungültige Auswahl.');
+        return;
+    }
+
+    const vorlage = wochenvorlagen[idx];
+    const montag = getMontag(dienstplanJahr, dienstplanKW);
+
+    if (!confirm(`Vorlage "${vorlage.name}" auf KW ${dienstplanKW}/${dienstplanJahr} anwenden?\n\n${vorlage.einsaetze.length} Einsätze werden erstellt.`)) return;
+
+    let count = 0;
+    vorlage.einsaetze.forEach(ve => {
+        const d = new Date(montag);
+        d.setUTCDate(d.getUTCDate() + ve.wochentag);
+        const datumStr = d.toISOString().split('T')[0];
+
+        // Prüfe ob bereits ein identischer Einsatz existiert
+        const existiert = einsaetze.some(e =>
+            e.datum === datumStr && e.zeitVon === ve.zeitVon && e.zeitBis === ve.zeitBis &&
+            e.objekt === ve.objekt && e.mitarbeiter === ve.mitarbeiter
+        );
+        if (existiert) return;
+
+        const berechnung = berechneEinsatz(datumStr, ve.zeitVon, ve.zeitBis, ve.stundensatz);
+
+        einsaetze.push({
+            id: Date.now() + count,
+            objekt: ve.objekt,
+            datum: datumStr,
+            zeitVon: ve.zeitVon,
+            zeitBis: ve.zeitBis,
+            stundensatz: ve.stundensatz,
+            mitarbeiter: ve.mitarbeiter,
+            bemerkung: ve.bemerkung,
+            status: 'geplant',
+            ...berechnung
+        });
+        count++;
+    });
+
+    if (count > 0) {
+        speichern();
+        renderDienstplan();
+        renderTabelle();
+        updateAlleFilter();
+        alert(`${count} Einsätze aus Vorlage erstellt!`);
+    } else {
+        alert('Keine neuen Einsätze erstellt (alle bereits vorhanden).');
+    }
+}
+
+// =============================================
+// PERSONALKOSTEN-TREND
+// =============================================
+function renderPersonalkostenTrend() {
+    const el = document.getElementById('personalkostenTrend');
+    if (!el) return;
+
+    // Letzte 6 Monate ermitteln
+    const monate = [];
+    const jetzt = new Date();
+    for (let i = 5; i >= 0; i--) {
+        const d = new Date(jetzt.getFullYear(), jetzt.getMonth() - i, 1);
+        monate.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`);
+    }
+
+    const daten = monate.map(m => {
+        const monatsE = einsaetze.filter(e => e.datum.substring(0, 7) === m);
+        const grundlohn = monatsE.reduce((s, e) => s + e.grundlohn, 0);
+        const zuschlaege = monatsE.reduce((s, e) => s + e.zuschlagBetrag, 0);
+        const gesamt = monatsE.reduce((s, e) => s + e.gesamt, 0);
+        const stunden = monatsE.reduce((s, e) => s + e.stunden, 0);
+        const maCount = new Set(monatsE.filter(e => e.mitarbeiter).map(e => e.mitarbeiter)).size;
+        return { monat: m, grundlohn, zuschlaege, gesamt, stunden, maCount };
+    });
+
+    const maxGesamt = Math.max(...daten.map(d => d.gesamt), 1);
+
+    if (daten.every(d => d.gesamt === 0)) {
+        el.innerHTML = '<p style="color:#a0aec0">Noch keine Kostendaten vorhanden.</p>';
+        return;
+    }
+
+    let html = '<div class="pk-chart">';
+    daten.forEach(d => {
+        const [j, m] = d.monat.split('-');
+        const label = `${MONATSNAMEN[parseInt(m) - 1].substring(0, 3)} ${j.substring(2)}`;
+        const grundPct = (d.grundlohn / maxGesamt) * 100;
+        const zuschlagPct = (d.zuschlaege / maxGesamt) * 100;
+
+        html += `<div class="pk-spalte">
+            <div class="pk-werte">
+                <div class="pk-gesamt">${formatEuro(d.gesamt)}</div>
+                <div class="pk-detail">${formatZahl(d.stunden)} Std. / ${d.maCount} MA</div>
+            </div>
+            <div class="pk-bar-container">
+                <div class="pk-bar-zuschlag" style="height:${zuschlagPct}%" title="Zuschläge: ${formatEuro(d.zuschlaege)}"></div>
+                <div class="pk-bar-grund" style="height:${grundPct}%" title="Grundlohn: ${formatEuro(d.grundlohn)}"></div>
+            </div>
+            <div class="pk-label">${label}</div>
+        </div>`;
+    });
+    html += '</div>';
+
+    // Legende
+    html += '<div class="pk-legende"><span class="pk-leg-item"><span class="pk-leg-color pk-leg-grund"></span>Grundlohn</span><span class="pk-leg-item"><span class="pk-leg-color pk-leg-zuschlag"></span>Zuschläge</span></div>';
+
+    // Zusammenfassung
+    const totalGesamt = daten.reduce((s, d) => s + d.gesamt, 0);
+    const avgMonat = totalGesamt / daten.filter(d => d.gesamt > 0).length || 0;
+    const letzterMonat = daten[daten.length - 1];
+    const vorletzter = daten[daten.length - 2];
+    const diffPct = vorletzter.gesamt > 0 ? ((letzterMonat.gesamt - vorletzter.gesamt) / vorletzter.gesamt * 100) : 0;
+
+    html += `<div class="pk-summary">
+        <span>Gesamt 6 Monate: <strong>${formatEuro(totalGesamt)}</strong></span>
+        <span>Durchschnitt/Monat: <strong>${formatEuro(avgMonat)}</strong></span>
+        ${vorletzter.gesamt > 0 ? `<span>Trend: <strong class="${diffPct >= 0 ? 'trend-up' : 'trend-down'}">${diffPct >= 0 ? '+' : ''}${diffPct.toFixed(1)}%</strong></span>` : ''}
+    </div>`;
+
+    el.innerHTML = html;
+}
+
+// =============================================
 // INITIALISIERUNG
 // =============================================
 document.getElementById('datum').valueAsDate = new Date();
@@ -3145,6 +3518,7 @@ renderVerfuegbarkeit();
 updateHeaderStats();
 pruefeBenachrichtigungen();
 renderDokumente();
+renderUrlaubskonto();
 document.getElementById('vfDatum').valueAsDate = new Date();
 document.getElementById('wbDatum').valueAsDate = new Date();
 const jetztInit = new Date();
