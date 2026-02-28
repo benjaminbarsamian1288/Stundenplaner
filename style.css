@@ -1582,6 +1582,452 @@ body.dark-mode .verf-frei {
     color: #3fb950;
 }
 
+body.dark-mode .vorfall-card {
+    background: #161b22;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+body.dark-mode .vorfall-body p {
+    color: #c9d1d9;
+}
+
+body.dark-mode .vorfall-massnahmen {
+    background: #0d1117;
+}
+
+body.dark-mode .vorfall-typ-badge {
+    background: #0d2137;
+    color: #388bfd;
+}
+
+body.dark-mode .vorfall-schwere-badge {
+    background: #21262d;
+    color: #8b949e;
+}
+
+body.dark-mode .dienstplan-section {
+    background: #161b22;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+body.dark-mode .dp-header {
+    background: #21262d;
+}
+
+body.dark-mode .dp-header.dp-heute {
+    background: #1f6feb;
+}
+
+body.dark-mode .dp-name {
+    background: #0d1117;
+    color: #c9d1d9;
+    border-bottom-color: #21262d;
+}
+
+body.dark-mode .dp-cell {
+    background: #161b22;
+    border-color: #21262d;
+}
+
+body.dark-mode .dp-cell.dp-leer {
+    background: #0d1117;
+}
+
+body.dark-mode .dp-cell.dp-abw-urlaub {
+    background: #0d2137;
+}
+
+body.dark-mode .dp-cell.dp-abw-krank {
+    background: #200d0d;
+}
+
+body.dark-mode .dp-cell.dp-abw-frei,
+body.dark-mode .dp-cell.dp-abw-fortbildung {
+    background: #0d200d;
+}
+
+body.dark-mode .dp-tag {
+    background: #0d2137;
+    color: #388bfd;
+}
+
+body.dark-mode .dp-nacht {
+    background: #21262d;
+}
+
+body.dark-mode .modal-content {
+    background: #161b22;
+    color: #c9d1d9;
+}
+
+body.dark-mode .modal-header {
+    border-bottom-color: #30363d;
+}
+
+body.dark-mode .modal-feiertag {
+    background: #200d0d;
+    color: #f85149;
+}
+
+body.dark-mode .modal-abschnitt {
+    border-bottom-color: #21262d;
+}
+
+body.dark-mode .modal-vorfall {
+    background: #200d0d;
+}
+
+body.dark-mode .modal-vorfall p {
+    color: #8b949e;
+}
+
+body.dark-mode .kalender-vorfall-badge {
+    background: #200d0d;
+    color: #f85149;
+}
+
+body.dark-mode textarea {
+    background: #0d1117;
+    color: #c9d1d9;
+    border-color: #30363d;
+}
+
+/* Vorfallsbericht */
+.vorfall-card {
+    background: #fff;
+    border-radius: 10px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    border-left: 4px solid #cbd5e0;
+}
+
+.vorfall-card.vf-schwere-mittel {
+    border-left-color: #ecc94b;
+}
+
+.vorfall-card.vf-schwere-hoch {
+    border-left-color: #ed8936;
+}
+
+.vorfall-card.vf-schwere-kritisch {
+    border-left-color: #e53e3e;
+}
+
+.vorfall-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 0.5rem;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.vorfall-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+}
+
+.vorfall-datum {
+    font-weight: 700;
+    font-size: 0.9rem;
+}
+
+.vorfall-objekt {
+    font-size: 0.85rem;
+    color: #718096;
+}
+
+.vorfall-badges {
+    display: flex;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+}
+
+.vorfall-typ-badge {
+    display: inline-block;
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    background: #ebf8ff;
+    color: #2b6cb0;
+}
+
+.vorfall-schwere-badge {
+    display: inline-block;
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    background: #f7fafc;
+    color: #718096;
+}
+
+.vorfall-schwere-badge.vf-schwere-mittel {
+    background: #fffff0;
+    color: #d69e2e;
+}
+
+.vorfall-schwere-badge.vf-schwere-hoch {
+    background: #fffaf0;
+    color: #dd6b20;
+}
+
+.vorfall-schwere-badge.vf-schwere-kritisch {
+    background: #fff5f5;
+    color: #e53e3e;
+}
+
+.vorfall-body {
+    margin-bottom: 0.5rem;
+}
+
+.vorfall-body p {
+    font-size: 0.9rem;
+    line-height: 1.5;
+    margin-bottom: 0.3rem;
+}
+
+.vorfall-massnahmen {
+    background: #f7fafc;
+    border-radius: 4px;
+    padding: 0.4rem 0.6rem;
+    font-size: 0.85rem;
+}
+
+.vorfall-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.8rem;
+    color: #718096;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+/* Dienstplan-Wochenansicht */
+.dienstplan-section {
+    background: #fff;
+    border-radius: 10px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    margin-top: 1.5rem;
+}
+
+.dienstplan-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.dienstplan-header h2 {
+    margin-bottom: 0;
+}
+
+.dienstplan-grid {
+    display: grid;
+    grid-template-columns: 140px repeat(7, 1fr);
+    gap: 2px;
+}
+
+.dp-header {
+    background: #1a1a2e;
+    color: #fff;
+    text-align: center;
+    padding: 0.5rem 0.3rem;
+    font-weight: 600;
+    font-size: 0.8rem;
+}
+
+.dp-header.dp-name {
+    text-align: left;
+    padding-left: 0.6rem;
+}
+
+.dp-header.dp-heute {
+    background: #2b6cb0;
+}
+
+.dp-name {
+    background: #f7fafc;
+    padding: 0.4rem 0.6rem;
+    font-weight: 600;
+    font-size: 0.8rem;
+    display: flex;
+    align-items: center;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.dp-cell {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    padding: 0.3rem;
+    min-height: 40px;
+    font-size: 0.75rem;
+}
+
+.dp-cell.dp-leer {
+    background: #fafafa;
+}
+
+.dp-cell.dp-abwesend {
+    position: relative;
+}
+
+.dp-cell.dp-abw-urlaub {
+    background: #ebf8ff;
+}
+
+.dp-cell.dp-abw-krank {
+    background: #fff5f5;
+}
+
+.dp-cell.dp-abw-frei,
+.dp-cell.dp-abw-fortbildung {
+    background: #f0fff4;
+}
+
+.dp-abw-label {
+    display: block;
+    text-align: center;
+    font-weight: 700;
+    font-size: 0.7rem;
+    color: #718096;
+}
+
+.dp-einsatz {
+    padding: 0.15rem 0.3rem;
+    border-radius: 3px;
+    margin-bottom: 0.15rem;
+    font-weight: 600;
+    font-size: 0.7rem;
+}
+
+.dp-tag {
+    background: #ebf8ff;
+    border-left: 2px solid #2b6cb0;
+    color: #2b6cb0;
+}
+
+.dp-nacht {
+    background: #2d3748;
+    color: #fff;
+    border-left: 2px solid #a0aec0;
+}
+
+/* Modal */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 1rem;
+}
+
+.modal-content {
+    background: #fff;
+    border-radius: 12px;
+    max-width: 700px;
+    width: 100%;
+    max-height: 85vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 1.5rem;
+    border-bottom: 2px solid #e2e8f0;
+}
+
+.modal-header h2 {
+    margin-bottom: 0;
+}
+
+.modal-header .btn-delete {
+    font-size: 1.2rem;
+    padding: 0.3rem 0.6rem;
+}
+
+.modal-feiertag {
+    background: #fff5f5;
+    color: #c53030;
+    padding: 0.5rem 1.5rem;
+    font-weight: 600;
+    font-size: 0.85rem;
+}
+
+.modal-abschnitt {
+    padding: 0.75rem 1.5rem;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.modal-abschnitt h3 {
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+}
+
+.modal-stats {
+    display: flex;
+    gap: 1.5rem;
+    margin-bottom: 0.75rem;
+    font-size: 0.85rem;
+}
+
+.modal-vorfall {
+    background: #fff5f5;
+    border-radius: 6px;
+    padding: 0.5rem 0.8rem;
+    margin-bottom: 0.4rem;
+    font-size: 0.85rem;
+}
+
+.modal-vorfall p {
+    margin-top: 0.3rem;
+    color: #4a5568;
+}
+
+.modal-actions {
+    padding: 1rem 1.5rem;
+}
+
+/* Kalender-Abwesenheit */
+.kalender-abwesend {
+    padding: 0.1rem 0.2rem;
+    border-radius: 3px;
+    margin-bottom: 0.1rem;
+    font-size: 0.6rem;
+    font-weight: 600;
+}
+
+/* Kalender-Vorfall */
+.kalender-vorfall-badge {
+    background: #fff5f5;
+    color: #c53030;
+    padding: 0.1rem 0.25rem;
+    border-radius: 3px;
+    font-size: 0.6rem;
+    font-weight: 700;
+    margin-top: 0.1rem;
+}
+
+/* Legende Abwesend */
+.legende-dot.abwesend {
+    background: #ebf8ff;
+    border: 1px solid #2b6cb0;
+}
+
 footer {
     text-align: center;
     padding: 2rem 1rem;
@@ -1695,5 +2141,27 @@ footer {
 
     .abrechnung-summary {
         grid-template-columns: repeat(2, 1fr);
+    }
+
+    .dienstplan-grid {
+        grid-template-columns: 90px repeat(7, 1fr);
+        font-size: 0.7rem;
+    }
+
+    .dp-header, .dp-name {
+        font-size: 0.7rem;
+        padding: 0.3rem;
+    }
+
+    .dp-einsatz {
+        font-size: 0.6rem;
+    }
+
+    .vorfall-header {
+        flex-direction: column;
+    }
+
+    .modal-content {
+        max-height: 90vh;
     }
 }

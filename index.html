@@ -19,6 +19,7 @@
             <button class="nav-btn" data-tab="dashboard">Dashboard</button>
             <button class="nav-btn" data-tab="objekte">Objekte</button>
             <button class="nav-btn" data-tab="mitarbeiter">Mitarbeiter</button>
+            <button class="nav-btn" data-tab="vorfaelle">Vorf&auml;lle</button>
             <button class="nav-btn" data-tab="einstellungen">Daten</button>
             <button class="dark-mode-toggle" id="darkModeBtn" onclick="toggleDarkMode()">Dunkel</button>
         </nav>
@@ -246,8 +247,29 @@
                     <span class="legende-item"><span class="legende-dot tag"></span> Tagschicht</span>
                     <span class="legende-item"><span class="legende-dot nacht"></span> Nachtschicht</span>
                     <span class="legende-item"><span class="legende-dot feiertag"></span> Feiertag</span>
+                    <span class="legende-item"><span class="legende-dot abwesend"></span> Abwesend</span>
                 </div>
             </section>
+
+            <section class="dienstplan-section">
+                <div class="dienstplan-header">
+                    <button class="btn-secondary" onclick="dienstplanNav(-1)">&larr;</button>
+                    <h2 id="dienstplanTitel">KW 9 / 2026</h2>
+                    <button class="btn-secondary" onclick="dienstplanNav(1)">&rarr;</button>
+                </div>
+                <div class="dienstplan-grid" id="dienstplanGrid"></div>
+            </section>
+        </div>
+
+        <!-- Tagesdetail-Modal -->
+        <div class="modal-overlay" id="tagesModal" style="display:none">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 id="tagesModalTitel">Details</h2>
+                    <button class="btn-delete" onclick="schliesseModal()">&times;</button>
+                </div>
+                <div id="tagesModalContent"></div>
+            </div>
         </div>
 
         <!-- TAB: Abrechnung -->
@@ -498,6 +520,100 @@
                     </table>
                 </div>
                 <p class="empty-message" id="verfEmpty">Keine Abwesenheiten eingetragen.</p>
+            </section>
+        </div>
+
+        <!-- TAB: Vorfälle -->
+        <div class="tab-content" id="tab-vorfaelle">
+            <section class="form-section">
+                <h2>Vorfallsbericht erfassen</h2>
+                <form id="vorfallForm">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="vfDatum">Datum</label>
+                            <input type="date" id="vfDatum" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="vfZeit">Uhrzeit</label>
+                            <input type="time" id="vfZeit" required>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="vfObjekt">Objekt / Einsatzort</label>
+                            <input type="text" id="vfObjekt" list="objektListe" placeholder="Einsatzort" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="vfMitarbeiter">Mitarbeiter (Melder)</label>
+                            <input type="text" id="vfMitarbeiter" list="mitarbeiterListe" placeholder="Name">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="vfTyp">Vorfallstyp</label>
+                            <select id="vfTyp">
+                                <option value="diebstahl">Diebstahl / Ladendiebstahl</option>
+                                <option value="hausfrieden">Hausfriendensbruch</option>
+                                <option value="vandalismus">Vandalismus / Sachbesch&auml;digung</option>
+                                <option value="koerperverletzung">K&ouml;rperverletzung</option>
+                                <option value="brand">Brand / Brandgefahr</option>
+                                <option value="technisch">Technische St&ouml;rung</option>
+                                <option value="verdacht">Verd&auml;chtiges Verhalten</option>
+                                <option value="unfall">Unfall / Verletzung</option>
+                                <option value="hausordnung">Hausordnungsversto&szlig;</option>
+                                <option value="sonstiges">Sonstiges</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="vfSchwere">Schweregrad</label>
+                            <select id="vfSchwere">
+                                <option value="gering">Gering</option>
+                                <option value="mittel">Mittel</option>
+                                <option value="hoch">Hoch</option>
+                                <option value="kritisch">Kritisch</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="vfBeschreibung">Beschreibung</label>
+                            <textarea id="vfBeschreibung" rows="3" placeholder="Was ist passiert?" required style="width:100%;padding:0.6rem;border:1px solid #cbd5e0;border-radius:6px;font-family:inherit;font-size:0.95rem;resize:vertical"></textarea>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="vfMassnahmen">Ergriffene Ma&szlig;nahmen</label>
+                            <textarea id="vfMassnahmen" rows="2" placeholder="Polizei gerufen, Person des Hauses verwiesen, etc." style="width:100%;padding:0.6rem;border:1px solid #cbd5e0;border-radius:6px;font-family:inherit;font-size:0.95rem;resize:vertical"></textarea>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label><input type="checkbox" id="vfPolizei"> Polizei informiert</label>
+                        </div>
+                        <div class="form-group">
+                            <label for="vfAktenzeichen">Aktenzeichen / Vorgangsnr.</label>
+                            <input type="text" id="vfAktenzeichen" placeholder="z.B. AZ 123/26">
+                        </div>
+                    </div>
+                    <div class="form-buttons">
+                        <button type="submit" class="btn-primary">Vorfall speichern</button>
+                    </div>
+                </form>
+            </section>
+
+            <section class="list-section">
+                <div class="list-header">
+                    <h2>Vorfallsberichte</h2>
+                    <div class="list-actions">
+                        <select id="vfFilterMonat">
+                            <option value="">Alle Monate</option>
+                        </select>
+                        <button class="btn-secondary" onclick="exportVorfaelle()">CSV Export</button>
+                        <button class="btn-secondary" onclick="druckeVorfaelle()">Drucken</button>
+                    </div>
+                </div>
+                <div id="vorfaelleContent"></div>
+                <p class="empty-message" id="vorfaelleEmpty">Keine Vorfallsberichte vorhanden.</p>
             </section>
         </div>
 

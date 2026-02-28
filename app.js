@@ -8,6 +8,11 @@ let objekte = JSON.parse(localStorage.getItem('bbprotect_objekte') || '[]');
 let vorlagen = JSON.parse(localStorage.getItem('bbprotect_vorlagen') || '[]');
 let mitarbeiterListe_ = JSON.parse(localStorage.getItem('bbprotect_mitarbeiter') || '[]');
 let verfuegbarkeit = JSON.parse(localStorage.getItem('bbprotect_verfuegbarkeit') || '[]');
+let vorfaelle = JSON.parse(localStorage.getItem('bbprotect_vorfaelle') || '[]');
+
+// Dienstplan-State
+let dienstplanKW = getKalenderWoche(new Date());
+let dienstplanJahr = new Date().getFullYear();
 
 // Sortierung
 let sortSpalte = 'datum';
@@ -52,9 +57,10 @@ document.querySelectorAll('.nav-btn').forEach(btn => {
 
         if (this.dataset.tab === 'dashboard') updateDashboard();
         if (this.dataset.tab === 'objekte') renderObjekte();
-        if (this.dataset.tab === 'kalender') renderKalender();
+        if (this.dataset.tab === 'kalender') { renderKalender(); renderDienstplan(); }
         if (this.dataset.tab === 'abrechnung') updateAbrechnung();
         if (this.dataset.tab === 'mitarbeiter') renderMitarbeiter();
+        if (this.dataset.tab === 'vorfaelle') renderVorfaelle();
         if (this.dataset.tab === 'einstellungen') updateDatenStats();
     });
 });
@@ -722,6 +728,22 @@ function renderKalender() {
             </div>`;
         });
 
+        // Abwesenheiten anzeigen
+        const tagesAbwesende = verfuegbarkeit.filter(v => v.von <= datumStr && v.bis >= datumStr);
+        if (tagesAbwesende.length > 0) {
+            const typLabels = { urlaub: 'U', krank: 'K', frei: 'F', fortbildung: 'FB' };
+            tagesAbwesende.forEach(v => {
+                const cls = v.typ === 'krank' ? 'verf-krank' : v.typ === 'urlaub' ? 'verf-urlaub' : 'verf-frei';
+                inhalt += `<div class="kalender-abwesend ${cls}" title="${escapeHtml(v.mitarbeiter)}: ${v.typ}">${typLabels[v.typ]} ${escapeHtml(v.mitarbeiter.split(' ')[0])}</div>`;
+            });
+        }
+
+        // Vorfälle anzeigen
+        const tagesVorfaelle = vorfaelle.filter(v => v.datum === datumStr);
+        if (tagesVorfaelle.length > 0) {
+            inhalt += `<div class="kalender-vorfall-badge" title="${tagesVorfaelle.length} Vorfall/Vorfälle">${tagesVorfaelle.length} Vorfall${tagesVorfaelle.length > 1 ? 'e' : ''}</div>`;
+        }
+
         // Stunden-Summe
         if (tagesEinsaetze.length > 0) {
             const tagesStunden = tagesEinsaetze.reduce((s, e) => s + e.stunden, 0);
@@ -730,19 +752,13 @@ function renderKalender() {
 
         cell.innerHTML = inhalt;
 
-        // Klick auf leere Zelle: Datum setzen und zum Formular wechseln
-        if (tagesEinsaetze.length === 0) {
-            cell.style.cursor = 'pointer';
-            cell.addEventListener('click', () => {
-                document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-                document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-                document.querySelector('[data-tab="erfassung"]').classList.add('active');
-                document.getElementById('tab-erfassung').classList.add('active');
-                document.getElementById('datum').value = datumStr;
-                document.getElementById('einsatzFormSection').scrollIntoView({ behavior: 'smooth' });
-                updatePreview();
-            });
-        }
+        // Klick auf Zelle öffnet Tagesdetail
+        cell.style.cursor = 'pointer';
+        cell.addEventListener('click', (ev) => {
+            // Nicht öffnen wenn auf einen Einsatz geklickt wurde (der hat eigenen onclick)
+            if (ev.target.closest('.kalender-einsatz')) return;
+            zeigeTagesDetail(datumStr);
+        });
 
         grid.appendChild(cell);
         posInWoche++;
@@ -1339,13 +1355,14 @@ function loescheMitarbeiter(index) {
 // =============================================
 function erstelleBackup() {
     const backup = {
-        version: 3,
+        version: 4,
         datum: new Date().toISOString(),
         einsaetze,
         objekte,
         vorlagen,
         mitarbeiter: mitarbeiterListe_,
-        verfuegbarkeit
+        verfuegbarkeit,
+        vorfaelle
     };
 
     const json = JSON.stringify(backup, null, 2);
@@ -1375,12 +1392,14 @@ function stelleWiederHer(event) {
             vorlagen = data.vorlagen || [];
             mitarbeiterListe_ = data.mitarbeiter || [];
             verfuegbarkeit = data.verfuegbarkeit || [];
+            vorfaelle = data.vorfaelle || [];
 
             speichern();
             localStorage.setItem('bbprotect_objekte', JSON.stringify(objekte));
             localStorage.setItem('bbprotect_vorlagen', JSON.stringify(vorlagen));
             localStorage.setItem('bbprotect_mitarbeiter', JSON.stringify(mitarbeiterListe_));
             localStorage.setItem('bbprotect_verfuegbarkeit', JSON.stringify(verfuegbarkeit));
+            localStorage.setItem('bbprotect_vorfaelle', JSON.stringify(vorfaelle));
 
             renderTabelle();
             updateAlleFilter();
@@ -1408,12 +1427,14 @@ function loescheAlleDaten() {
     vorlagen = [];
     mitarbeiterListe_ = [];
     verfuegbarkeit = [];
+    vorfaelle = [];
 
     localStorage.removeItem('bbprotect_einsaetze');
     localStorage.removeItem('bbprotect_objekte');
     localStorage.removeItem('bbprotect_vorlagen');
     localStorage.removeItem('bbprotect_mitarbeiter');
     localStorage.removeItem('bbprotect_verfuegbarkeit');
+    localStorage.removeItem('bbprotect_vorfaelle');
 
     renderTabelle();
     updateAlleFilter();
@@ -1437,6 +1458,7 @@ function updateDatenStats() {
             <div class="daten-stat"><strong>${objekte.length}</strong><span>Objekte</span></div>
             <div class="daten-stat"><strong>${mitarbeiterListe_.length}</strong><span>Mitarbeiter</span></div>
             <div class="daten-stat"><strong>${vorlagen.length}</strong><span>Vorlagen</span></div>
+            <div class="daten-stat"><strong>${vorfaelle.length}</strong><span>Vorfälle</span></div>
             <div class="daten-stat"><strong>${formatZahl(totalStd)}</strong><span>Stunden gesamt</span></div>
             <div class="daten-stat"><strong>${formatEuro(totalGesamt)}</strong><span>Umsatz gesamt</span></div>
         </div>
@@ -1677,6 +1699,360 @@ function wechsleZuTab(tabName) {
 }
 
 // =============================================
+// VORFALLSBERICHT
+// =============================================
+const VORFALL_TYPEN = {
+    diebstahl: 'Diebstahl / Ladendiebstahl',
+    hausfrieden: 'Hausfriedensbruch',
+    vandalismus: 'Vandalismus / Sachbeschädigung',
+    koerperverletzung: 'Körperverletzung',
+    brand: 'Brand / Brandgefahr',
+    technisch: 'Technische Störung',
+    verdacht: 'Verdächtiges Verhalten',
+    unfall: 'Unfall / Verletzung',
+    hausordnung: 'Hausordnungsverstoß',
+    sonstiges: 'Sonstiges'
+};
+
+const SCHWERE_LABELS = {
+    gering: 'Gering',
+    mittel: 'Mittel',
+    hoch: 'Hoch',
+    kritisch: 'Kritisch'
+};
+
+document.getElementById('vorfallForm').addEventListener('submit', function (e) {
+    e.preventDefault();
+
+    const vorfall = {
+        id: Date.now(),
+        datum: document.getElementById('vfDatum').value,
+        zeit: document.getElementById('vfZeit').value,
+        objekt: document.getElementById('vfObjekt').value.trim(),
+        mitarbeiter: document.getElementById('vfMitarbeiter').value.trim(),
+        typ: document.getElementById('vfTyp').value,
+        schwere: document.getElementById('vfSchwere').value,
+        beschreibung: document.getElementById('vfBeschreibung').value.trim(),
+        massnahmen: document.getElementById('vfMassnahmen').value.trim(),
+        polizei: document.getElementById('vfPolizei').checked,
+        aktenzeichen: document.getElementById('vfAktenzeichen').value.trim()
+    };
+
+    if (!vorfall.datum || !vorfall.zeit || !vorfall.objekt || !vorfall.beschreibung) return;
+
+    vorfaelle.push(vorfall);
+    localStorage.setItem('bbprotect_vorfaelle', JSON.stringify(vorfaelle));
+    renderVorfaelle();
+    this.reset();
+    document.getElementById('vfDatum').valueAsDate = new Date();
+});
+
+function renderVorfaelle() {
+    const content = document.getElementById('vorfaelleContent');
+    const empty = document.getElementById('vorfaelleEmpty');
+    if (!content) return;
+
+    // Filter aktualisieren
+    const filterSelect = document.getElementById('vfFilterMonat');
+    const monate = new Set();
+    vorfaelle.forEach(v => monate.add(v.datum.substring(0, 7)));
+    fillMonatsSelect(filterSelect, monate);
+
+    const filterM = filterSelect.value;
+    let gefiltert = vorfaelle;
+    if (filterM) gefiltert = gefiltert.filter(v => v.datum.substring(0, 7) === filterM);
+
+    if (gefiltert.length === 0) {
+        content.innerHTML = '';
+        empty.style.display = 'block';
+        return;
+    }
+    empty.style.display = 'none';
+
+    // Sortiere nach Datum absteigend
+    gefiltert.sort((a, b) => b.datum.localeCompare(a.datum) || b.zeit.localeCompare(a.zeit));
+
+    let html = '';
+    gefiltert.forEach(v => {
+        const schwereCls = 'vf-schwere-' + v.schwere;
+        html += `<div class="vorfall-card ${schwereCls}">
+            <div class="vorfall-header">
+                <div class="vorfall-meta">
+                    <span class="vorfall-datum">${formatDatum(v.datum)} ${v.zeit} Uhr</span>
+                    <span class="vorfall-objekt">${escapeHtml(v.objekt)}</span>
+                </div>
+                <div class="vorfall-badges">
+                    <span class="vorfall-typ-badge">${escapeHtml(VORFALL_TYPEN[v.typ] || v.typ)}</span>
+                    <span class="vorfall-schwere-badge ${schwereCls}">${escapeHtml(SCHWERE_LABELS[v.schwere] || v.schwere)}</span>
+                </div>
+            </div>
+            <div class="vorfall-body">
+                <p>${escapeHtml(v.beschreibung)}</p>
+                ${v.massnahmen ? '<p class="vorfall-massnahmen"><strong>Maßnahmen:</strong> ' + escapeHtml(v.massnahmen) + '</p>' : ''}
+            </div>
+            <div class="vorfall-footer">
+                <span>${v.mitarbeiter ? 'Melder: ' + escapeHtml(v.mitarbeiter) : ''}</span>
+                <span>${v.polizei ? 'Polizei informiert' + (v.aktenzeichen ? ' (AZ: ' + escapeHtml(v.aktenzeichen) + ')' : '') : ''}</span>
+                <button class="btn-delete btn-small" onclick="loescheVorfall(${v.id})">Löschen</button>
+            </div>
+        </div>`;
+    });
+
+    content.innerHTML = html;
+}
+
+function loescheVorfall(id) {
+    if (!confirm('Diesen Vorfallsbericht wirklich löschen?')) return;
+    vorfaelle = vorfaelle.filter(v => v.id !== id);
+    localStorage.setItem('bbprotect_vorfaelle', JSON.stringify(vorfaelle));
+    renderVorfaelle();
+}
+
+document.getElementById('vfFilterMonat').addEventListener('change', renderVorfaelle);
+
+function exportVorfaelle() {
+    const filterM = document.getElementById('vfFilterMonat').value;
+    let gefiltert = vorfaelle;
+    if (filterM) gefiltert = gefiltert.filter(v => v.datum.substring(0, 7) === filterM);
+
+    if (gefiltert.length === 0) { alert('Keine Vorfälle zum Exportieren.'); return; }
+
+    const header = 'Datum;Uhrzeit;Objekt;Typ;Schweregrad;Beschreibung;Maßnahmen;Melder;Polizei;Aktenzeichen';
+    const rows = gefiltert.map(v => [
+        formatDatum(v.datum), v.zeit, v.objekt, VORFALL_TYPEN[v.typ] || v.typ,
+        SCHWERE_LABELS[v.schwere] || v.schwere, v.beschreibung, v.massnahmen || '',
+        v.mitarbeiter || '', v.polizei ? 'Ja' : 'Nein', v.aktenzeichen || ''
+    ].map(x => `"${x.replace(/"/g, '""')}"`).join(';'));
+
+    downloadFile(`BBProtect_Vorfaelle_${filterM || 'Alle'}.csv`,
+        '\uFEFF' + header + '\n' + rows.join('\n'), 'text/csv;charset=utf-8;');
+}
+
+function druckeVorfaelle() {
+    const filterM = document.getElementById('vfFilterMonat').value;
+    let gefiltert = vorfaelle;
+    if (filterM) gefiltert = gefiltert.filter(v => v.datum.substring(0, 7) === filterM);
+
+    if (gefiltert.length === 0) { alert('Keine Vorfälle zum Drucken.'); return; }
+
+    gefiltert.sort((a, b) => b.datum.localeCompare(a.datum) || b.zeit.localeCompare(a.zeit));
+
+    let zeitraum = 'Alle Vorfälle';
+    if (filterM) {
+        const [j, m] = filterM.split('-');
+        zeitraum = `Vorfallsberichte ${MONATSNAMEN[parseInt(m) - 1]} ${j}`;
+    }
+
+    let html = printHeader(zeitraum) + `
+        <table><thead><tr>
+            <th>Datum/Zeit</th><th>Objekt</th><th>Typ</th><th>Schwere</th>
+            <th>Beschreibung</th><th>Maßnahmen</th><th>Polizei</th>
+        </tr></thead><tbody>`;
+
+    gefiltert.forEach(v => {
+        html += `<tr>
+            <td>${formatDatum(v.datum)}<br>${v.zeit}</td>
+            <td>${escapeHtml(v.objekt)}</td>
+            <td>${escapeHtml(VORFALL_TYPEN[v.typ] || v.typ)}</td>
+            <td>${escapeHtml(SCHWERE_LABELS[v.schwere] || v.schwere)}</td>
+            <td>${escapeHtml(v.beschreibung)}</td>
+            <td>${escapeHtml(v.massnahmen || '\u2014')}</td>
+            <td>${v.polizei ? 'Ja' + (v.aktenzeichen ? '<br>AZ: ' + escapeHtml(v.aktenzeichen) : '') : 'Nein'}</td>
+        </tr>`;
+    });
+
+    html += '</tbody></table>' + printFooter();
+    document.getElementById('printArea').innerHTML = html;
+    window.print();
+}
+
+// =============================================
+// DIENSTPLAN-WOCHENANSICHT
+// =============================================
+function dienstplanNav(offset) {
+    dienstplanKW += offset;
+    if (dienstplanKW > 52) { dienstplanKW = 1; dienstplanJahr++; }
+    if (dienstplanKW < 1) { dienstplanKW = 52; dienstplanJahr--; }
+    renderDienstplan();
+}
+
+function getMontag(jahr, kw) {
+    const jan4 = new Date(Date.UTC(jahr, 0, 4));
+    const montag = new Date(jan4);
+    montag.setUTCDate(jan4.getUTCDate() - (jan4.getUTCDay() || 7) + 1 + (kw - 1) * 7);
+    return montag;
+}
+
+function renderDienstplan() {
+    document.getElementById('dienstplanTitel').textContent = `KW ${dienstplanKW} / ${dienstplanJahr}`;
+
+    const grid = document.getElementById('dienstplanGrid');
+    grid.innerHTML = '';
+
+    const montag = getMontag(dienstplanJahr, dienstplanKW);
+    const tage = [];
+    const tageLabels = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
+
+    for (let i = 0; i < 7; i++) {
+        const d = new Date(montag);
+        d.setUTCDate(d.getUTCDate() + i);
+        tage.push(d.toISOString().split('T')[0]);
+    }
+
+    // Alle MA die in dieser Woche Einsätze haben oder in der MA-Liste stehen
+    const alleMa = new Set();
+    mitarbeiterListe_.forEach(m => alleMa.add(m.name));
+    einsaetze.forEach(e => {
+        if (e.mitarbeiter && tage.includes(e.datum)) alleMa.add(e.mitarbeiter);
+    });
+
+    const maList = Array.from(alleMa).sort();
+
+    if (maList.length === 0) {
+        grid.innerHTML = '<p style="color:#a0aec0;text-align:center;padding:1rem">Keine Mitarbeiter vorhanden.</p>';
+        return;
+    }
+
+    // Header-Zeile
+    let html = '<div class="dp-header dp-name">Mitarbeiter</div>';
+    tage.forEach((datum, i) => {
+        const d = new Date(datum);
+        const heute = datum === new Date().toISOString().split('T')[0];
+        html += `<div class="dp-header ${heute ? 'dp-heute' : ''}">${tageLabels[i]}<br><small>${d.getUTCDate()}.${d.getUTCMonth() + 1}.</small></div>`;
+    });
+
+    // MA-Zeilen
+    maList.forEach(name => {
+        html += `<div class="dp-name">${escapeHtml(name)}</div>`;
+        tage.forEach(datum => {
+            const tagesE = einsaetze.filter(e => e.mitarbeiter === name && e.datum === datum);
+            const abwesend = verfuegbarkeit.find(v => v.mitarbeiter === name && v.von <= datum && v.bis >= datum);
+
+            let cellContent = '';
+            let cellClass = 'dp-cell';
+
+            if (abwesend) {
+                const typLabels = { urlaub: 'U', krank: 'K', frei: 'F', fortbildung: 'FB' };
+                cellClass += ' dp-abwesend dp-abw-' + abwesend.typ;
+                cellContent = `<span class="dp-abw-label">${typLabels[abwesend.typ] || '?'}</span>`;
+            }
+
+            tagesE.forEach(e => {
+                const hatNacht = e.nachtStunden > 0;
+                cellContent += `<div class="dp-einsatz ${hatNacht ? 'dp-nacht' : 'dp-tag'}">${e.zeitVon}-${e.zeitBis}</div>`;
+            });
+
+            if (!cellContent) cellClass += ' dp-leer';
+
+            html += `<div class="${cellClass}">${cellContent}</div>`;
+        });
+    });
+
+    grid.innerHTML = html;
+}
+
+// =============================================
+// TAGES-DETAIL-MODAL
+// =============================================
+function zeigeTagesDetail(datumStr) {
+    const modal = document.getElementById('tagesModal');
+    const content = document.getElementById('tagesModalContent');
+    const titel = document.getElementById('tagesModalTitel');
+
+    const wochentage = ['Sonntag', 'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag'];
+    const wochentag = wochentage[new Date(datumStr).getDay()];
+    const feiertag = istFeiertag(datumStr);
+
+    titel.textContent = `${wochentag}, ${formatDatum(datumStr)}`;
+
+    const tagesE = einsaetze.filter(e => e.datum === datumStr);
+    tagesE.sort((a, b) => a.zeitVon.localeCompare(b.zeitVon));
+
+    const abwesende = verfuegbarkeit.filter(v => v.von <= datumStr && v.bis >= datumStr);
+    const tagesV = vorfaelle.filter(v => v.datum === datumStr);
+
+    let html = '';
+
+    if (feiertag) {
+        html += `<div class="modal-feiertag">Feiertag: ${escapeHtml(feiertag)}</div>`;
+    }
+
+    if (abwesende.length > 0) {
+        html += '<div class="modal-abschnitt"><h3>Abwesend</h3>';
+        const typLabels = { urlaub: 'Urlaub', krank: 'Krank', frei: 'Frei', fortbildung: 'Fortbildung' };
+        abwesende.forEach(v => {
+            const cls = v.typ === 'krank' ? 'verf-krank' : v.typ === 'urlaub' ? 'verf-urlaub' : 'verf-frei';
+            html += `<span class="verf-badge ${cls}">${escapeHtml(v.mitarbeiter)}: ${typLabels[v.typ] || v.typ}</span> `;
+        });
+        html += '</div>';
+    }
+
+    if (tagesE.length === 0) {
+        html += '<div class="modal-abschnitt"><p style="color:#a0aec0">Keine Einsätze an diesem Tag.</p></div>';
+    } else {
+        const totalStd = tagesE.reduce((s, e) => s + e.stunden, 0);
+        const totalGesamt = tagesE.reduce((s, e) => s + e.gesamt, 0);
+
+        html += `<div class="modal-abschnitt"><h3>Einsätze (${tagesE.length})</h3>
+            <div class="modal-stats">
+                <span><strong>${formatZahl(totalStd)}</strong> Stunden</span>
+                <span><strong>${formatEuro(totalGesamt)}</strong> Umsatz</span>
+            </div>
+            <table class="abrechnung-table"><thead><tr>
+                <th>Zeit</th><th>Objekt</th><th>MA</th><th>Std.</th><th>Gesamt</th><th></th>
+            </tr></thead><tbody>`;
+
+        tagesE.forEach(e => {
+            html += `<tr>
+                <td>${e.zeitVon}-${e.zeitBis}</td>
+                <td>${escapeHtml(e.objekt)}</td>
+                <td>${escapeHtml(e.mitarbeiter || '\u2014')}</td>
+                <td>${formatZahl(e.stunden)}</td>
+                <td>${formatEuro(e.gesamt)}</td>
+                <td><button class="btn-edit btn-small" onclick="schliesseModal();bearbeiteEinsatz(${e.id})">Bearb.</button></td>
+            </tr>`;
+        });
+
+        html += '</tbody></table></div>';
+    }
+
+    if (tagesV.length > 0) {
+        html += '<div class="modal-abschnitt"><h3>Vorfälle (' + tagesV.length + ')</h3>';
+        tagesV.forEach(v => {
+            html += `<div class="modal-vorfall">
+                <strong>${v.zeit} Uhr</strong> - ${escapeHtml(VORFALL_TYPEN[v.typ] || v.typ)} (${escapeHtml(v.objekt)})
+                <p>${escapeHtml(v.beschreibung)}</p>
+            </div>`;
+        });
+        html += '</div>';
+    }
+
+    // Button um neuen Einsatz an diesem Tag zu erstellen
+    html += `<div class="modal-actions">
+        <button class="btn-primary btn-small" onclick="schliesseModal();neuenEinsatzAnTag('${datumStr}')">+ Einsatz an diesem Tag</button>
+    </div>`;
+
+    content.innerHTML = html;
+    modal.style.display = 'flex';
+}
+
+function schliesseModal() {
+    document.getElementById('tagesModal').style.display = 'none';
+}
+
+function neuenEinsatzAnTag(datumStr) {
+    wechsleZuTab('erfassung');
+    document.getElementById('datum').value = datumStr;
+    document.getElementById('einsatzFormSection').scrollIntoView({ behavior: 'smooth' });
+    updatePreview();
+}
+
+// Modal schließen bei Klick auf Overlay
+document.getElementById('tagesModal').addEventListener('click', function (e) {
+    if (e.target === this) schliesseModal();
+});
+
+// =============================================
 // INITIALISIERUNG
 // =============================================
 document.getElementById('datum').valueAsDate = new Date();
@@ -1690,3 +2066,4 @@ renderVorlagen();
 renderMitarbeiter();
 renderVerfuegbarkeit();
 updateHeaderStats();
+document.getElementById('vfDatum').valueAsDate = new Date();
