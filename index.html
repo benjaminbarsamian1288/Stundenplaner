@@ -756,6 +756,13 @@
                     </div>
                 </div>
             </section>
+
+                <div class="dashboard-details" style="margin-top:1rem">
+                    <div class="detail-card full-width">
+                        <h3>Einsatz-Dauer-Statistik (Histogramm)</h3>
+                        <div id="dauerStatistikContent"></div>
+                    </div>
+                </div>
         </div>
 
         <!-- TAB: Objekte -->
@@ -1224,6 +1231,55 @@
                 </div>
                 <button type="button" class="btn-primary" onclick="objektBewertenSpeichern()" style="margin-top:0.5rem">Bewertung abgeben</button>
                 <div id="objektBewertungenContent" style="margin-top:0.5rem"></div>
+            </section>
+
+            <section class="form-section">
+                <div class="list-header">
+                    <h2>Objekt-Notfall-Kontakte</h2>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="onfObjekt">Objekt</label>
+                        <select id="onfObjekt">
+                            <option value="">Objekt w&auml;hlen...</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="onfTyp">Typ</label>
+                        <select id="onfTyp">
+                            <option value="polizei">Polizei</option>
+                            <option value="feuerwehr">Feuerwehr</option>
+                            <option value="rettung">Rettungsdienst</option>
+                            <option value="hausmeister">Hausmeister</option>
+                            <option value="verwaltung">Verwaltung</option>
+                            <option value="sonstige">Sonstige</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="onfName">Name / Stelle</label>
+                        <input type="text" id="onfName" placeholder="z.B. Polizeirevier Nord, Herr M&uuml;ller">
+                    </div>
+                    <div class="form-group">
+                        <label for="onfTelefon">Telefon</label>
+                        <input type="tel" id="onfTelefon" placeholder="+49 110">
+                    </div>
+                    <div class="form-group" style="display:flex;align-items:flex-end">
+                        <button type="button" class="btn-primary" onclick="objektNotfallSpeichern()">+ Kontakt</button>
+                    </div>
+                </div>
+                <div style="margin-top:0.75rem">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="onfFilterObjekt">Filter</label>
+                            <select id="onfFilterObjekt" onchange="renderObjektNotfallKontakte()">
+                                <option value="">Alle Objekte</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div id="objektNotfallContent"></div>
+                </div>
             </section>
 
             <section class="form-section">
@@ -1706,6 +1762,13 @@
                 <p style="font-size:0.75rem;color:#718096;margin-bottom:0.5rem">Offene Tausch-Anfragen von Mitarbeitern. &Uuml;ber &bdquo;Tausch&ldquo; in der Einsatztabelle k&ouml;nnen MA ihre Schicht zum Tausch anbieten.</p>
                 <div id="tauschBoardContent"></div>
             </section>
+
+            <section class="form-section">
+                <div class="list-header">
+                    <h2>MA-Einsatz-Heatmap (Wochentag/Uhrzeit)</h2>
+                </div>
+                <div id="maHeatmapContent"></div>
+            </section>
         </div>
 
         <!-- TAB: Vorfälle -->
@@ -1971,6 +2034,22 @@
                     <div id="schichtUebergabenContent"></div>
                 </div>
             </section>
+
+            <section class="form-section">
+                <div class="list-header">
+                    <h2>Schicht-Tagesprotokoll</h2>
+                    <div class="list-actions">
+                        <button class="btn-secondary" onclick="druckeTagesprotokoll()">Drucken</button>
+                    </div>
+                </div>
+                <div class="form-row" style="margin-bottom:0.5rem">
+                    <div class="form-group">
+                        <label for="tprtDatum">Datum</label>
+                        <input type="date" id="tprtDatum" onchange="renderTagesprotokoll()">
+                    </div>
+                </div>
+                <div id="tagesprotokollContent"></div>
+            </section>
         </div>
 
         <!-- TAB: Einstellungen / Daten -->
@@ -2024,6 +2103,12 @@
 
                 <h2 style="margin-top:1.5rem">Speicher-Statistik</h2>
                 <div id="speicherStatistikContent" style="margin-bottom:1rem"></div>
+
+                <h2 style="margin-top:1.5rem">Daten-Changelog</h2>
+                <div style="display:flex;justify-content:flex-end;margin-bottom:0.3rem">
+                    <button class="btn-secondary btn-small" onclick="changelogLeeren()">Changelog leeren</button>
+                </div>
+                <div id="datenChangelogContent" style="margin-bottom:1rem"></div>
 
                 <h2 style="margin-top:1.5rem">Feiertags-Kalender</h2>
                 <div class="form-row" style="margin-bottom:0.5rem">

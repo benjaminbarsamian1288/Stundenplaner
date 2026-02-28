@@ -9181,6 +9181,321 @@ body.dark-mode .sps-total {
     color: #cbd5e0;
 }
 
+/* =============================================
+   EINSATZ-DAUER-STATISTIK
+   ============================================= */
+.ds-chart {
+    display: flex;
+    align-items: flex-end;
+    gap: 0.5rem;
+    height: 120px;
+    padding: 0.5rem 0;
+}
+
+.ds-bar-col {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    height: 100%;
+    justify-content: flex-end;
+}
+
+.ds-count {
+    font-size: 0.65rem;
+    font-weight: 700;
+    color: #4a5568;
+    margin-bottom: 2px;
+}
+
+body.dark-mode .ds-count {
+    color: #cbd5e0;
+}
+
+.ds-bar {
+    width: 100%;
+    min-width: 24px;
+    max-width: 50px;
+    background: linear-gradient(to top, #4299e1, #63b3ed);
+    border-radius: 4px 4px 0 0;
+    transition: height 0.3s;
+}
+
+.ds-label {
+    font-size: 0.6rem;
+    color: #718096;
+    margin-top: 3px;
+    white-space: nowrap;
+}
+
+body.dark-mode .ds-label {
+    color: #a0aec0;
+}
+
+.ds-info {
+    text-align: center;
+    font-size: 0.8rem;
+    color: #4a5568;
+    margin-top: 0.5rem;
+    padding-top: 0.5rem;
+    border-top: 1px solid #e2e8f0;
+}
+
+body.dark-mode .ds-info {
+    color: #cbd5e0;
+    border-top-color: #4a5568;
+}
+
+/* =============================================
+   MA-EINSATZ-HEATMAP
+   ============================================= */
+.hm-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.8rem;
+}
+
+.hm-table th {
+    font-size: 0.7rem;
+    color: #718096;
+    font-weight: 600;
+    padding: 0.3rem 0.5rem;
+    text-align: center;
+}
+
+body.dark-mode .hm-table th {
+    color: #a0aec0;
+}
+
+.hm-tag {
+    font-weight: 700;
+    font-size: 0.75rem;
+    color: #4a5568;
+    padding: 0.3rem 0.5rem;
+}
+
+body.dark-mode .hm-tag {
+    color: #e2e8f0;
+}
+
+.hm-cell {
+    text-align: center;
+    padding: 0.4rem;
+    font-weight: 600;
+    font-size: 0.75rem;
+    border-radius: 4px;
+    min-width: 40px;
+}
+
+/* =============================================
+   OBJEKT-NOTFALL-KONTAKTE
+   ============================================= */
+.onf-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+
+.onf-item {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.5rem 0.75rem;
+    background: #f7fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 0.8rem;
+}
+
+body.dark-mode .onf-item {
+    background: #2d3748;
+    border-color: #4a5568;
+}
+
+.onf-icon {
+    font-size: 1.3rem;
+    flex-shrink: 0;
+}
+
+.onf-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+}
+
+.onf-info strong {
+    color: #2d3748;
+    font-size: 0.8rem;
+}
+
+body.dark-mode .onf-info strong {
+    color: #e2e8f0;
+}
+
+.onf-typ {
+    font-size: 0.65rem;
+    color: #718096;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+body.dark-mode .onf-typ {
+    color: #a0aec0;
+}
+
+.onf-obj {
+    font-size: 0.65rem;
+    color: #a0aec0;
+}
+
+.onf-tel {
+    font-weight: 700;
+    color: #4299e1;
+    text-decoration: none;
+    font-size: 0.85rem;
+    white-space: nowrap;
+}
+
+.onf-tel:hover {
+    text-decoration: underline;
+}
+
+/* =============================================
+   SCHICHT-TAGESPROTOKOLL
+   ============================================= */
+.tprt-proto {
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+body.dark-mode .tprt-proto {
+    border-color: #4a5568;
+}
+
+.tprt-header {
+    background: #2d3748;
+    color: #fff;
+    padding: 0.6rem 0.75rem;
+    font-size: 0.85rem;
+}
+
+body.dark-mode .tprt-header {
+    background: #1a202c;
+}
+
+.tprt-section {
+    padding: 0.5rem 0.75rem;
+    border-bottom: 1px solid #e2e8f0;
+    font-size: 0.8rem;
+}
+
+body.dark-mode .tprt-section {
+    border-bottom-color: #4a5568;
+}
+
+.tprt-section strong {
+    color: #2d3748;
+    display: block;
+    margin-bottom: 0.3rem;
+}
+
+body.dark-mode .tprt-section strong {
+    color: #e2e8f0;
+}
+
+.tprt-row {
+    padding: 0.2rem 0;
+    color: #4a5568;
+    font-family: monospace;
+    font-size: 0.75rem;
+    border-bottom: 1px dotted #edf2f7;
+}
+
+body.dark-mode .tprt-row {
+    color: #cbd5e0;
+    border-bottom-color: #4a5568;
+}
+
+.tprt-vorfall {
+    color: #e53e3e !important;
+}
+
+body.dark-mode .tprt-vorfall {
+    color: #fc8181 !important;
+}
+
+.tprt-empty {
+    color: #a0aec0;
+    font-size: 0.75rem;
+    font-style: italic;
+    margin: 0.2rem 0;
+}
+
+/* =============================================
+   DATEN-CHANGELOG
+   ============================================= */
+.cl-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+}
+
+.cl-entry {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.3rem 0.5rem;
+    background: #f7fafc;
+    border-radius: 6px;
+    font-size: 0.75rem;
+}
+
+body.dark-mode .cl-entry {
+    background: #2d3748;
+}
+
+.cl-icon {
+    font-size: 0.85rem;
+    flex-shrink: 0;
+}
+
+.cl-zeit {
+    color: #718096;
+    font-family: monospace;
+    font-size: 0.7rem;
+    min-width: 80px;
+    flex-shrink: 0;
+}
+
+body.dark-mode .cl-zeit {
+    color: #a0aec0;
+}
+
+.cl-bereich {
+    font-weight: 700;
+    color: #4299e1;
+    min-width: 70px;
+    flex-shrink: 0;
+}
+
+body.dark-mode .cl-bereich {
+    color: #63b3ed;
+}
+
+.cl-detail {
+    color: #4a5568;
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+body.dark-mode .cl-detail {
+    color: #cbd5e0;
+}
+
 @media (max-width: 768px) {
     .ob-item {
         flex-direction: column;
@@ -9191,5 +9506,21 @@ body.dark-mode .sps-total {
     .sps-label {
         min-width: 80px;
         font-size: 0.65rem;
+    }
+
+    .ds-chart {
+        height: 80px;
+    }
+
+    .onf-item {
+        flex-wrap: wrap;
+    }
+
+    .cl-entry {
+        flex-wrap: wrap;
+    }
+
+    .cl-detail {
+        white-space: normal;
     }
 }

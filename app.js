@@ -86,14 +86,14 @@ document.querySelectorAll('.nav-btn').forEach(btn => {
         this.classList.add('active');
         document.getElementById('tab-' + this.dataset.tab).classList.add('active');
 
-        if (this.dataset.tab === 'dashboard') { updateDashboard(); renderEinsatzChronik(); renderEinsatzAnalytics(); renderWochenReport(); renderEinsatzTimeline(); renderKostenTrend(); renderObjektUmsatzRanking(); renderStundenkontoChart(); renderDashboardKacheln(); renderSchichtplanVorschau(); renderErweiterteStatistik(); renderTagesPersonal(); renderWetterWidget(); }
-        if (this.dataset.tab === 'objekte') { renderObjekte(); renderVertraege(); renderObjektAuslastung(); updateChecklisteObjekte(); updateObjektHistorieSelect(); updateObjektKontakteSelect(); renderObjektKontakte(); updateObjektAnweisungenSelect(); renderObjektAnweisungen(); updateObjektKostenMonat(); renderObjektKostenanalyse(); renderVertragsCountdown(); updateRevierplanSelect(); renderRevierplan(); updateBesObjektSelect(); renderBesichtigungen(); updateInfokarteSelect(); updateWetterObjektSelects(); renderWetterNotizen(); updateObjektChecklisteSelect(); renderObjektCheckliste(); renderVertragslaufzeitBalken(); updateZugangshinweiseSelect(); renderZugangshinweise(); updateObjektBewertungSelect(); renderObjektBewertungen(); }
+        if (this.dataset.tab === 'dashboard') { updateDashboard(); renderEinsatzChronik(); renderEinsatzAnalytics(); renderWochenReport(); renderEinsatzTimeline(); renderKostenTrend(); renderObjektUmsatzRanking(); renderStundenkontoChart(); renderDashboardKacheln(); renderSchichtplanVorschau(); renderErweiterteStatistik(); renderTagesPersonal(); renderWetterWidget(); renderDauerStatistik(); }
+        if (this.dataset.tab === 'objekte') { renderObjekte(); renderVertraege(); renderObjektAuslastung(); updateChecklisteObjekte(); updateObjektHistorieSelect(); updateObjektKontakteSelect(); renderObjektKontakte(); updateObjektAnweisungenSelect(); renderObjektAnweisungen(); updateObjektKostenMonat(); renderObjektKostenanalyse(); renderVertragsCountdown(); updateRevierplanSelect(); renderRevierplan(); updateBesObjektSelect(); renderBesichtigungen(); updateInfokarteSelect(); updateWetterObjektSelects(); renderWetterNotizen(); updateObjektChecklisteSelect(); renderObjektCheckliste(); renderVertragslaufzeitBalken(); updateZugangshinweiseSelect(); renderZugangshinweise(); updateObjektBewertungSelect(); renderObjektBewertungen(); updateObjektNotfallSelects(); renderObjektNotfallKontakte(); }
         if (this.dataset.tab === 'kalender') { renderKalender(); renderDienstplan(); renderJahresuebersicht(); }
         if (this.dataset.tab === 'abrechnung') { updateAbrechnung(); updateLohnvorschauSelects(); renderDuplikatCheck(); renderBewertungsUebersicht(); updateMonatsabschlussSelect(); renderMonatsabschluss(); updateCSVExportFilter(); }
-        if (this.dataset.tab === 'mitarbeiter') { renderMitarbeiter(); renderDokumente(); renderUeberstunden(); renderKontaktliste(); renderUrlaubskonto(); renderArbeitszeitkonto(); renderQualMatrix(); updateSchichtHistorieSelect(); renderNotfallkontakte(); updateMAKalSelect(); renderVerfuegbarkeitWoche(); renderDoppelschichtWarnungen(); renderMALeistung(); renderKrankenstatistik(); renderGeburtstageJubilaeen(); renderMASkills(); renderTauschBoard(); renderMAVerfuegbarkeitsKalender(); renderNachrichtenBoard(); renderZertifikateTracker(); renderJahresarbeitszeitkonto(); renderUeberstundenWarnung(); }
+        if (this.dataset.tab === 'mitarbeiter') { renderMitarbeiter(); renderDokumente(); renderUeberstunden(); renderKontaktliste(); renderUrlaubskonto(); renderArbeitszeitkonto(); renderQualMatrix(); updateSchichtHistorieSelect(); renderNotfallkontakte(); updateMAKalSelect(); renderVerfuegbarkeitWoche(); renderDoppelschichtWarnungen(); renderMALeistung(); renderKrankenstatistik(); renderGeburtstageJubilaeen(); renderMASkills(); renderTauschBoard(); renderMAVerfuegbarkeitsKalender(); renderNachrichtenBoard(); renderZertifikateTracker(); renderJahresarbeitszeitkonto(); renderUeberstundenWarnung(); renderMAEinsatzHeatmap(); }
         if (this.dataset.tab === 'vorfaelle') { renderVorfaelle(); renderVorfallsStatistik(); }
-        if (this.dataset.tab === 'wachbuch') { renderWachbuch(); renderUebergaben(); renderWachbuchStats(); updateSchichtUebergabeSelects(); renderSchichtUebergaben(); }
-        if (this.dataset.tab === 'einstellungen') { updateDatenStats(); updateSpeicherStats(); ladeEinstellungen(); renderAuditLog(); renderSondernotizen(); renderFeiertagsKalender(); renderSpeicherStatistik(); }
+        if (this.dataset.tab === 'wachbuch') { renderWachbuch(); renderUebergaben(); renderWachbuchStats(); updateSchichtUebergabeSelects(); renderSchichtUebergaben(); renderTagesprotokoll(); }
+        if (this.dataset.tab === 'einstellungen') { updateDatenStats(); updateSpeicherStats(); ladeEinstellungen(); renderAuditLog(); renderSondernotizen(); renderFeiertagsKalender(); renderSpeicherStatistik(); renderDatenChangelog(); }
     });
 });
 
@@ -1575,7 +1575,7 @@ function loescheMitarbeiter(index) {
 // =============================================
 function erstelleBackup() {
     const backup = {
-        version: 21,
+        version: 22,
         datum: new Date().toISOString(),
         einsaetze,
         objekte,
@@ -1608,7 +1608,9 @@ function erstelleBackup() {
         maZertifikate,
         einsatzFarbTags,
         objektZugangshinweise,
-        objektBewertungen
+        objektBewertungen,
+        objektNotfallKontakte,
+        datenChangelog
     };
 
     const json = JSON.stringify(backup, null, 2);
@@ -1665,6 +1667,8 @@ function stelleWiederHer(event) {
             einsatzFarbTags = data.einsatzFarbTags || {};
             objektZugangshinweise = data.objektZugangshinweise || {};
             objektBewertungen = data.objektBewertungen || {};
+            objektNotfallKontakte = data.objektNotfallKontakte || {};
+            datenChangelog = data.datenChangelog || [];
 
             speichern();
             localStorage.setItem('bbprotect_objekte', JSON.stringify(objekte));
@@ -1698,6 +1702,8 @@ function stelleWiederHer(event) {
             localStorage.setItem('bbprotect_farbtags', JSON.stringify(einsatzFarbTags));
             localStorage.setItem('bbprotect_zugangshinweise', JSON.stringify(objektZugangshinweise));
             localStorage.setItem('bbprotect_objektbewertungen', JSON.stringify(objektBewertungen));
+            localStorage.setItem('bbprotect_objektnotfall', JSON.stringify(objektNotfallKontakte));
+            localStorage.setItem('bbprotect_changelog', JSON.stringify(datenChangelog));
 
             renderTabelle();
             updateAlleFilter();
@@ -1752,6 +1758,8 @@ function loescheAlleDaten() {
     einsatzFarbTags = {};
     objektZugangshinweise = {};
     objektBewertungen = {};
+    objektNotfallKontakte = {};
+    datenChangelog = [];
 
     localStorage.removeItem('bbprotect_einsaetze');
     localStorage.removeItem('bbprotect_objekte');
@@ -1785,6 +1793,8 @@ function loescheAlleDaten() {
     localStorage.removeItem('bbprotect_farbtags');
     localStorage.removeItem('bbprotect_zugangshinweise');
     localStorage.removeItem('bbprotect_objektbewertungen');
+    localStorage.removeItem('bbprotect_objektnotfall');
+    localStorage.removeItem('bbprotect_changelog');
 
     renderTabelle();
     updateAlleFilter();
@@ -9349,6 +9359,292 @@ function updateObjektBewertungSelect() {
 }
 
 // =============================================
+// EINSATZ-DAUER-STATISTIK (Histogramm)
+// =============================================
+function renderDauerStatistik() {
+    const el = document.getElementById('dauerStatistikContent');
+    if (!el) return;
+
+    const buckets = { '0-2': 0, '2-4': 0, '4-6': 0, '6-8': 0, '8-10': 0, '10-12': 0, '12+': 0 };
+
+    einsaetze.forEach(e => {
+        const std = e.stunden || 0;
+        if (std <= 2) buckets['0-2']++;
+        else if (std <= 4) buckets['2-4']++;
+        else if (std <= 6) buckets['4-6']++;
+        else if (std <= 8) buckets['6-8']++;
+        else if (std <= 10) buckets['8-10']++;
+        else if (std <= 12) buckets['10-12']++;
+        else buckets['12+']++;
+    });
+
+    const maxVal = Math.max(...Object.values(buckets), 1);
+
+    let html = '<div class="ds-chart">';
+    Object.entries(buckets).forEach(([label, count]) => {
+        const pct = (count / maxVal) * 100;
+        html += `<div class="ds-bar-col">
+            <span class="ds-count">${count}</span>
+            <div class="ds-bar" style="height:${Math.max(pct, 2)}%"></div>
+            <span class="ds-label">${label}h</span>
+        </div>`;
+    });
+    html += '</div>';
+
+    const totalEinsaetze = einsaetze.length;
+    const totalStd = einsaetze.reduce((s, e) => s + (e.stunden || 0), 0);
+    const avgDauer = totalEinsaetze > 0 ? (totalStd / totalEinsaetze).toFixed(1) : '0.0';
+
+    html += `<div class="ds-info">Ø Dauer: <strong>${avgDauer} Std.</strong> | ${totalEinsaetze} Einsätze gesamt</div>`;
+    el.innerHTML = html;
+}
+
+// =============================================
+// MA-EINSATZ-HEATMAP (Wochentag x Stunde)
+// =============================================
+function renderMAEinsatzHeatmap() {
+    const el = document.getElementById('maHeatmapContent');
+    if (!el) return;
+
+    const tage = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
+    const stundenBloecke = ['00-06', '06-12', '12-18', '18-24'];
+
+    // Matrix: [wochentag][stundenblock] = Anzahl
+    const matrix = Array.from({ length: 7 }, () => Array(4).fill(0));
+
+    einsaetze.forEach(e => {
+        if (!e.datum || !e.zeitVon) return;
+        const d = new Date(e.datum);
+        let wt = d.getDay() - 1;
+        if (wt < 0) wt = 6; // Sonntag → 6
+        const h = parseInt(e.zeitVon.split(':')[0]) || 0;
+        const block = Math.min(Math.floor(h / 6), 3);
+        matrix[wt][block]++;
+    });
+
+    const maxVal = Math.max(...matrix.flat(), 1);
+
+    let html = '<table class="hm-table"><thead><tr><th></th>';
+    stundenBloecke.forEach(sb => { html += `<th>${sb}</th>`; });
+    html += '</tr></thead><tbody>';
+
+    tage.forEach((tag, ti) => {
+        html += `<tr><td class="hm-tag">${tag}</td>`;
+        for (let si = 0; si < 4; si++) {
+            const val = matrix[ti][si];
+            const intensity = val / maxVal;
+            const bg = intensity > 0 ? `rgba(66,153,225,${0.15 + intensity * 0.85})` : 'transparent';
+            const color = intensity > 0.5 ? '#fff' : '#4a5568';
+            html += `<td class="hm-cell" style="background:${bg};color:${color}">${val || ''}</td>`;
+        }
+        html += '</tr>';
+    });
+    html += '</tbody></table>';
+    el.innerHTML = html;
+}
+
+// =============================================
+// OBJEKT-NOTFALL-KONTAKTLISTE
+// =============================================
+let objektNotfallKontakte = JSON.parse(localStorage.getItem('bbprotect_objektnotfall') || '{}');
+
+function objektNotfallSpeichern() {
+    const objekt = document.getElementById('onfObjekt').value;
+    const typ = document.getElementById('onfTyp').value;
+    const name = document.getElementById('onfName').value.trim();
+    const telefon = document.getElementById('onfTelefon').value.trim();
+
+    if (!objekt || !name || !telefon) { alert('Bitte Objekt, Name und Telefon ausfüllen.'); return; }
+
+    if (!objektNotfallKontakte[objekt]) objektNotfallKontakte[objekt] = [];
+    objektNotfallKontakte[objekt].push({ typ, name, telefon, datum: new Date().toISOString() });
+    localStorage.setItem('bbprotect_objektnotfall', JSON.stringify(objektNotfallKontakte));
+
+    document.getElementById('onfName').value = '';
+    document.getElementById('onfTelefon').value = '';
+    renderObjektNotfallKontakte();
+}
+
+function loescheObjektNotfall(objekt, idx) {
+    if (!confirm('Notfallkontakt löschen?')) return;
+    objektNotfallKontakte[objekt].splice(idx, 1);
+    if (objektNotfallKontakte[objekt].length === 0) delete objektNotfallKontakte[objekt];
+    localStorage.setItem('bbprotect_objektnotfall', JSON.stringify(objektNotfallKontakte));
+    renderObjektNotfallKontakte();
+}
+
+function renderObjektNotfallKontakte() {
+    const el = document.getElementById('objektNotfallContent');
+    if (!el) return;
+
+    const objekt = document.getElementById('onfFilterObjekt') ? document.getElementById('onfFilterObjekt').value : '';
+    const typIcons = { polizei: '🚔', feuerwehr: '🚒', rettung: '🚑', hausmeister: '🔧', verwaltung: '🏢', sonstige: '📞' };
+    const typLabels = { polizei: 'Polizei', feuerwehr: 'Feuerwehr', rettung: 'Rettungsdienst', hausmeister: 'Hausmeister', verwaltung: 'Verwaltung', sonstige: 'Sonstige' };
+
+    let kontakte = [];
+    Object.entries(objektNotfallKontakte).forEach(([obj, liste]) => {
+        if (objekt && obj !== objekt) return;
+        liste.forEach((k, idx) => kontakte.push({ ...k, objekt: obj, idx }));
+    });
+
+    if (kontakte.length === 0) {
+        el.innerHTML = '<span style="color:#a0aec0;font-size:0.8rem">Keine Notfallkontakte hinterlegt.</span>';
+        return;
+    }
+
+    let html = '<div class="onf-list">';
+    kontakte.forEach(k => {
+        html += `<div class="onf-item">
+            <span class="onf-icon">${typIcons[k.typ] || '📞'}</span>
+            <div class="onf-info">
+                <strong>${escapeHtml(k.name)}</strong>
+                <span class="onf-typ">${typLabels[k.typ] || k.typ}</span>
+                <span class="onf-obj">${escapeHtml(k.objekt)}</span>
+            </div>
+            <a href="tel:${escapeHtml(k.telefon)}" class="onf-tel">${escapeHtml(k.telefon)}</a>
+            <button class="btn-delete btn-small" onclick="loescheObjektNotfall('${escapeHtml(k.objekt)}',${k.idx})">X</button>
+        </div>`;
+    });
+    html += '</div>';
+    el.innerHTML = html;
+}
+
+function updateObjektNotfallSelects() {
+    ['onfObjekt', 'onfFilterObjekt'].forEach(id => {
+        const sel = document.getElementById(id);
+        if (!sel) return;
+        const val = sel.value;
+        const firstOpt = id === 'onfFilterObjekt' ? '<option value="">Alle Objekte</option>' : '<option value="">Objekt wählen...</option>';
+        sel.innerHTML = firstOpt + objekte.map(o => `<option value="${escapeHtml(o.name)}">${escapeHtml(o.name)}</option>`).join('');
+        sel.value = val;
+    });
+}
+
+// =============================================
+// SCHICHT-TAGESPROTOKOLL (druckbar)
+// =============================================
+function renderTagesprotokoll() {
+    const el = document.getElementById('tagesprotokollContent');
+    if (!el) return;
+
+    const datum = document.getElementById('tprtDatum') ? document.getElementById('tprtDatum').value : '';
+    if (!datum) { el.innerHTML = '<span style="color:#a0aec0;font-size:0.8rem">Datum wählen</span>'; return; }
+
+    const tagesEinsaetze = einsaetze.filter(e => e.datum === datum);
+    const tagesWachbuch = wachbuch.filter(w => w.datum === datum);
+    const tagesVorfaelle = vorfaelle.filter(v => v.datum === datum);
+
+    const feiertage = typeof getFeiertage === 'function' ? getFeiertage(parseInt(datum.substring(0, 4))) : {};
+    const istFeiertag = feiertage[datum];
+    const wochentag = ['Sonntag', 'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag'][new Date(datum).getDay()];
+
+    let html = '<div class="tprt-proto">';
+    html += `<div class="tprt-header"><strong>Tagesprotokoll ${formatDatum(datum)}</strong> (${wochentag}${istFeiertag ? ' — ' + istFeiertag : ''})</div>`;
+
+    html += '<div class="tprt-section"><strong>Einsätze (' + tagesEinsaetze.length + ')</strong>';
+    if (tagesEinsaetze.length === 0) {
+        html += '<p class="tprt-empty">Keine Einsätze</p>';
+    } else {
+        tagesEinsaetze.sort((a, b) => (a.zeitVon || '').localeCompare(b.zeitVon || '')).forEach(e => {
+            html += `<div class="tprt-row">${e.zeitVon || '?'} - ${e.zeitBis || '?'} | ${escapeHtml(e.objekt)} | ${escapeHtml(e.mitarbeiter || '—')} | ${formatZahl(e.stunden)} Std.</div>`;
+        });
+    }
+    html += '</div>';
+
+    html += '<div class="tprt-section"><strong>Wachbuch (' + tagesWachbuch.length + ')</strong>';
+    if (tagesWachbuch.length === 0) {
+        html += '<p class="tprt-empty">Keine Einträge</p>';
+    } else {
+        tagesWachbuch.forEach(w => {
+            html += `<div class="tprt-row">${w.zeit || '?'} | ${escapeHtml(w.objekt)} | ${escapeHtml(w.kategorie)} | ${escapeHtml(w.eintrag ? w.eintrag.substring(0, 80) : '—')}</div>`;
+        });
+    }
+    html += '</div>';
+
+    html += '<div class="tprt-section"><strong>Vorfälle (' + tagesVorfaelle.length + ')</strong>';
+    if (tagesVorfaelle.length === 0) {
+        html += '<p class="tprt-empty">Keine Vorfälle</p>';
+    } else {
+        tagesVorfaelle.forEach(v => {
+            html += `<div class="tprt-row tprt-vorfall">${v.zeit || '?'} | ${escapeHtml(v.objekt)} | ${escapeHtml(v.typ)} (${v.schwere}) | ${escapeHtml(v.beschreibung ? v.beschreibung.substring(0, 60) : '—')}</div>`;
+        });
+    }
+    html += '</div>';
+    html += '</div>';
+
+    el.innerHTML = html;
+}
+
+function druckeTagesprotokoll() {
+    const datum = document.getElementById('tprtDatum') ? document.getElementById('tprtDatum').value : '';
+    if (!datum) { alert('Bitte Datum wählen.'); return; }
+
+    const content = document.getElementById('tagesprotokollContent');
+    if (!content) return;
+
+    const printArea = document.getElementById('printArea');
+    printArea.innerHTML = `<h2>B.B. Protect — Tagesprotokoll ${formatDatum(datum)}</h2>` + content.innerHTML;
+    printArea.style.display = 'block';
+    document.body.classList.add('print-mode');
+    window.print();
+    document.body.classList.remove('print-mode');
+    printArea.style.display = 'none';
+}
+
+// =============================================
+// DATEN-CHANGELOG
+// =============================================
+let datenChangelog = JSON.parse(localStorage.getItem('bbprotect_changelog') || '[]');
+
+function changelogEintrag(aktion, bereich, details) {
+    datenChangelog.unshift({
+        zeit: new Date().toISOString(),
+        aktion,
+        bereich,
+        details: (details || '').substring(0, 100)
+    });
+    if (datenChangelog.length > 100) datenChangelog = datenChangelog.slice(0, 100);
+    localStorage.setItem('bbprotect_changelog', JSON.stringify(datenChangelog));
+}
+
+function renderDatenChangelog() {
+    const el = document.getElementById('datenChangelogContent');
+    if (!el) return;
+
+    if (datenChangelog.length === 0) {
+        el.innerHTML = '<span style="color:#a0aec0;font-size:0.8rem">Noch keine Änderungen protokolliert.</span>';
+        return;
+    }
+
+    const aktionIcons = { erstellt: '➕', geloescht: '🗑️', geaendert: '✏️', import: '📥', export: '📤' };
+    const anzeigen = datenChangelog.slice(0, 20);
+
+    let html = '<div class="cl-list">';
+    anzeigen.forEach(c => {
+        const zeit = new Date(c.zeit);
+        const zeitStr = `${String(zeit.getDate()).padStart(2, '0')}.${String(zeit.getMonth() + 1).padStart(2, '0')}. ${String(zeit.getHours()).padStart(2, '0')}:${String(zeit.getMinutes()).padStart(2, '0')}`;
+        html += `<div class="cl-entry">
+            <span class="cl-icon">${aktionIcons[c.aktion] || '📝'}</span>
+            <span class="cl-zeit">${zeitStr}</span>
+            <span class="cl-bereich">${escapeHtml(c.bereich)}</span>
+            <span class="cl-detail">${escapeHtml(c.details || '')}</span>
+        </div>`;
+    });
+    html += '</div>';
+    if (datenChangelog.length > 20) {
+        html += `<div style="font-size:0.7rem;color:#a0aec0;text-align:center;margin-top:0.3rem">... und ${datenChangelog.length - 20} weitere Einträge</div>`;
+    }
+    el.innerHTML = html;
+}
+
+function changelogLeeren() {
+    if (!confirm('Changelog wirklich leeren?')) return;
+    datenChangelog = [];
+    localStorage.setItem('bbprotect_changelog', JSON.stringify(datenChangelog));
+    renderDatenChangelog();
+}
+
+// =============================================
 // DASHBOARD-WETTER-WIDGET
 // =============================================
 function renderWetterWidget() {
@@ -9462,6 +9758,7 @@ document.getElementById('fkJahr').value = new Date().getFullYear();
 document.getElementById('tpDatum').valueAsDate = new Date();
 document.getElementById('jazkJahr').value = new Date().getFullYear();
 document.getElementById('dpStartDatum').valueAsDate = new Date();
+document.getElementById('tprtDatum').valueAsDate = new Date();
 const jetztInit = new Date();
 document.getElementById('wbZeit').value = `${String(jetztInit.getHours()).padStart(2, '0')}:${String(jetztInit.getMinutes()).padStart(2, '0')}`;
 document.getElementById('ugZeit').value = `${String(jetztInit.getHours()).padStart(2, '0')}:${String(jetztInit.getMinutes()).padStart(2, '0')}`;
