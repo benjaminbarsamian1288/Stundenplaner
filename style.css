@@ -4010,6 +4010,207 @@ body.dark-mode .qm-badge {
     background: #1f6feb;
 }
 
+/* -- Heatmap -- */
+.hm-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 3px;
+}
+
+.hm-header {
+    text-align: center;
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: #718096;
+    padding: 0.2rem;
+}
+
+.hm-cell {
+    aspect-ratio: 1;
+    border-radius: 4px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7rem;
+    position: relative;
+    min-height: 32px;
+}
+
+.hm-leer {
+    background: transparent;
+}
+
+.hm-l0 { background: #f7fafc; }
+.hm-l1 { background: #c3dafe; }
+.hm-l2 { background: #90cdf4; }
+.hm-l3 { background: #667eea; color: #fff; }
+.hm-l4 { background: #4c51bf; color: #fff; }
+
+.hm-feiertag {
+    border: 2px solid #e53e3e;
+}
+
+.hm-sonntag {
+    border: 2px solid #d69e2e;
+}
+
+.hm-tag {
+    font-weight: 600;
+    font-size: 0.65rem;
+}
+
+.hm-cnt {
+    font-size: 0.6rem;
+    opacity: 0.8;
+}
+
+.hm-legende {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.3rem;
+    margin-top: 0.5rem;
+}
+
+.hm-leg-label {
+    font-size: 0.65rem;
+    color: #718096;
+}
+
+.hm-leg-box {
+    width: 14px;
+    height: 14px;
+    border-radius: 3px;
+}
+
+/* -- Schichthistorie -- */
+.sh-summary {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    margin-bottom: 0.75rem;
+}
+
+.sh-stat {
+    background: #f0fff4;
+    color: #276749;
+    padding: 0.3rem 0.6rem;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.sh-zeitraum {
+    font-size: 0.8rem;
+    color: #718096;
+    margin-bottom: 0.5rem;
+}
+
+.sh-monate {
+    margin-bottom: 0.75rem;
+}
+
+.sh-monat-row {
+    display: flex;
+    gap: 1rem;
+    padding: 0.3rem 0.5rem;
+    font-size: 0.8rem;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.sh-monat-label {
+    font-weight: 600;
+    min-width: 120px;
+}
+
+.sh-table {
+    font-size: 0.75rem;
+}
+
+/* -- Notfallkontakte -- */
+.nk-liste {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.nk-group {
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.nk-ma {
+    background: #f7fafc;
+    padding: 0.4rem 0.6rem;
+    font-weight: 700;
+    font-size: 0.85rem;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.nk-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.4rem 0.6rem;
+    font-size: 0.8rem;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.nk-item:last-child {
+    border-bottom: none;
+}
+
+.nk-name {
+    font-weight: 600;
+    min-width: 100px;
+}
+
+.nk-bez {
+    color: #718096;
+    font-size: 0.75rem;
+    min-width: 80px;
+}
+
+.nk-tel {
+    color: #667eea;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.nk-tel:hover {
+    text-decoration: underline;
+}
+
+body.dark-mode .hm-l0 { background: #161b22; }
+body.dark-mode .hm-l1 { background: #0d2137; }
+body.dark-mode .hm-l2 { background: #0d3d6e; }
+body.dark-mode .hm-l3 { background: #1f6feb; }
+body.dark-mode .hm-l4 { background: #388bfd; }
+
+body.dark-mode .sh-stat {
+    background: #0a2117;
+    color: #3fb950;
+}
+
+body.dark-mode .sh-monat-row {
+    border-bottom-color: #21262d;
+}
+
+body.dark-mode .nk-group {
+    border-color: #30363d;
+}
+
+body.dark-mode .nk-ma {
+    background: #161b22;
+    border-bottom-color: #30363d;
+}
+
+body.dark-mode .nk-item {
+    border-bottom-color: #21262d;
+}
+
 body.dark-mode .auto-plan {
     background: #0d1117;
     border-color: #30363d;
@@ -4679,5 +4880,30 @@ footer {
 
     .globale-suche-wrapper {
         padding: 0 0.5rem;
+    }
+
+    .sh-summary {
+        gap: 0.3rem;
+    }
+
+    .sh-monat-row {
+        flex-direction: column;
+        gap: 0.1rem;
+    }
+
+    .nk-item {
+        flex-wrap: wrap;
+    }
+
+    .hm-cell {
+        min-height: 24px;
+    }
+
+    .hm-tag {
+        font-size: 0.55rem;
+    }
+
+    .hm-cnt {
+        font-size: 0.5rem;
     }
 }

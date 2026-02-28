@@ -33,6 +33,9 @@ let tagesnotizen = JSON.parse(localStorage.getItem('bbprotect_tagesnotizen') || 
 // Schichtübergabe-Protokolle
 let uebergaben = JSON.parse(localStorage.getItem('bbprotect_uebergaben') || '[]');
 
+// Notfallkontakte
+let notfallkontakte = JSON.parse(localStorage.getItem('bbprotect_notfallkontakte') || '[]');
+
 // Kalender-State
 let kalenderJahr = new Date().getFullYear();
 let kalenderMonat = new Date().getMonth();
@@ -81,7 +84,7 @@ document.querySelectorAll('.nav-btn').forEach(btn => {
         if (this.dataset.tab === 'objekte') { renderObjekte(); renderVertraege(); renderObjektAuslastung(); updateChecklisteObjekte(); updateObjektHistorieSelect(); }
         if (this.dataset.tab === 'kalender') { renderKalender(); renderDienstplan(); renderJahresuebersicht(); }
         if (this.dataset.tab === 'abrechnung') updateAbrechnung();
-        if (this.dataset.tab === 'mitarbeiter') { renderMitarbeiter(); renderDokumente(); renderUeberstunden(); renderKontaktliste(); renderUrlaubskonto(); renderArbeitszeitkonto(); renderQualMatrix(); }
+        if (this.dataset.tab === 'mitarbeiter') { renderMitarbeiter(); renderDokumente(); renderUeberstunden(); renderKontaktliste(); renderUrlaubskonto(); renderArbeitszeitkonto(); renderQualMatrix(); updateSchichtHistorieSelect(); renderNotfallkontakte(); }
         if (this.dataset.tab === 'vorfaelle') renderVorfaelle();
         if (this.dataset.tab === 'wachbuch') { renderWachbuch(); renderUebergaben(); }
         if (this.dataset.tab === 'einstellungen') { updateDatenStats(); updateSpeicherStats(); }
@@ -1035,6 +1038,9 @@ function updateDashboard() {
     // Wochentage-Verteilung
     renderWochentageVerteilung(gefiltert);
 
+    // Monats-Heatmap
+    renderHeatmap(filterM);
+
     // Konflikterkennung
     renderKonflikte();
 }
@@ -1509,7 +1515,7 @@ function loescheMitarbeiter(index) {
 // =============================================
 function erstelleBackup() {
     const backup = {
-        version: 9,
+        version: 10,
         datum: new Date().toISOString(),
         einsaetze,
         objekte,
@@ -1521,7 +1527,8 @@ function erstelleBackup() {
         dokumente,
         wochenvorlagen,
         tagesnotizen,
-        uebergaben
+        uebergaben,
+        notfallkontakte
     };
 
     const json = JSON.stringify(backup, null, 2);
@@ -1557,6 +1564,7 @@ function stelleWiederHer(event) {
             wochenvorlagen = data.wochenvorlagen || [];
             tagesnotizen = data.tagesnotizen || {};
             uebergaben = data.uebergaben || [];
+            notfallkontakte = data.notfallkontakte || [];
 
             speichern();
             localStorage.setItem('bbprotect_objekte', JSON.stringify(objekte));
@@ -1569,6 +1577,7 @@ function stelleWiederHer(event) {
             localStorage.setItem('bbprotect_wochenvorlagen', JSON.stringify(wochenvorlagen));
             localStorage.setItem('bbprotect_tagesnotizen', JSON.stringify(tagesnotizen));
             localStorage.setItem('bbprotect_uebergaben', JSON.stringify(uebergaben));
+            localStorage.setItem('bbprotect_notfallkontakte', JSON.stringify(notfallkontakte));
 
             renderTabelle();
             updateAlleFilter();
@@ -1602,6 +1611,7 @@ function loescheAlleDaten() {
     wochenvorlagen = [];
     tagesnotizen = {};
     uebergaben = [];
+    notfallkontakte = [];
 
     localStorage.removeItem('bbprotect_einsaetze');
     localStorage.removeItem('bbprotect_objekte');
@@ -1614,6 +1624,7 @@ function loescheAlleDaten() {
     localStorage.removeItem('bbprotect_wochenvorlagen');
     localStorage.removeItem('bbprotect_tagesnotizen');
     localStorage.removeItem('bbprotect_uebergaben');
+    localStorage.removeItem('bbprotect_notfallkontakte');
 
     renderTabelle();
     updateAlleFilter();
@@ -4705,7 +4716,7 @@ function updateSpeicherStats() {
 
     let totalBytes = 0;
     const details = [];
-    const keys = ['einsaetze', 'objekte', 'vorlagen', 'mitarbeiter', 'verfuegbarkeit', 'vorfaelle', 'wachbuch', 'dokumente', 'wochenvorlagen', 'tagesnotizen', 'uebergaben'];
+    const keys = ['einsaetze', 'objekte', 'vorlagen', 'mitarbeiter', 'verfuegbarkeit', 'vorfaelle', 'wachbuch', 'dokumente', 'wochenvorlagen', 'tagesnotizen', 'uebergaben', 'notfallkontakte'];
 
     keys.forEach(key => {
         const val = localStorage.getItem('bbprotect_' + key);
@@ -4791,6 +4802,230 @@ function pruefeDatenIntegritaet() {
 }
 
 // =============================================
+// MONATS-HEATMAP
+// =============================================
+function renderHeatmap(filterM) {
+    const el = document.getElementById('heatmapContent');
+    if (!el) return;
+
+    if (!filterM) {
+        const jetzt = new Date();
+        filterM = `${jetzt.getFullYear()}-${String(jetzt.getMonth() + 1).padStart(2, '0')}`;
+    }
+
+    const [jahr, monat] = filterM.split('-').map(Number);
+    const ersterTag = new Date(jahr, monat - 1, 1);
+    const letzterTag = new Date(jahr, monat, 0);
+    const tageImMonat = letzterTag.getDate();
+
+    // Zähle Einsätze pro Tag
+    const tagesDaten = {};
+    for (let t = 1; t <= tageImMonat; t++) {
+        const tagStr = `${filterM}-${String(t).padStart(2, '0')}`;
+        const tagesE = einsaetze.filter(e => e.datum === tagStr);
+        tagesDaten[t] = { count: tagesE.length, stunden: tagesE.reduce((s, e) => s + e.stunden, 0) };
+    }
+
+    const maxCount = Math.max(...Object.values(tagesDaten).map(d => d.count), 1);
+    const tageLabels = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
+
+    let html = '<div class="hm-grid">';
+
+    // Header (Wochentage)
+    tageLabels.forEach(l => { html += `<div class="hm-header">${l}</div>`; });
+
+    // Leere Zellen vor dem 1. des Monats
+    let startTag = ersterTag.getDay();
+    if (startTag === 0) startTag = 7;
+    for (let i = 1; i < startTag; i++) {
+        html += '<div class="hm-cell hm-leer"></div>';
+    }
+
+    for (let t = 1; t <= tageImMonat; t++) {
+        const d = tagesDaten[t];
+        const intensity = d.count / maxCount;
+        const level = d.count === 0 ? 0 : intensity < 0.25 ? 1 : intensity < 0.5 ? 2 : intensity < 0.75 ? 3 : 4;
+        const tagStr = `${filterM}-${String(t).padStart(2, '0')}`;
+        const feiertag = istFeiertag(tagStr);
+        const datumObj = new Date(jahr, monat - 1, t);
+        const istSo = datumObj.getDay() === 0;
+
+        html += `<div class="hm-cell hm-l${level}${feiertag ? ' hm-feiertag' : ''}${istSo ? ' hm-sonntag' : ''}" title="${t}. ${MONATSNAMEN[monat - 1]}: ${d.count} Einsätze, ${formatZahl(d.stunden)} Std.">
+            <span class="hm-tag">${t}</span>
+            ${d.count > 0 ? '<span class="hm-cnt">' + d.count + '</span>' : ''}
+        </div>`;
+    }
+    html += '</div>';
+
+    // Legende
+    html += '<div class="hm-legende"><span class="hm-leg-label">Wenig</span>';
+    for (let i = 0; i <= 4; i++) {
+        html += `<span class="hm-leg-box hm-l${i}"></span>`;
+    }
+    html += '<span class="hm-leg-label">Viel</span></div>';
+
+    el.innerHTML = html;
+}
+
+// =============================================
+// MA-SCHICHTHISTORIE
+// =============================================
+function updateSchichtHistorieSelect() {
+    const sel = document.getElementById('shMa');
+    if (!sel) return;
+    const current = sel.value;
+    sel.innerHTML = '<option value="">Mitarbeiter wählen...</option>';
+    mitarbeiterListe_.forEach(m => {
+        sel.innerHTML += `<option value="${escapeHtml(m.name)}">${escapeHtml(m.name)}</option>`;
+    });
+    if (current) sel.value = current;
+}
+
+function renderSchichtHistorie() {
+    const el = document.getElementById('schichtHistorieContent');
+    if (!el) return;
+
+    const maName = document.getElementById('shMa').value;
+    if (!maName) {
+        el.innerHTML = '<p style="color:#a0aec0">Mitarbeiter auswählen.</p>';
+        return;
+    }
+
+    const maEinsaetze = einsaetze.filter(e => e.mitarbeiter === maName).sort((a, b) => b.datum.localeCompare(a.datum));
+
+    if (maEinsaetze.length === 0) {
+        el.innerHTML = '<p style="color:#a0aec0">Keine Einsätze für diesen Mitarbeiter.</p>';
+        return;
+    }
+
+    // Zusammenfassung
+    const totalStd = maEinsaetze.reduce((s, e) => s + e.stunden, 0);
+    const totalNacht = maEinsaetze.reduce((s, e) => s + e.nachtStunden, 0);
+    const totalUmsatz = maEinsaetze.reduce((s, e) => s + e.gesamt, 0);
+    const objSet = new Set(maEinsaetze.map(e => e.objekt));
+
+    // Durchschnittliche Schichtlänge
+    const avgStd = totalStd / maEinsaetze.length;
+
+    // Erster/Letzter Einsatz
+    const erster = maEinsaetze[maEinsaetze.length - 1];
+    const letzter = maEinsaetze[0];
+
+    let html = '<div class="sh-summary">';
+    html += `<span class="sh-stat">${maEinsaetze.length} Einsätze</span>`;
+    html += `<span class="sh-stat">${formatZahl(totalStd)} Std. gesamt</span>`;
+    html += `<span class="sh-stat">${formatZahl(totalNacht)} Nachtstd.</span>`;
+    html += `<span class="sh-stat">\u00D8 ${formatZahl(avgStd)} Std./Einsatz</span>`;
+    html += `<span class="sh-stat">${objSet.size} Objekte</span>`;
+    html += `<span class="sh-stat">${formatEuro(totalUmsatz)} Umsatz</span>`;
+    html += '</div>';
+
+    html += `<div class="sh-zeitraum">Zeitraum: ${formatDatum(erster.datum)} \u2013 ${formatDatum(letzter.datum)}</div>`;
+
+    // Nach Monat gruppiert
+    const monatsGruppen = {};
+    maEinsaetze.forEach(e => {
+        const m = e.datum.substring(0, 7);
+        if (!monatsGruppen[m]) monatsGruppen[m] = { count: 0, std: 0, umsatz: 0 };
+        monatsGruppen[m].count++;
+        monatsGruppen[m].std += e.stunden;
+        monatsGruppen[m].umsatz += e.gesamt;
+    });
+
+    html += '<div class="sh-monate">';
+    Object.entries(monatsGruppen).sort((a, b) => b[0].localeCompare(a[0])).forEach(([monat, d]) => {
+        const [j, mo] = monat.split('-');
+        html += `<div class="sh-monat-row">
+            <span class="sh-monat-label">${MONATSNAMEN[parseInt(mo) - 1]} ${j}</span>
+            <span>${d.count} Einsätze</span>
+            <span>${formatZahl(d.std)} Std.</span>
+            <span>${formatEuro(d.umsatz)}</span>
+        </div>`;
+    });
+    html += '</div>';
+
+    // Letzte 10 Einsätze
+    html += '<table class="sh-table"><thead><tr><th>Datum</th><th>Objekt</th><th>Von</th><th>Bis</th><th>Std.</th><th>Gesamt</th></tr></thead><tbody>';
+    maEinsaetze.slice(0, 15).forEach(e => {
+        html += `<tr><td>${formatDatum(e.datum)}</td><td>${escapeHtml(e.objekt)}</td><td>${e.zeitVon}</td><td>${e.zeitBis}</td><td>${formatZahl(e.stunden)}</td><td>${formatEuro(e.gesamt)}</td></tr>`;
+    });
+    html += '</tbody></table>';
+
+    el.innerHTML = html;
+}
+
+// =============================================
+// NOTFALLKONTAKTE
+// =============================================
+function notfallkontaktSpeichern() {
+    const ma = document.getElementById('nkMa').value.trim();
+    const kontakt = document.getElementById('nkKontakt').value.trim();
+    const telefon = document.getElementById('nkTelefon').value.trim();
+    const beziehung = document.getElementById('nkBeziehung').value;
+
+    if (!ma || !kontakt || !telefon) { alert('Bitte alle Pflichtfelder ausfüllen.'); return; }
+
+    notfallkontakte.push({
+        id: Date.now(),
+        ma, kontakt, telefon, beziehung
+    });
+
+    localStorage.setItem('bbprotect_notfallkontakte', JSON.stringify(notfallkontakte));
+    renderNotfallkontakte();
+    document.getElementById('nkMa').value = '';
+    document.getElementById('nkKontakt').value = '';
+    document.getElementById('nkTelefon').value = '';
+}
+
+function renderNotfallkontakte() {
+    const el = document.getElementById('notfallkontakteContent');
+    if (!el) return;
+
+    if (notfallkontakte.length === 0) {
+        el.innerHTML = '<p style="color:#a0aec0">Keine Notfallkontakte eingetragen.</p>';
+        return;
+    }
+
+    const BEZIEHUNG_LABELS = {
+        ehepartner: 'Ehepartner/in',
+        eltern: 'Elternteil',
+        kind: 'Kind',
+        geschwister: 'Geschwister',
+        freund: 'Freund/in',
+        sonstige: 'Sonstige'
+    };
+
+    // Gruppiere nach MA
+    const gruppen = {};
+    notfallkontakte.forEach(nk => {
+        if (!gruppen[nk.ma]) gruppen[nk.ma] = [];
+        gruppen[nk.ma].push(nk);
+    });
+
+    let html = '<div class="nk-liste">';
+    Object.entries(gruppen).sort((a, b) => a[0].localeCompare(b[0])).forEach(([ma, kontakte]) => {
+        html += `<div class="nk-group"><div class="nk-ma">${escapeHtml(ma)}</div>`;
+        kontakte.forEach(nk => {
+            html += `<div class="nk-item">
+                <span class="nk-name">${escapeHtml(nk.kontakt)}</span>
+                <span class="nk-bez">${escapeHtml(BEZIEHUNG_LABELS[nk.beziehung] || nk.beziehung)}</span>
+                <a href="tel:${escapeHtml(nk.telefon)}" class="nk-tel">${escapeHtml(nk.telefon)}</a>
+                <button class="btn-delete btn-small" onclick="loescheNotfallkontakt(${nk.id})">X</button>
+            </div>`;
+        });
+        html += '</div>';
+    });
+    html += '</div>';
+    el.innerHTML = html;
+}
+
+function loescheNotfallkontakt(id) {
+    notfallkontakte = notfallkontakte.filter(nk => nk.id !== id);
+    localStorage.setItem('bbprotect_notfallkontakte', JSON.stringify(notfallkontakte));
+    renderNotfallkontakte();
+}
+
+// =============================================
 // INITIALISIERUNG
 // =============================================
 document.getElementById('datum').valueAsDate = new Date();
@@ -4810,6 +5045,7 @@ renderUrlaubskonto();
 updateChecklisteObjekte();
 renderArbeitszeitkonto();
 renderUebergaben();
+renderNotfallkontakte();
 document.getElementById('vfDatum').valueAsDate = new Date();
 document.getElementById('wbDatum').valueAsDate = new Date();
 document.getElementById('ugDatum').valueAsDate = new Date();
