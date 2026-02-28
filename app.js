@@ -84,10 +84,10 @@ document.querySelectorAll('.nav-btn').forEach(btn => {
         if (this.dataset.tab === 'objekte') { renderObjekte(); renderVertraege(); renderObjektAuslastung(); updateChecklisteObjekte(); updateObjektHistorieSelect(); }
         if (this.dataset.tab === 'kalender') { renderKalender(); renderDienstplan(); renderJahresuebersicht(); }
         if (this.dataset.tab === 'abrechnung') updateAbrechnung();
-        if (this.dataset.tab === 'mitarbeiter') { renderMitarbeiter(); renderDokumente(); renderUeberstunden(); renderKontaktliste(); renderUrlaubskonto(); renderArbeitszeitkonto(); renderQualMatrix(); updateSchichtHistorieSelect(); renderNotfallkontakte(); }
+        if (this.dataset.tab === 'mitarbeiter') { renderMitarbeiter(); renderDokumente(); renderUeberstunden(); renderKontaktliste(); renderUrlaubskonto(); renderArbeitszeitkonto(); renderQualMatrix(); updateSchichtHistorieSelect(); renderNotfallkontakte(); updateMAKalSelect(); }
         if (this.dataset.tab === 'vorfaelle') renderVorfaelle();
         if (this.dataset.tab === 'wachbuch') { renderWachbuch(); renderUebergaben(); renderWachbuchStats(); }
-        if (this.dataset.tab === 'einstellungen') { updateDatenStats(); updateSpeicherStats(); }
+        if (this.dataset.tab === 'einstellungen') { updateDatenStats(); updateSpeicherStats(); ladeEinstellungen(); }
     });
 });
 
@@ -1046,6 +1046,9 @@ function updateDashboard() {
 
     // Monats-Heatmap
     renderHeatmap(filterM);
+
+    // Monatsziel-Fortschritt
+    renderFortschritt(filterM);
 
     // Zeitvergleich
     renderZeitvergleich(filterM);
@@ -5502,6 +5505,177 @@ function printHeader() {
 }
 
 // =============================================
+// MONATSZIEL-FORTSCHRITT
+// =============================================
+function renderFortschritt(filterM) {
+    const el = document.getElementById('fortschrittContent');
+    if (!el) return;
+
+    if (!filterM) {
+        const jetzt = new Date();
+        filterM = `${jetzt.getFullYear()}-${String(jetzt.getMonth() + 1).padStart(2, '0')}`;
+    }
+
+    // Objekte mit Monatsstunden-Soll
+    const zielObjekte = objekte.filter(o => o.monatsstunden > 0);
+
+    if (zielObjekte.length === 0) {
+        el.innerHTML = '<p style="color:#a0aec0;font-size:0.8rem">Objekte mit Soll-Monatsstunden anlegen.</p>';
+        return;
+    }
+
+    let html = '<div class="fort-grid">';
+    zielObjekte.forEach(o => {
+        const objE = einsaetze.filter(e => e.objekt === o.name && e.datum.substring(0, 7) === filterM);
+        const istStd = objE.reduce((s, e) => s + e.stunden, 0);
+        const soll = o.monatsstunden;
+        const pct = soll > 0 ? Math.min((istStd / soll) * 100, 120) : 0;
+        const cls = pct >= 100 ? 'fort-voll' : pct >= 75 ? 'fort-gut' : pct >= 50 ? 'fort-mittel' : 'fort-niedrig';
+
+        html += `<div class="fort-item">
+            <div class="fort-header">
+                <span class="fort-name">${escapeHtml(o.name)}</span>
+                <span class="fort-pct ${cls}">${pct.toFixed(0)}%</span>
+            </div>
+            <div class="fort-bar-wrap"><div class="fort-bar ${cls}" style="width:${Math.min(pct, 100)}%"></div></div>
+            <div class="fort-detail">${formatZahl(istStd)} / ${formatZahl(soll)} Std. (${objE.length} Einsätze)</div>
+        </div>`;
+    });
+    html += '</div>';
+    el.innerHTML = html;
+}
+
+// =============================================
+// MA-EINSATZKALENDER
+// =============================================
+let maKalJahr = new Date().getFullYear();
+let maKalMonat = new Date().getMonth();
+
+function maKalNav(richtung) {
+    maKalMonat += richtung;
+    if (maKalMonat < 0) { maKalMonat = 11; maKalJahr--; }
+    if (maKalMonat > 11) { maKalMonat = 0; maKalJahr++; }
+    renderMAKalender();
+}
+
+function updateMAKalSelect() {
+    const sel = document.getElementById('maKalMa');
+    if (!sel) return;
+    const current = sel.value;
+    sel.innerHTML = '<option value="">Mitarbeiter wählen...</option>';
+    mitarbeiterListe_.forEach(m => {
+        sel.innerHTML += `<option value="${escapeHtml(m.name)}">${escapeHtml(m.name)}</option>`;
+    });
+    if (current) sel.value = current;
+}
+
+function renderMAKalender() {
+    const el = document.getElementById('maKalenderContent');
+    const titel = document.getElementById('maKalTitel');
+    if (!el) return;
+
+    if (titel) titel.textContent = `${MONATSNAMEN[maKalMonat]} ${maKalJahr}`;
+
+    const maName = document.getElementById('maKalMa').value;
+    if (!maName) {
+        el.innerHTML = '<p style="color:#a0aec0">Mitarbeiter auswählen.</p>';
+        return;
+    }
+
+    const monatStr = `${maKalJahr}-${String(maKalMonat + 1).padStart(2, '0')}`;
+    const letzterTag = new Date(maKalJahr, maKalMonat + 1, 0).getDate();
+    const ersterWT = new Date(maKalJahr, maKalMonat, 1).getDay();
+    const startWT = ersterWT === 0 ? 7 : ersterWT;
+
+    const tageLabels = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
+    let html = '<div class="mak-grid">';
+    tageLabels.forEach(l => { html += `<div class="mak-header">${l}</div>`; });
+
+    for (let i = 1; i < startWT; i++) html += '<div class="mak-cell mak-leer"></div>';
+
+    // Abwesenheiten
+    const maVerf = verfuegbarkeit.filter(v => v.mitarbeiter === maName);
+
+    for (let t = 1; t <= letzterTag; t++) {
+        const tagStr = `${monatStr}-${String(t).padStart(2, '0')}`;
+        const tagesE = einsaetze.filter(e => e.mitarbeiter === maName && e.datum === tagStr);
+        const abwesend = maVerf.find(v => v.von <= tagStr && v.bis >= tagStr);
+        const feiertag = istFeiertag(tagStr);
+        const datumObj = new Date(maKalJahr, maKalMonat, t);
+        const istSo = datumObj.getDay() === 0;
+
+        let cls = 'mak-cell';
+        if (abwesend) cls += ' mak-abwesend';
+        else if (tagesE.length > 0) cls += ' mak-einsatz';
+        if (feiertag) cls += ' mak-feiertag';
+        if (istSo) cls += ' mak-sonntag';
+
+        const totalStd = tagesE.reduce((s, e) => s + e.stunden, 0);
+        let inhalt = `<span class="mak-tag">${t}</span>`;
+        if (tagesE.length > 0) {
+            inhalt += `<span class="mak-info">${tagesE.length}x | ${formatZahl(totalStd)}h</span>`;
+        }
+        if (abwesend) {
+            inhalt += `<span class="mak-verf">${abwesend.typ === 'urlaub' ? 'U' : abwesend.typ === 'krank' ? 'K' : 'F'}</span>`;
+        }
+
+        html += `<div class="${cls}" title="${formatDatum(tagStr)}: ${tagesE.length} Einsätze${abwesend ? ', ' + abwesend.typ : ''}">${inhalt}</div>`;
+    }
+    html += '</div>';
+
+    // Monats-Summary
+    const monatsE = einsaetze.filter(e => e.mitarbeiter === maName && e.datum.substring(0, 7) === monatStr);
+    const totalStd = monatsE.reduce((s, e) => s + e.stunden, 0);
+    const totalNacht = monatsE.reduce((s, e) => s + e.nachtStunden, 0);
+    const arbeitstage = new Set(monatsE.map(e => e.datum)).size;
+    const urlaubstage = maVerf.filter(v => v.typ === 'urlaub').reduce((sum, v) => {
+        let count = 0;
+        const start = new Date(Math.max(new Date(v.von), new Date(maKalJahr, maKalMonat, 1)));
+        const end = new Date(Math.min(new Date(v.bis), new Date(maKalJahr, maKalMonat + 1, 0)));
+        for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) count++;
+        return sum + count;
+    }, 0);
+
+    html += `<div class="mak-summary">
+        <span>${monatsE.length} Einsätze</span>
+        <span>${arbeitstage} Arbeitstage</span>
+        <span>${formatZahl(totalStd)} Std.</span>
+        <span>${formatZahl(totalNacht)} Nachtstd.</span>
+        ${urlaubstage > 0 ? '<span>' + urlaubstage + ' Urlaubstage</span>' : ''}
+    </div>`;
+
+    el.innerHTML = html;
+}
+
+// =============================================
+// EINSTELLUNGEN
+// =============================================
+let einstellungen = JSON.parse(localStorage.getItem('bbprotect_einstellungen') || '{}');
+
+function ladeEinstellungen() {
+    const e = einstellungen;
+    const fn = document.getElementById('einstFirmenname');
+    const ss = document.getElementById('einstStdSatz');
+    const am = document.getElementById('einstArbZGMax');
+    const wm = document.getElementById('einstWocheMax');
+
+    if (fn && e.firmenname) fn.value = e.firmenname;
+    if (ss && e.standardSatz) ss.value = e.standardSatz;
+    if (am && e.arbZGMax) am.value = e.arbZGMax;
+    if (wm && e.wocheMax) wm.value = e.wocheMax;
+}
+
+function speichereEinstellungen() {
+    einstellungen = {
+        firmenname: document.getElementById('einstFirmenname').value.trim() || 'B.B. Protect',
+        standardSatz: parseFloat(document.getElementById('einstStdSatz').value) || 15,
+        arbZGMax: parseFloat(document.getElementById('einstArbZGMax').value) || 10,
+        wocheMax: parseFloat(document.getElementById('einstWocheMax').value) || 48
+    };
+    localStorage.setItem('bbprotect_einstellungen', JSON.stringify(einstellungen));
+}
+
+// =============================================
 // INITIALISIERUNG
 // =============================================
 document.getElementById('datum').valueAsDate = new Date();
@@ -5522,6 +5696,7 @@ updateChecklisteObjekte();
 renderArbeitszeitkonto();
 renderUebergaben();
 renderNotfallkontakte();
+ladeEinstellungen();
 document.getElementById('vfDatum').valueAsDate = new Date();
 document.getElementById('wbDatum').valueAsDate = new Date();
 document.getElementById('ugDatum').valueAsDate = new Date();

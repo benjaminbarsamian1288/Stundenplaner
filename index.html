@@ -478,6 +478,13 @@
                         <div id="konfliktAnzeige"></div>
                     </div>
                 </div>
+
+                <div class="dashboard-details" style="margin-top:1rem">
+                    <div class="detail-card full-width">
+                        <h3>Monatsziel-Fortschritt</h3>
+                        <div id="fortschrittContent"></div>
+                    </div>
+                </div>
             </section>
         </div>
 
@@ -924,6 +931,21 @@
 
             <section class="form-section">
                 <div class="list-header">
+                    <h2>MA-Einsatzkalender</h2>
+                    <div class="list-actions">
+                        <select id="maKalMa" onchange="renderMAKalender()">
+                            <option value="">Mitarbeiter w&auml;hlen...</option>
+                        </select>
+                        <button class="btn-secondary btn-small" onclick="maKalNav(-1)">&larr;</button>
+                        <span id="maKalTitel" style="font-size:0.8rem;font-weight:600"></span>
+                        <button class="btn-secondary btn-small" onclick="maKalNav(1)">&rarr;</button>
+                    </div>
+                </div>
+                <div id="maKalenderContent"></div>
+            </section>
+
+            <section class="form-section">
+                <div class="list-header">
                     <h2>Notfallkontakte</h2>
                 </div>
                 <div class="form-row">
@@ -1177,7 +1199,27 @@
         <!-- TAB: Einstellungen / Daten -->
         <div class="tab-content" id="tab-einstellungen">
             <section class="daten-section">
-                <h2>Datensicherung &amp; Import</h2>
+                <h2>Einstellungen</h2>
+                <div class="einst-grid">
+                    <div class="einst-item">
+                        <label for="einstFirmenname">Firmenname</label>
+                        <input type="text" id="einstFirmenname" placeholder="B.B. Protect" onchange="speichereEinstellungen()">
+                    </div>
+                    <div class="einst-item">
+                        <label for="einstStdSatz">Standard-Stundensatz (&euro;)</label>
+                        <input type="number" id="einstStdSatz" step="0.01" min="0" placeholder="15.00" onchange="speichereEinstellungen()">
+                    </div>
+                    <div class="einst-item">
+                        <label for="einstArbZGMax">Max. Arbeitszeit/Tag (Std.)</label>
+                        <input type="number" id="einstArbZGMax" step="0.5" min="1" max="24" placeholder="10" onchange="speichereEinstellungen()">
+                    </div>
+                    <div class="einst-item">
+                        <label for="einstWocheMax">Max. Arbeitszeit/Woche (Std.)</label>
+                        <input type="number" id="einstWocheMax" step="1" min="1" max="168" placeholder="48" onchange="speichereEinstellungen()">
+                    </div>
+                </div>
+
+                <h2 style="margin-top:1.5rem">Datensicherung &amp; Import</h2>
                 <p class="daten-info">Alle Daten werden lokal im Browser gespeichert (localStorage). Erstelle regelm&auml;&szlig;ig ein Backup, damit nichts verloren geht.</p>
 
                 <div class="daten-grid">

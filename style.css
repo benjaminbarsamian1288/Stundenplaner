@@ -4599,6 +4599,186 @@ body.dark-mode .shortcuts-hint kbd {
     color: #c9d1d9;
 }
 
+/* -- Monatsziel-Fortschritt -- */
+.fort-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.fort-item {
+    background: #f7fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 0.5rem 0.75rem;
+}
+
+.fort-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.3rem;
+}
+
+.fort-name {
+    font-weight: 600;
+    font-size: 0.85rem;
+}
+
+.fort-pct {
+    font-weight: 700;
+    font-size: 0.9rem;
+}
+
+.fort-bar-wrap {
+    height: 8px;
+    background: #e2e8f0;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.fort-bar {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.3s;
+}
+
+.fort-voll, .fort-voll .fort-bar { color: #38a169; background: #48bb78; }
+.fort-gut, .fort-gut .fort-bar { color: #2b6cb0; background: #4299e1; }
+.fort-mittel, .fort-mittel .fort-bar { color: #d69e2e; background: #ecc94b; }
+.fort-niedrig, .fort-niedrig .fort-bar { color: #e53e3e; background: #fc8181; }
+
+.fort-detail {
+    font-size: 0.75rem;
+    color: #718096;
+    margin-top: 0.2rem;
+}
+
+/* -- MA-Einsatzkalender -- */
+.mak-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 2px;
+}
+
+.mak-header {
+    text-align: center;
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: #718096;
+    padding: 0.2rem;
+}
+
+.mak-cell {
+    background: #f7fafc;
+    border-radius: 4px;
+    padding: 0.2rem;
+    min-height: 36px;
+    text-align: center;
+    font-size: 0.7rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.mak-leer {
+    background: transparent;
+}
+
+.mak-einsatz {
+    background: #c3dafe;
+}
+
+.mak-abwesend {
+    background: #feebc8;
+}
+
+.mak-feiertag {
+    border: 2px solid #e53e3e;
+}
+
+.mak-sonntag {
+    border: 2px solid #d69e2e;
+}
+
+.mak-tag {
+    font-weight: 600;
+    font-size: 0.65rem;
+}
+
+.mak-info {
+    font-size: 0.55rem;
+    color: #2b6cb0;
+}
+
+.mak-verf {
+    font-size: 0.55rem;
+    color: #c53030;
+    font-weight: 700;
+}
+
+.mak-summary {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-top: 0.5rem;
+    font-size: 0.8rem;
+    color: #4a5568;
+}
+
+/* -- Einstellungen -- */
+.einst-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+.einst-item label {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #4a5568;
+    margin-bottom: 0.2rem;
+}
+
+.einst-item input, .einst-item select {
+    width: 100%;
+    padding: 0.4rem 0.6rem;
+    border: 1px solid #cbd5e0;
+    border-radius: 6px;
+    font-size: 0.85rem;
+}
+
+body.dark-mode .fort-item {
+    background: #161b22;
+    border-color: #30363d;
+}
+
+body.dark-mode .fort-bar-wrap {
+    background: #30363d;
+}
+
+body.dark-mode .mak-cell {
+    background: #161b22;
+}
+
+body.dark-mode .mak-einsatz {
+    background: #0d2137;
+}
+
+body.dark-mode .mak-abwesend {
+    background: #2d2000;
+}
+
+body.dark-mode .einst-item input, body.dark-mode .einst-item select {
+    background: #0d1117;
+    border-color: #30363d;
+    color: #c9d1d9;
+}
+
 body.dark-mode .auto-plan {
     background: #0d1117;
     border-color: #30363d;
