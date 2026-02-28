@@ -20,6 +20,7 @@
             <button class="nav-btn" data-tab="objekte">Objekte</button>
             <button class="nav-btn" data-tab="mitarbeiter">Mitarbeiter</button>
             <button class="nav-btn" data-tab="vorfaelle">Vorf&auml;lle</button>
+            <button class="nav-btn" data-tab="wachbuch">Wachbuch</button>
             <button class="nav-btn" data-tab="einstellungen">Daten</button>
             <button class="dark-mode-toggle" id="darkModeBtn" onclick="toggleDarkMode()">Dunkel</button>
         </nav>
@@ -270,6 +271,15 @@
                 </div>
                 <div class="dienstplan-grid" id="dienstplanGrid"></div>
             </section>
+
+            <section class="form-section">
+                <div class="kalender-header" style="margin-bottom:0">
+                    <button class="btn-secondary" onclick="jahresNav(-1)">&larr;</button>
+                    <h2 id="jahresTitel" style="margin-bottom:0">Jahres&uuml;bersicht 2026</h2>
+                    <button class="btn-secondary" onclick="jahresNav(1)">&rarr;</button>
+                </div>
+                <div class="jahres-grid" id="jahresGrid"></div>
+            </section>
         </div>
 
         <!-- Tagesdetail-Modal -->
@@ -509,6 +519,12 @@
                             <input type="date" id="maQualAblauf">
                         </div>
                         <div class="form-group">
+                            <label for="maSollStunden">Soll-Stunden / Monat</label>
+                            <input type="number" id="maSollStunden" step="1" min="0" placeholder="z.B. 160">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
                             <label for="maBemerkung">Bemerkung</label>
                             <input type="text" id="maBemerkung" placeholder="z.B. nur Tagschicht, Ersthelfer">
                         </div>
@@ -590,6 +606,26 @@
                     </table>
                 </div>
                 <p class="empty-message" id="verfEmpty">Keine Abwesenheiten eingetragen.</p>
+            </section>
+
+            <section class="form-section">
+                <div class="list-header">
+                    <h2>&Uuml;berstunden-&Uuml;bersicht</h2>
+                    <div class="list-actions">
+                        <select id="ueberstundenMonat" onchange="renderUeberstunden()">
+                            <option value="">Aktueller Monat</option>
+                        </select>
+                    </div>
+                </div>
+                <div id="ueberstundenContent"></div>
+            </section>
+
+            <section class="form-section">
+                <div class="list-header">
+                    <h2>Kontaktliste</h2>
+                    <button class="btn-secondary" onclick="druckeKontaktliste()">Kontaktliste drucken</button>
+                </div>
+                <div id="kontaktlisteContent"></div>
             </section>
         </div>
 
@@ -684,6 +720,72 @@
                 </div>
                 <div id="vorfaelleContent"></div>
                 <p class="empty-message" id="vorfaelleEmpty">Keine Vorfallsberichte vorhanden.</p>
+            </section>
+        </div>
+
+        <!-- TAB: Wachbuch -->
+        <div class="tab-content" id="tab-wachbuch">
+            <section class="form-section">
+                <h2>Wachbuch-Eintrag</h2>
+                <form id="wachbuchForm">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="wbDatum">Datum</label>
+                            <input type="date" id="wbDatum" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="wbZeit">Uhrzeit</label>
+                            <input type="time" id="wbZeit" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="wbObjekt">Objekt</label>
+                            <input type="text" id="wbObjekt" list="objektListe" placeholder="Einsatzort" required>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="wbKategorie">Kategorie</label>
+                            <select id="wbKategorie">
+                                <option value="rundgang">Kontrollrundgang</option>
+                                <option value="schichtuebergabe">Schicht&uuml;bergabe</option>
+                                <option value="zugang">Zugangs&uuml;berwachung</option>
+                                <option value="schliessung">Schlie&szlig;dienst</option>
+                                <option value="alarm">Alarm / St&ouml;rung</option>
+                                <option value="besucher">Besucherverkehr</option>
+                                <option value="lieferung">Lieferung / Anlieferung</option>
+                                <option value="sonstiges">Sonstiges</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="wbMitarbeiter">Mitarbeiter</label>
+                            <input type="text" id="wbMitarbeiter" list="mitarbeiterListe" placeholder="Name">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="wbEintrag">Eintrag</label>
+                            <textarea id="wbEintrag" rows="2" placeholder="Rundgang ohne Besonderheiten / Auff&auml;lligkeiten..." required style="width:100%;padding:0.6rem;border:1px solid #cbd5e0;border-radius:6px;font-family:inherit;font-size:0.95rem;resize:vertical"></textarea>
+                        </div>
+                    </div>
+                    <div class="form-buttons">
+                        <button type="submit" class="btn-primary">Eintrag speichern</button>
+                    </div>
+                </form>
+            </section>
+
+            <section class="list-section">
+                <div class="list-header">
+                    <h2>Wachbuch-Eintr&auml;ge</h2>
+                    <div class="list-actions">
+                        <select id="wbFilterObjekt" onchange="renderWachbuch()">
+                            <option value="">Alle Objekte</option>
+                        </select>
+                        <input type="date" id="wbFilterDatum" onchange="renderWachbuch()">
+                        <button class="btn-secondary" onclick="druckeWachbuch()">Drucken</button>
+                    </div>
+                </div>
+                <div id="wachbuchContent"></div>
+                <p class="empty-message" id="wachbuchEmpty">Noch keine Eintr&auml;ge im Wachbuch.</p>
             </section>
         </div>
 

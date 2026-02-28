@@ -9,6 +9,10 @@ let vorlagen = JSON.parse(localStorage.getItem('bbprotect_vorlagen') || '[]');
 let mitarbeiterListe_ = JSON.parse(localStorage.getItem('bbprotect_mitarbeiter') || '[]');
 let verfuegbarkeit = JSON.parse(localStorage.getItem('bbprotect_verfuegbarkeit') || '[]');
 let vorfaelle = JSON.parse(localStorage.getItem('bbprotect_vorfaelle') || '[]');
+let wachbuch = JSON.parse(localStorage.getItem('bbprotect_wachbuch') || '[]');
+
+// Jahresübersicht-State
+let jahresJahr = new Date().getFullYear();
 
 // Dienstplan-State
 let dienstplanKW = getKalenderWoche(new Date());
@@ -64,10 +68,11 @@ document.querySelectorAll('.nav-btn').forEach(btn => {
 
         if (this.dataset.tab === 'dashboard') updateDashboard();
         if (this.dataset.tab === 'objekte') { renderObjekte(); renderObjektAuslastung(); }
-        if (this.dataset.tab === 'kalender') { renderKalender(); renderDienstplan(); }
+        if (this.dataset.tab === 'kalender') { renderKalender(); renderDienstplan(); renderJahresuebersicht(); }
         if (this.dataset.tab === 'abrechnung') updateAbrechnung();
-        if (this.dataset.tab === 'mitarbeiter') renderMitarbeiter();
+        if (this.dataset.tab === 'mitarbeiter') { renderMitarbeiter(); renderUeberstunden(); renderKontaktliste(); }
         if (this.dataset.tab === 'vorfaelle') renderVorfaelle();
+        if (this.dataset.tab === 'wachbuch') renderWachbuch();
         if (this.dataset.tab === 'einstellungen') updateDatenStats();
     });
 });
@@ -1374,13 +1379,14 @@ document.getElementById('mitarbeiterForm').addEventListener('submit', function (
     const qualifikation = document.getElementById('maQualifikation').value;
     const stundensatz = parseFloat(document.getElementById('maStundensatz').value) || 0;
     const qualAblauf = document.getElementById('maQualAblauf').value;
+    const sollStunden = parseFloat(document.getElementById('maSollStunden').value) || 0;
     const bemerkung = document.getElementById('maBemerkung').value.trim();
 
     if (!vorname || !nachname) return;
 
     const vollname = `${vorname} ${nachname}`;
     const idx = mitarbeiterListe_.findIndex(m => m.name === vollname);
-    const ma = { name: vollname, vorname, nachname, telefon, email, qualifikation, stundensatz, qualAblauf, bemerkung };
+    const ma = { name: vollname, vorname, nachname, telefon, email, qualifikation, stundensatz, qualAblauf, sollStunden, bemerkung };
 
     if (idx !== -1) mitarbeiterListe_[idx] = ma; else mitarbeiterListe_.push(ma);
 
@@ -1455,14 +1461,15 @@ function loescheMitarbeiter(index) {
 // =============================================
 function erstelleBackup() {
     const backup = {
-        version: 4,
+        version: 5,
         datum: new Date().toISOString(),
         einsaetze,
         objekte,
         vorlagen,
         mitarbeiter: mitarbeiterListe_,
         verfuegbarkeit,
-        vorfaelle
+        vorfaelle,
+        wachbuch
     };
 
     const json = JSON.stringify(backup, null, 2);
@@ -1493,6 +1500,7 @@ function stelleWiederHer(event) {
             mitarbeiterListe_ = data.mitarbeiter || [];
             verfuegbarkeit = data.verfuegbarkeit || [];
             vorfaelle = data.vorfaelle || [];
+            wachbuch = data.wachbuch || [];
 
             speichern();
             localStorage.setItem('bbprotect_objekte', JSON.stringify(objekte));
@@ -1500,6 +1508,7 @@ function stelleWiederHer(event) {
             localStorage.setItem('bbprotect_mitarbeiter', JSON.stringify(mitarbeiterListe_));
             localStorage.setItem('bbprotect_verfuegbarkeit', JSON.stringify(verfuegbarkeit));
             localStorage.setItem('bbprotect_vorfaelle', JSON.stringify(vorfaelle));
+            localStorage.setItem('bbprotect_wachbuch', JSON.stringify(wachbuch));
 
             renderTabelle();
             updateAlleFilter();
@@ -1528,6 +1537,7 @@ function loescheAlleDaten() {
     mitarbeiterListe_ = [];
     verfuegbarkeit = [];
     vorfaelle = [];
+    wachbuch = [];
 
     localStorage.removeItem('bbprotect_einsaetze');
     localStorage.removeItem('bbprotect_objekte');
@@ -1535,6 +1545,7 @@ function loescheAlleDaten() {
     localStorage.removeItem('bbprotect_mitarbeiter');
     localStorage.removeItem('bbprotect_verfuegbarkeit');
     localStorage.removeItem('bbprotect_vorfaelle');
+    localStorage.removeItem('bbprotect_wachbuch');
 
     renderTabelle();
     updateAlleFilter();
@@ -1559,6 +1570,7 @@ function updateDatenStats() {
             <div class="daten-stat"><strong>${mitarbeiterListe_.length}</strong><span>Mitarbeiter</span></div>
             <div class="daten-stat"><strong>${vorlagen.length}</strong><span>Vorlagen</span></div>
             <div class="daten-stat"><strong>${vorfaelle.length}</strong><span>Vorfälle</span></div>
+            <div class="daten-stat"><strong>${wachbuch.length}</strong><span>Wachbuch</span></div>
             <div class="daten-stat"><strong>${formatZahl(totalStd)}</strong><span>Stunden gesamt</span></div>
             <div class="daten-stat"><strong>${formatEuro(totalGesamt)}</strong><span>Umsatz gesamt</span></div>
         </div>
@@ -2417,6 +2429,341 @@ function druckeStundenzettel() {
 }
 
 // =============================================
+// JAHRESÜBERSICHT
+// =============================================
+function jahresNav(offset) {
+    jahresJahr += offset;
+    renderJahresuebersicht();
+}
+
+function renderJahresuebersicht() {
+    const el = document.getElementById('jahresGrid');
+    const titel = document.getElementById('jahresTitel');
+    if (!el) return;
+
+    titel.textContent = `Jahresübersicht ${jahresJahr}`;
+
+    let html = '';
+    for (let m = 0; m < 12; m++) {
+        const monatsStr = `${jahresJahr}-${String(m + 1).padStart(2, '0')}`;
+        const monatsE = einsaetze.filter(e => e.datum.substring(0, 7) === monatsStr);
+        const totalStd = monatsE.reduce((s, e) => s + e.stunden, 0);
+        const totalGesamt = monatsE.reduce((s, e) => s + e.gesamt, 0);
+        const tageImMonat = new Date(jahresJahr, m + 1, 0).getDate();
+
+        const ersterTag = new Date(jahresJahr, m, 1);
+        let startWochentag = ersterTag.getDay();
+        if (startWochentag === 0) startWochentag = 7;
+        startWochentag--;
+
+        html += `<div class="jahres-monat">
+            <div class="jahres-monat-header" onclick="kalenderMonat=${m};kalenderJahr=${jahresJahr};wechsleZuTab('kalender');renderKalender();renderDienstplan();">
+                <strong>${MONATSNAMEN[m].substring(0, 3)}</strong>
+                ${monatsE.length > 0 ? '<span class="jahres-count">' + monatsE.length + '</span>' : ''}
+            </div>
+            <div class="jahres-mini-grid">`;
+
+        // Tage-Labels
+        ['M', 'D', 'M', 'D', 'F', 'S', 'S'].forEach(t => {
+            html += `<span class="jm-header">${t}</span>`;
+        });
+
+        // Leere Zellen
+        for (let i = 0; i < startWochentag; i++) {
+            html += '<span class="jm-leer"></span>';
+        }
+
+        const heute = new Date().toISOString().split('T')[0];
+
+        for (let tag = 1; tag <= tageImMonat; tag++) {
+            const datumStr = `${monatsStr}-${String(tag).padStart(2, '0')}`;
+            const hatEinsatz = monatsE.some(e => e.datum === datumStr);
+            const istHeute = datumStr === heute;
+            const feiertag = istFeiertag(datumStr);
+            const wt = new Date(datumStr).getDay();
+
+            let cls = 'jm-tag';
+            if (hatEinsatz) cls += ' jm-aktiv';
+            if (istHeute) cls += ' jm-heute';
+            if (feiertag) cls += ' jm-feiertag';
+            if (wt === 0 || wt === 6) cls += ' jm-we';
+
+            html += `<span class="${cls}">${tag}</span>`;
+        }
+
+        html += `</div>`;
+
+        if (monatsE.length > 0) {
+            html += `<div class="jahres-monat-footer">
+                <span>${formatZahl(totalStd)} Std.</span>
+                <span>${formatEuro(totalGesamt)}</span>
+            </div>`;
+        }
+
+        html += '</div>';
+    }
+
+    el.innerHTML = html;
+}
+
+// =============================================
+// ÜBERSTUNDEN-TRACKING
+// =============================================
+function renderUeberstunden() {
+    const el = document.getElementById('ueberstundenContent');
+    if (!el) return;
+
+    // Filter aktualisieren
+    const filterSelect = document.getElementById('ueberstundenMonat');
+    const monate = new Set();
+    einsaetze.forEach(e => monate.add(e.datum.substring(0, 7)));
+    fillMonatsSelect(filterSelect, monate);
+
+    let filterM = filterSelect.value;
+    if (!filterM) {
+        // Aktueller Monat
+        const jetzt = new Date();
+        filterM = `${jetzt.getFullYear()}-${String(jetzt.getMonth() + 1).padStart(2, '0')}`;
+    }
+
+    const maList = mitarbeiterListe_.filter(m => m.sollStunden > 0);
+
+    if (maList.length === 0) {
+        el.innerHTML = '<p style="color:#a0aec0">Keine Mitarbeiter mit Soll-Stunden definiert. Tragen Sie Soll-Stunden in der Mitarbeiter-Verwaltung ein.</p>';
+        return;
+    }
+
+    const [j, m] = filterM.split('-');
+    const monatLabel = `${MONATSNAMEN[parseInt(m) - 1]} ${j}`;
+
+    let html = `<p style="font-size:0.85rem;color:#718096;margin-bottom:0.75rem">${monatLabel}</p>`;
+
+    maList.forEach(ma => {
+        const maEinsaetze = einsaetze.filter(e => e.mitarbeiter === ma.name && e.datum.substring(0, 7) === filterM);
+        const istStunden = maEinsaetze.reduce((s, e) => s + e.stunden, 0);
+        const diff = istStunden - ma.sollStunden;
+        const pct = Math.min((istStunden / ma.sollStunden) * 100, 150);
+
+        let barCls = 'ue-bar-fill';
+        if (diff > 0) barCls += ' ue-plus';
+        else if (istStunden < ma.sollStunden * 0.8) barCls += ' ue-minus';
+
+        html += `<div class="ue-row">
+            <div class="ue-name">${escapeHtml(ma.name)}</div>
+            <div class="ue-bar-bg">
+                <div class="${barCls}" style="width:${Math.min(pct, 100)}%"></div>
+                ${pct > 100 ? '<div class="ue-bar-over" style="width:' + (pct - 100) + '%"></div>' : ''}
+            </div>
+            <div class="ue-werte">
+                <span>${formatZahl(istStunden)} / ${formatZahl(ma.sollStunden)} Std.</span>
+                <span class="${diff >= 0 ? 'trend-up' : 'trend-down'}">${diff >= 0 ? '+' : ''}${formatZahl(diff)}</span>
+            </div>
+        </div>`;
+    });
+
+    el.innerHTML = html;
+}
+
+// =============================================
+// KONTAKTLISTE
+// =============================================
+function renderKontaktliste() {
+    const el = document.getElementById('kontaktlisteContent');
+    if (!el) return;
+
+    if (mitarbeiterListe_.length === 0) {
+        el.innerHTML = '<p style="color:#a0aec0">Keine Mitarbeiter vorhanden.</p>';
+        return;
+    }
+
+    let html = '<div class="kontakt-grid">';
+    mitarbeiterListe_.sort((a, b) => a.name.localeCompare(b.name)).forEach(m => {
+        html += `<div class="kontakt-card">
+            <div class="kontakt-name">${escapeHtml(m.name)}</div>
+            <div class="kontakt-details">
+                ${m.telefon ? '<span>Tel: ' + escapeHtml(m.telefon) + '</span>' : ''}
+                ${m.email ? '<span>Mail: ' + escapeHtml(m.email) + '</span>' : ''}
+                <span class="qual-badge">${escapeHtml(QUAL_LABELS[m.qualifikation] || m.qualifikation)}</span>
+            </div>
+        </div>`;
+    });
+    html += '</div>';
+    el.innerHTML = html;
+}
+
+function druckeKontaktliste() {
+    if (mitarbeiterListe_.length === 0) { alert('Keine Mitarbeiter vorhanden.'); return; }
+
+    let html = printHeader('Kontaktliste / Notfallkontakte');
+    html += '<table><thead><tr><th>Name</th><th>Telefon</th><th>E-Mail</th><th>Qualifikation</th><th>Bemerkung</th></tr></thead><tbody>';
+
+    mitarbeiterListe_.sort((a, b) => a.name.localeCompare(b.name)).forEach(m => {
+        html += `<tr>
+            <td><strong>${escapeHtml(m.name)}</strong></td>
+            <td>${escapeHtml(m.telefon || '\u2014')}</td>
+            <td>${escapeHtml(m.email || '\u2014')}</td>
+            <td>${escapeHtml(QUAL_LABELS[m.qualifikation] || m.qualifikation)}</td>
+            <td>${escapeHtml(m.bemerkung || '\u2014')}</td>
+        </tr>`;
+    });
+
+    html += '</tbody></table>';
+    html += '<div style="margin-top:1.5rem;font-size:9pt;color:#666"><strong>Notrufnummern:</strong> Polizei: 110 | Feuerwehr/Rettung: 112 | Leitstelle B.B. Protect: ___________</div>';
+    html += printFooter();
+
+    document.getElementById('printArea').innerHTML = html;
+    window.print();
+}
+
+// =============================================
+// WACHBUCH
+// =============================================
+const WB_KATEGORIEN = {
+    rundgang: 'Kontrollrundgang',
+    schichtuebergabe: 'Schichtübergabe',
+    zugang: 'Zugangsüberwachung',
+    schliessung: 'Schließdienst',
+    alarm: 'Alarm / Störung',
+    besucher: 'Besucherverkehr',
+    lieferung: 'Lieferung / Anlieferung',
+    sonstiges: 'Sonstiges'
+};
+
+document.getElementById('wachbuchForm').addEventListener('submit', function (e) {
+    e.preventDefault();
+
+    const eintrag = {
+        id: Date.now(),
+        datum: document.getElementById('wbDatum').value,
+        zeit: document.getElementById('wbZeit').value,
+        objekt: document.getElementById('wbObjekt').value.trim(),
+        kategorie: document.getElementById('wbKategorie').value,
+        mitarbeiter: document.getElementById('wbMitarbeiter').value.trim(),
+        eintrag: document.getElementById('wbEintrag').value.trim()
+    };
+
+    if (!eintrag.datum || !eintrag.zeit || !eintrag.objekt || !eintrag.eintrag) return;
+
+    wachbuch.push(eintrag);
+    localStorage.setItem('bbprotect_wachbuch', JSON.stringify(wachbuch));
+    renderWachbuch();
+    this.reset();
+    document.getElementById('wbDatum').valueAsDate = new Date();
+    const jetzt = new Date();
+    document.getElementById('wbZeit').value = `${String(jetzt.getHours()).padStart(2, '0')}:${String(jetzt.getMinutes()).padStart(2, '0')}`;
+});
+
+function renderWachbuch() {
+    const content = document.getElementById('wachbuchContent');
+    const empty = document.getElementById('wachbuchEmpty');
+    if (!content) return;
+
+    // Objekt-Filter aktualisieren
+    const filterObjekt = document.getElementById('wbFilterObjekt');
+    const objNames = new Set(wachbuch.map(w => w.objekt));
+    const current = filterObjekt.value;
+    filterObjekt.innerHTML = '<option value="">Alle Objekte</option>';
+    Array.from(objNames).sort().forEach(name => {
+        const opt = document.createElement('option');
+        opt.value = name;
+        opt.textContent = name;
+        filterObjekt.appendChild(opt);
+    });
+    filterObjekt.value = current;
+
+    const filterO = filterObjekt.value;
+    const filterD = document.getElementById('wbFilterDatum').value;
+
+    let gefiltert = wachbuch;
+    if (filterO) gefiltert = gefiltert.filter(w => w.objekt === filterO);
+    if (filterD) gefiltert = gefiltert.filter(w => w.datum === filterD);
+
+    if (gefiltert.length === 0) {
+        content.innerHTML = '';
+        empty.style.display = 'block';
+        return;
+    }
+    empty.style.display = 'none';
+
+    // Sortiere nach Datum/Zeit absteigend
+    gefiltert.sort((a, b) => b.datum.localeCompare(a.datum) || b.zeit.localeCompare(a.zeit));
+
+    // Gruppiere nach Datum
+    const gruppen = {};
+    gefiltert.forEach(w => {
+        if (!gruppen[w.datum]) gruppen[w.datum] = [];
+        gruppen[w.datum].push(w);
+    });
+
+    let html = '';
+    Object.entries(gruppen).forEach(([datum, eintraege]) => {
+        const wochentage = ['Sonntag', 'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag'];
+        const wt = wochentage[new Date(datum).getDay()];
+
+        html += `<div class="wb-tag">
+            <div class="wb-tag-header">${wt}, ${formatDatum(datum)} (${eintraege.length} Einträge)</div>`;
+
+        eintraege.forEach(w => {
+            html += `<div class="wb-eintrag">
+                <div class="wb-eintrag-header">
+                    <span class="wb-zeit">${w.zeit} Uhr</span>
+                    <span class="wb-kat">${escapeHtml(WB_KATEGORIEN[w.kategorie] || w.kategorie)}</span>
+                    <span class="wb-objekt">${escapeHtml(w.objekt)}</span>
+                    ${w.mitarbeiter ? '<span class="wb-ma">' + escapeHtml(w.mitarbeiter) + '</span>' : ''}
+                </div>
+                <p class="wb-text">${escapeHtml(w.eintrag)}</p>
+                <button class="btn-delete btn-small" onclick="loescheWachbuchEintrag(${w.id})">Löschen</button>
+            </div>`;
+        });
+
+        html += '</div>';
+    });
+
+    content.innerHTML = html;
+}
+
+function loescheWachbuchEintrag(id) {
+    if (!confirm('Diesen Wachbuch-Eintrag wirklich löschen?')) return;
+    wachbuch = wachbuch.filter(w => w.id !== id);
+    localStorage.setItem('bbprotect_wachbuch', JSON.stringify(wachbuch));
+    renderWachbuch();
+}
+
+function druckeWachbuch() {
+    const filterO = document.getElementById('wbFilterObjekt').value;
+    const filterD = document.getElementById('wbFilterDatum').value;
+
+    let gefiltert = wachbuch;
+    if (filterO) gefiltert = gefiltert.filter(w => w.objekt === filterO);
+    if (filterD) gefiltert = gefiltert.filter(w => w.datum === filterD);
+
+    if (gefiltert.length === 0) { alert('Keine Einträge zum Drucken.'); return; }
+
+    gefiltert.sort((a, b) => a.datum.localeCompare(b.datum) || a.zeit.localeCompare(b.zeit));
+
+    let titel = 'Wachbuch';
+    if (filterO) titel += ' \u2014 ' + filterO;
+
+    let html = printHeader(titel);
+    html += '<table><thead><tr><th>Datum</th><th>Zeit</th><th>Objekt</th><th>Kategorie</th><th>Mitarbeiter</th><th>Eintrag</th></tr></thead><tbody>';
+
+    gefiltert.forEach(w => {
+        html += `<tr>
+            <td>${formatDatum(w.datum)}</td>
+            <td>${w.zeit}</td>
+            <td>${escapeHtml(w.objekt)}</td>
+            <td>${escapeHtml(WB_KATEGORIEN[w.kategorie] || w.kategorie)}</td>
+            <td>${escapeHtml(w.mitarbeiter || '\u2014')}</td>
+            <td>${escapeHtml(w.eintrag)}</td>
+        </tr>`;
+    });
+
+    html += '</tbody></table>' + printFooter();
+    document.getElementById('printArea').innerHTML = html;
+    window.print();
+}
+
+// =============================================
 // INITIALISIERUNG
 // =============================================
 document.getElementById('datum').valueAsDate = new Date();
@@ -2432,3 +2779,6 @@ renderVerfuegbarkeit();
 updateHeaderStats();
 pruefeBenachrichtigungen();
 document.getElementById('vfDatum').valueAsDate = new Date();
+document.getElementById('wbDatum').valueAsDate = new Date();
+const jetztInit = new Date();
+document.getElementById('wbZeit').value = `${String(jetztInit.getHours()).padStart(2, '0')}:${String(jetztInit.getMinutes()).padStart(2, '0')}`;

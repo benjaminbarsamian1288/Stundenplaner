@@ -2386,6 +2386,306 @@ body.dark-mode .status-storniert {
     border: 1px solid #2b6cb0;
 }
 
+/* Jahresübersicht */
+.jahres-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.75rem;
+    margin-top: 1rem;
+}
+
+.jahres-monat {
+    background: #f7fafc;
+    border-radius: 8px;
+    padding: 0.5rem;
+    border: 1px solid #e2e8f0;
+}
+
+.jahres-monat-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.3rem 0.4rem;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: background 0.15s;
+}
+
+.jahres-monat-header:hover {
+    background: #e2e8f0;
+}
+
+.jahres-count {
+    background: #1a1a2e;
+    color: #fff;
+    padding: 0.1rem 0.4rem;
+    border-radius: 10px;
+    font-size: 0.65rem;
+    font-weight: 700;
+}
+
+.jahres-mini-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 1px;
+    margin-top: 0.3rem;
+}
+
+.jm-header {
+    text-align: center;
+    font-size: 0.5rem;
+    font-weight: 700;
+    color: #a0aec0;
+    padding: 0.1rem;
+}
+
+.jm-tag {
+    text-align: center;
+    font-size: 0.55rem;
+    padding: 0.1rem;
+    border-radius: 2px;
+    cursor: default;
+}
+
+.jm-leer {
+    padding: 0.1rem;
+}
+
+.jm-aktiv {
+    background: #ebf8ff;
+    color: #2b6cb0;
+    font-weight: 700;
+}
+
+.jm-heute {
+    background: #1a1a2e;
+    color: #fff;
+    font-weight: 700;
+}
+
+.jm-feiertag {
+    color: #c53030;
+}
+
+.jm-we {
+    color: #a0aec0;
+}
+
+.jahres-monat-footer {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.6rem;
+    color: #718096;
+    padding: 0.2rem 0.4rem 0;
+    margin-top: 0.2rem;
+    border-top: 1px solid #e2e8f0;
+}
+
+/* Überstunden */
+.ue-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.4rem 0;
+    border-bottom: 1px solid #f0f2f5;
+}
+
+.ue-name {
+    width: 140px;
+    font-weight: 600;
+    font-size: 0.85rem;
+    flex-shrink: 0;
+}
+
+.ue-bar-bg {
+    flex: 1;
+    height: 10px;
+    background: #e2e8f0;
+    border-radius: 5px;
+    display: flex;
+    overflow: visible;
+    position: relative;
+}
+
+.ue-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #38a169, #48bb78);
+    border-radius: 5px 0 0 5px;
+    transition: width 0.3s;
+}
+
+.ue-bar-fill.ue-plus {
+    background: linear-gradient(90deg, #38a169, #48bb78);
+}
+
+.ue-bar-fill.ue-minus {
+    background: linear-gradient(90deg, #e53e3e, #fc8181);
+}
+
+.ue-bar-over {
+    height: 100%;
+    background: #ecc94b;
+    border-radius: 0 5px 5px 0;
+}
+
+.ue-werte {
+    width: 200px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.8rem;
+    flex-shrink: 0;
+}
+
+/* Kontaktliste */
+.kontakt-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 0.5rem;
+}
+
+.kontakt-card {
+    background: #f7fafc;
+    border-radius: 6px;
+    padding: 0.6rem 0.8rem;
+    border: 1px solid #e2e8f0;
+}
+
+.kontakt-name {
+    font-weight: 700;
+    font-size: 0.9rem;
+    margin-bottom: 0.3rem;
+}
+
+.kontakt-details {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    font-size: 0.8rem;
+    color: #718096;
+}
+
+/* Wachbuch */
+.wb-tag {
+    margin-bottom: 1rem;
+}
+
+.wb-tag-header {
+    background: #1a1a2e;
+    color: #fff;
+    padding: 0.5rem 0.8rem;
+    border-radius: 6px 6px 0 0;
+    font-weight: 600;
+    font-size: 0.85rem;
+}
+
+.wb-eintrag {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-top: none;
+    padding: 0.6rem 0.8rem;
+}
+
+.wb-eintrag:last-child {
+    border-radius: 0 0 6px 6px;
+}
+
+.wb-eintrag-header {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+    margin-bottom: 0.3rem;
+    flex-wrap: wrap;
+}
+
+.wb-zeit {
+    font-weight: 700;
+    font-size: 0.85rem;
+}
+
+.wb-kat {
+    background: #ebf8ff;
+    color: #2b6cb0;
+    padding: 0.1rem 0.4rem;
+    border-radius: 3px;
+    font-size: 0.7rem;
+    font-weight: 600;
+}
+
+.wb-objekt {
+    font-size: 0.8rem;
+    color: #718096;
+}
+
+.wb-ma {
+    font-size: 0.8rem;
+    color: #4a5568;
+    font-weight: 600;
+}
+
+.wb-text {
+    font-size: 0.85rem;
+    line-height: 1.4;
+    margin-bottom: 0.3rem;
+}
+
+/* Dark mode - Neue Elemente */
+body.dark-mode .jahres-monat {
+    background: #0d1117;
+    border-color: #21262d;
+}
+
+body.dark-mode .jahres-monat-header:hover {
+    background: #21262d;
+}
+
+body.dark-mode .jahres-count {
+    background: #1f6feb;
+}
+
+body.dark-mode .jm-aktiv {
+    background: #0d2137;
+    color: #388bfd;
+}
+
+body.dark-mode .jm-heute {
+    background: #1f6feb;
+}
+
+body.dark-mode .jahres-monat-footer {
+    border-top-color: #21262d;
+}
+
+body.dark-mode .ue-bar-bg {
+    background: #21262d;
+}
+
+body.dark-mode .kontakt-card {
+    background: #0d1117;
+    border-color: #21262d;
+}
+
+body.dark-mode .kontakt-name {
+    color: #c9d1d9;
+}
+
+body.dark-mode .wb-tag-header {
+    background: #21262d;
+}
+
+body.dark-mode .wb-eintrag {
+    background: #161b22;
+    border-color: #21262d;
+}
+
+body.dark-mode .wb-kat {
+    background: #0d2137;
+    color: #388bfd;
+}
+
+body.dark-mode .wb-text {
+    color: #c9d1d9;
+}
+
 footer {
     text-align: center;
     padding: 2rem 1rem;
@@ -2521,5 +2821,27 @@ footer {
 
     .modal-content {
         max-height: 90vh;
+    }
+
+    .jahres-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .ue-row {
+        flex-wrap: wrap;
+    }
+
+    .ue-name {
+        width: 100%;
+    }
+
+    .ue-werte {
+        width: 100%;
+    }
+
+    .wb-eintrag-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.3rem;
     }
 }
