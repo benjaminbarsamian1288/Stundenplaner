@@ -86,14 +86,14 @@ document.querySelectorAll('.nav-btn').forEach(btn => {
         this.classList.add('active');
         document.getElementById('tab-' + this.dataset.tab).classList.add('active');
 
-        if (this.dataset.tab === 'dashboard') { updateDashboard(); renderEinsatzChronik(); renderEinsatzAnalytics(); renderWochenReport(); renderEinsatzTimeline(); renderKostenTrend(); renderObjektUmsatzRanking(); renderStundenkontoChart(); renderDashboardKacheln(); renderSchichtplanVorschau(); renderErweiterteStatistik(); renderTagesPersonal(); renderWetterWidget(); renderDauerStatistik(); }
-        if (this.dataset.tab === 'objekte') { renderObjekte(); renderVertraege(); renderObjektAuslastung(); updateChecklisteObjekte(); updateObjektHistorieSelect(); updateObjektKontakteSelect(); renderObjektKontakte(); updateObjektAnweisungenSelect(); renderObjektAnweisungen(); updateObjektKostenMonat(); renderObjektKostenanalyse(); renderVertragsCountdown(); updateRevierplanSelect(); renderRevierplan(); updateBesObjektSelect(); renderBesichtigungen(); updateInfokarteSelect(); updateWetterObjektSelects(); renderWetterNotizen(); updateObjektChecklisteSelect(); renderObjektCheckliste(); renderVertragslaufzeitBalken(); updateZugangshinweiseSelect(); renderZugangshinweise(); updateObjektBewertungSelect(); renderObjektBewertungen(); updateObjektNotfallSelects(); renderObjektNotfallKontakte(); }
+        if (this.dataset.tab === 'dashboard') { updateDashboard(); renderEinsatzChronik(); renderEinsatzAnalytics(); renderWochenReport(); renderEinsatzTimeline(); renderKostenTrend(); renderObjektUmsatzRanking(); renderStundenkontoChart(); renderDashboardKacheln(); renderSchichtplanVorschau(); renderErweiterteStatistik(); renderTagesPersonal(); renderWetterWidget(); renderDauerStatistik(); renderStornoquote(); }
+        if (this.dataset.tab === 'objekte') { renderObjekte(); renderVertraege(); renderObjektAuslastung(); updateChecklisteObjekte(); updateObjektHistorieSelect(); updateObjektKontakteSelect(); renderObjektKontakte(); updateObjektAnweisungenSelect(); renderObjektAnweisungen(); updateObjektKostenMonat(); renderObjektKostenanalyse(); renderVertragsCountdown(); updateRevierplanSelect(); renderRevierplan(); updateBesObjektSelect(); renderBesichtigungen(); updateInfokarteSelect(); updateWetterObjektSelects(); renderWetterNotizen(); updateObjektChecklisteSelect(); renderObjektCheckliste(); renderVertragslaufzeitBalken(); updateZugangshinweiseSelect(); renderZugangshinweise(); updateObjektBewertungSelect(); renderObjektBewertungen(); updateObjektNotfallSelects(); renderObjektNotfallKontakte(); updateObjektEinsatzKalSelects(); renderObjektEinsatzKalender(); }
         if (this.dataset.tab === 'kalender') { renderKalender(); renderDienstplan(); renderJahresuebersicht(); }
         if (this.dataset.tab === 'abrechnung') { updateAbrechnung(); updateLohnvorschauSelects(); renderDuplikatCheck(); renderBewertungsUebersicht(); updateMonatsabschlussSelect(); renderMonatsabschluss(); updateCSVExportFilter(); }
-        if (this.dataset.tab === 'mitarbeiter') { renderMitarbeiter(); renderDokumente(); renderUeberstunden(); renderKontaktliste(); renderUrlaubskonto(); renderArbeitszeitkonto(); renderQualMatrix(); updateSchichtHistorieSelect(); renderNotfallkontakte(); updateMAKalSelect(); renderVerfuegbarkeitWoche(); renderDoppelschichtWarnungen(); renderMALeistung(); renderKrankenstatistik(); renderGeburtstageJubilaeen(); renderMASkills(); renderTauschBoard(); renderMAVerfuegbarkeitsKalender(); renderNachrichtenBoard(); renderZertifikateTracker(); renderJahresarbeitszeitkonto(); renderUeberstundenWarnung(); renderMAEinsatzHeatmap(); }
+        if (this.dataset.tab === 'mitarbeiter') { renderMitarbeiter(); renderDokumente(); renderUeberstunden(); renderKontaktliste(); renderUrlaubskonto(); renderArbeitszeitkonto(); renderQualMatrix(); updateSchichtHistorieSelect(); renderNotfallkontakte(); updateMAKalSelect(); renderVerfuegbarkeitWoche(); renderDoppelschichtWarnungen(); renderMALeistung(); renderKrankenstatistik(); renderGeburtstageJubilaeen(); renderMASkills(); renderTauschBoard(); renderMAVerfuegbarkeitsKalender(); renderNachrichtenBoard(); renderZertifikateTracker(); renderJahresarbeitszeitkonto(); renderUeberstundenWarnung(); renderMAEinsatzHeatmap(); renderMAFavoritobjekte(); }
         if (this.dataset.tab === 'vorfaelle') { renderVorfaelle(); renderVorfallsStatistik(); }
         if (this.dataset.tab === 'wachbuch') { renderWachbuch(); renderUebergaben(); renderWachbuchStats(); updateSchichtUebergabeSelects(); renderSchichtUebergaben(); renderTagesprotokoll(); }
-        if (this.dataset.tab === 'einstellungen') { updateDatenStats(); updateSpeicherStats(); ladeEinstellungen(); renderAuditLog(); renderSondernotizen(); renderFeiertagsKalender(); renderSpeicherStatistik(); renderDatenChangelog(); }
+        if (this.dataset.tab === 'einstellungen') { updateDatenStats(); updateSpeicherStats(); ladeEinstellungen(); renderAuditLog(); renderSondernotizen(); renderFeiertagsKalender(); renderSpeicherStatistik(); renderDatenChangelog(); renderAutoErinnerungen(); }
     });
 });
 
@@ -9592,6 +9592,264 @@ function druckeTagesprotokoll() {
 }
 
 // =============================================
+// EINSATZ-STORNOQUOTE
+// =============================================
+function renderStornoquote() {
+    const el = document.getElementById('stornoquoteContent');
+    if (!el) return;
+
+    const total = einsaetze.length;
+    if (total === 0) {
+        el.innerHTML = '<span style="color:#a0aec0;font-size:0.8rem">Keine Einsätze vorhanden</span>';
+        return;
+    }
+
+    const storniert = einsaetze.filter(e => e.status === 'storniert').length;
+    const quote = ((storniert / total) * 100).toFixed(1);
+
+    // Letzten 3 Monate vs. davor
+    const heute = new Date();
+    const vor3Mon = new Date(heute.getFullYear(), heute.getMonth() - 3, 1).toISOString().split('T')[0];
+    const vor6Mon = new Date(heute.getFullYear(), heute.getMonth() - 6, 1).toISOString().split('T')[0];
+
+    const letzte3 = einsaetze.filter(e => e.datum >= vor3Mon);
+    const davor3 = einsaetze.filter(e => e.datum >= vor6Mon && e.datum < vor3Mon);
+
+    const quote3 = letzte3.length > 0 ? ((letzte3.filter(e => e.status === 'storniert').length / letzte3.length) * 100).toFixed(1) : '0.0';
+    const quoteDavor = davor3.length > 0 ? ((davor3.filter(e => e.status === 'storniert').length / davor3.length) * 100).toFixed(1) : '0.0';
+
+    const trend = parseFloat(quote3) - parseFloat(quoteDavor);
+    const trendIcon = trend > 0 ? '📈' : trend < 0 ? '📉' : '➡️';
+    const trendColor = trend > 0 ? '#e53e3e' : trend < 0 ? '#38a169' : '#718096';
+
+    let html = '<div class="sq-grid">';
+    html += `<div class="sq-card"><div class="sq-val">${quote}%</div><div class="sq-lbl">Gesamt-Stornoquote</div><div class="sq-sub">${storniert} von ${total} Einsätzen</div></div>`;
+    html += `<div class="sq-card"><div class="sq-val">${quote3}%</div><div class="sq-lbl">Letzte 3 Monate</div><div class="sq-sub">${letzte3.filter(e => e.status === 'storniert').length} von ${letzte3.length}</div></div>`;
+    html += `<div class="sq-card"><div class="sq-val" style="color:${trendColor}">${trendIcon} ${trend > 0 ? '+' : ''}${trend.toFixed(1)}%</div><div class="sq-lbl">Trend</div><div class="sq-sub">vs. vorherige 3 Monate</div></div>`;
+    html += '</div>';
+    el.innerHTML = html;
+}
+
+// =============================================
+// MA-FAVORITOBJEKTE
+// =============================================
+function renderMAFavoritobjekte() {
+    const el = document.getElementById('maFavoritContent');
+    if (!el) return;
+
+    // Pro MA: zähle Einsätze pro Objekt
+    const maObjekte = {};
+    einsaetze.forEach(e => {
+        if (!e.mitarbeiter || !e.objekt) return;
+        if (!maObjekte[e.mitarbeiter]) maObjekte[e.mitarbeiter] = {};
+        maObjekte[e.mitarbeiter][e.objekt] = (maObjekte[e.mitarbeiter][e.objekt] || 0) + 1;
+    });
+
+    const ranking = Object.entries(maObjekte).map(([ma, objekte]) => {
+        const sorted = Object.entries(objekte).sort((a, b) => b[1] - a[1]);
+        const top = sorted[0];
+        const totalEinsaetze = sorted.reduce((s, [, c]) => s + c, 0);
+        return { ma, topObjekt: top[0], topCount: top[1], totalEinsaetze, anzahlObjekte: sorted.length };
+    }).sort((a, b) => b.topCount - a.topCount);
+
+    if (ranking.length === 0) {
+        el.innerHTML = '<span style="color:#a0aec0;font-size:0.8rem">Keine MA-Einsatzdaten vorhanden.</span>';
+        return;
+    }
+
+    let html = '<div class="mf-list">';
+    ranking.slice(0, 15).forEach(r => {
+        const pct = r.totalEinsaetze > 0 ? ((r.topCount / r.totalEinsaetze) * 100).toFixed(0) : 0;
+        html += `<div class="mf-row">
+            <span class="mf-ma">${escapeHtml(r.ma)}</span>
+            <span class="mf-obj">⭐ ${escapeHtml(r.topObjekt)}</span>
+            <span class="mf-count">${r.topCount}x (${pct}%)</span>
+            <span class="mf-info">${r.anzahlObjekte} Obj. / ${r.totalEinsaetze} Eins.</span>
+        </div>`;
+    });
+    html += '</div>';
+    el.innerHTML = html;
+}
+
+// =============================================
+// OBJEKT-EINSATZ-KALENDER
+// =============================================
+function renderObjektEinsatzKalender() {
+    const el = document.getElementById('oekContent');
+    if (!el) return;
+
+    const objekt = document.getElementById('oekObjekt') ? document.getElementById('oekObjekt').value : '';
+    const monatStr = document.getElementById('oekMonat') ? document.getElementById('oekMonat').value : '';
+
+    if (!objekt || !monatStr) {
+        el.innerHTML = '<span style="color:#a0aec0;font-size:0.8rem">Objekt und Monat wählen</span>';
+        return;
+    }
+
+    const [jahr, monat] = monatStr.split('-').map(Number);
+    const ersterTag = new Date(jahr, monat - 1, 1);
+    const letzterTag = new Date(jahr, monat, 0);
+    const tageImMonat = letzterTag.getDate();
+
+    let startTag = ersterTag.getDay() - 1;
+    if (startTag < 0) startTag = 6;
+
+    const objektEinsaetze = einsaetze.filter(e => e.objekt === objekt);
+    const einsatzTage = {};
+    objektEinsaetze.forEach(e => {
+        if (!e.datum) return;
+        if (!einsatzTage[e.datum]) einsatzTage[e.datum] = [];
+        einsatzTage[e.datum].push(e);
+    });
+
+    const tagLabels = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
+    let html = '<table class="oek-cal"><thead><tr>';
+    tagLabels.forEach(t => { html += `<th>${t}</th>`; });
+    html += '</tr></thead><tbody><tr>';
+
+    for (let i = 0; i < startTag; i++) html += '<td></td>';
+
+    for (let d = 1; d <= tageImMonat; d++) {
+        const datum = `${jahr}-${String(monat).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+        const tagesE = einsatzTage[datum] || [];
+        const cls = tagesE.length > 0 ? 'oek-day oek-has' : 'oek-day';
+        const title = tagesE.length > 0 ? tagesE.map(e => `${e.zeitVon}-${e.zeitBis} ${e.mitarbeiter || ''}`).join('\n') : '';
+        html += `<td class="${cls}" title="${escapeHtml(title)}">${d}${tagesE.length > 0 ? '<span class="oek-count">' + tagesE.length + '</span>' : ''}</td>`;
+
+        if ((startTag + d) % 7 === 0 && d < tageImMonat) html += '</tr><tr>';
+    }
+
+    const rest = (startTag + tageImMonat) % 7;
+    if (rest > 0) for (let i = rest; i < 7; i++) html += '<td></td>';
+    html += '</tr></tbody></table>';
+
+    const totalMo = objektEinsaetze.filter(e => e.datum && e.datum.startsWith(monatStr)).length;
+    const totalStd = objektEinsaetze.filter(e => e.datum && e.datum.startsWith(monatStr)).reduce((s, e) => s + (e.stunden || 0), 0);
+    html += `<div class="oek-summary">${totalMo} Einsätze / ${formatZahl(totalStd)} Std. im ${MONATSNAMEN[monat - 1]} ${jahr}</div>`;
+
+    el.innerHTML = html;
+}
+
+function updateObjektEinsatzKalSelects() {
+    const sel = document.getElementById('oekObjekt');
+    if (!sel) return;
+    const val = sel.value;
+    sel.innerHTML = '<option value="">Objekt wählen...</option>' + objekte.map(o => `<option value="${escapeHtml(o.name)}">${escapeHtml(o.name)}</option>`).join('');
+    sel.value = val;
+}
+
+// =============================================
+// WACHBUCH-SUCHFUNKTION
+// =============================================
+function wachbuchSuchen() {
+    const el = document.getElementById('wbSucheErgebnis');
+    if (!el) return;
+
+    const suchtext = (document.getElementById('wbSuche') ? document.getElementById('wbSuche').value : '').toLowerCase().trim();
+    if (suchtext.length < 2) {
+        el.innerHTML = '<span style="color:#a0aec0;font-size:0.75rem">Mindestens 2 Zeichen eingeben</span>';
+        return;
+    }
+
+    const treffer = wachbuch.filter(w => {
+        return (w.eintrag || '').toLowerCase().includes(suchtext) ||
+               (w.objekt || '').toLowerCase().includes(suchtext) ||
+               (w.mitarbeiter || '').toLowerCase().includes(suchtext) ||
+               (w.kategorie || '').toLowerCase().includes(suchtext);
+    }).slice(0, 20);
+
+    if (treffer.length === 0) {
+        el.innerHTML = '<span style="color:#a0aec0;font-size:0.75rem">Keine Treffer</span>';
+        return;
+    }
+
+    let html = `<div class="wbs-info">${treffer.length} Treffer${treffer.length === 20 ? ' (max. 20 angezeigt)' : ''}</div>`;
+    html += '<div class="wbs-list">';
+    treffer.forEach(w => {
+        const text = (w.eintrag || '').substring(0, 100);
+        const highlighted = text.replace(new RegExp('(' + suchtext.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')', 'gi'), '<mark>$1</mark>');
+        html += `<div class="wbs-item">
+            <span class="wbs-date">${formatDatum(w.datum)} ${w.zeit || ''}</span>
+            <span class="wbs-obj">${escapeHtml(w.objekt)}</span>
+            <span class="wbs-text">${highlighted}</span>
+        </div>`;
+    });
+    html += '</div>';
+    el.innerHTML = html;
+}
+
+// =============================================
+// AUTO-ERINNERUNGEN (Ablaufende Dokumente/Zertifikate)
+// =============================================
+function renderAutoErinnerungen() {
+    const el = document.getElementById('autoErinnerungenContent');
+    if (!el) return;
+
+    const heute = new Date().toISOString().split('T')[0];
+    const in30 = new Date(Date.now() + 30 * 86400000).toISOString().split('T')[0];
+    const in60 = new Date(Date.now() + 60 * 86400000).toISOString().split('T')[0];
+
+    const warnungen = [];
+
+    // Dokumente prüfen
+    dokumente.forEach(d => {
+        if (!d.gueltigBis) return;
+        if (d.gueltigBis < heute) {
+            warnungen.push({ typ: 'abgelaufen', icon: '🔴', bereich: 'Dokument', ma: d.mitarbeiter, detail: `${d.typ} abgelaufen seit ${formatDatum(d.gueltigBis)}`, datum: d.gueltigBis });
+        } else if (d.gueltigBis <= in30) {
+            warnungen.push({ typ: 'bald', icon: '🟡', bereich: 'Dokument', ma: d.mitarbeiter, detail: `${d.typ} läuft ab am ${formatDatum(d.gueltigBis)}`, datum: d.gueltigBis });
+        } else if (d.gueltigBis <= in60) {
+            warnungen.push({ typ: 'info', icon: '🟢', bereich: 'Dokument', ma: d.mitarbeiter, detail: `${d.typ} läuft ab am ${formatDatum(d.gueltigBis)}`, datum: d.gueltigBis });
+        }
+    });
+
+    // Zertifikate prüfen
+    maZertifikate.forEach(z => {
+        if (!z.ablauf) return;
+        if (z.ablauf < heute) {
+            warnungen.push({ typ: 'abgelaufen', icon: '🔴', bereich: 'Zertifikat', ma: z.ma, detail: `${z.bezeichnung} abgelaufen seit ${formatDatum(z.ablauf)}`, datum: z.ablauf });
+        } else if (z.ablauf <= in30) {
+            warnungen.push({ typ: 'bald', icon: '🟡', bereich: 'Zertifikat', ma: z.ma, detail: `${z.bezeichnung} läuft ab am ${formatDatum(z.ablauf)}`, datum: z.ablauf });
+        } else if (z.ablauf <= in60) {
+            warnungen.push({ typ: 'info', icon: '🟢', bereich: 'Zertifikat', ma: z.ma, detail: `${z.bezeichnung} läuft ab am ${formatDatum(z.ablauf)}`, datum: z.ablauf });
+        }
+    });
+
+    // MA-Qualifikation prüfen
+    mitarbeiterListe_.forEach(m => {
+        if (!m.qualAblauf) return;
+        if (m.qualAblauf < heute) {
+            warnungen.push({ typ: 'abgelaufen', icon: '🔴', bereich: 'Qualifikation', ma: m.name, detail: `Qualifikation abgelaufen seit ${formatDatum(m.qualAblauf)}`, datum: m.qualAblauf });
+        } else if (m.qualAblauf <= in30) {
+            warnungen.push({ typ: 'bald', icon: '🟡', bereich: 'Qualifikation', ma: m.name, detail: `Qualifikation läuft ab am ${formatDatum(m.qualAblauf)}`, datum: m.qualAblauf });
+        }
+    });
+
+    warnungen.sort((a, b) => {
+        const order = { abgelaufen: 0, bald: 1, info: 2 };
+        return (order[a.typ] || 3) - (order[b.typ] || 3) || a.datum.localeCompare(b.datum);
+    });
+
+    if (warnungen.length === 0) {
+        el.innerHTML = '<span style="color:#38a169;font-size:0.8rem">✅ Keine ablaufenden Dokumente oder Zertifikate.</span>';
+        return;
+    }
+
+    let html = `<div class="ae-header">${warnungen.filter(w => w.typ === 'abgelaufen').length} abgelaufen | ${warnungen.filter(w => w.typ === 'bald').length} in 30 Tagen | ${warnungen.filter(w => w.typ === 'info').length} in 60 Tagen</div>`;
+    html += '<div class="ae-list">';
+    warnungen.forEach(w => {
+        html += `<div class="ae-item ae-${w.typ}">
+            <span class="ae-icon">${w.icon}</span>
+            <span class="ae-bereich">${escapeHtml(w.bereich)}</span>
+            <span class="ae-ma">${escapeHtml(w.ma)}</span>
+            <span class="ae-detail">${escapeHtml(w.detail)}</span>
+        </div>`;
+    });
+    html += '</div>';
+    el.innerHTML = html;
+}
+
+// =============================================
 // DATEN-CHANGELOG
 // =============================================
 let datenChangelog = JSON.parse(localStorage.getItem('bbprotect_changelog') || '[]');
@@ -9759,6 +10017,7 @@ document.getElementById('tpDatum').valueAsDate = new Date();
 document.getElementById('jazkJahr').value = new Date().getFullYear();
 document.getElementById('dpStartDatum').valueAsDate = new Date();
 document.getElementById('tprtDatum').valueAsDate = new Date();
+document.getElementById('oekMonat').value = new Date().toISOString().substring(0, 7);
 const jetztInit = new Date();
 document.getElementById('wbZeit').value = `${String(jetztInit.getHours()).padStart(2, '0')}:${String(jetztInit.getMinutes()).padStart(2, '0')}`;
 document.getElementById('ugZeit').value = `${String(jetztInit.getHours()).padStart(2, '0')}:${String(jetztInit.getMinutes()).padStart(2, '0')}`;

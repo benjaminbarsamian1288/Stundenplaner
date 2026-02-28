@@ -9496,6 +9496,351 @@ body.dark-mode .cl-detail {
     color: #cbd5e0;
 }
 
+/* =============================================
+   EINSATZ-STORNOQUOTE
+   ============================================= */
+.sq-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.75rem;
+}
+
+.sq-card {
+    text-align: center;
+    padding: 0.75rem;
+    background: #f7fafc;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+}
+
+body.dark-mode .sq-card {
+    background: #2d3748;
+    border-color: #4a5568;
+}
+
+.sq-val {
+    font-size: 1.4rem;
+    font-weight: 800;
+    color: #2d3748;
+}
+
+body.dark-mode .sq-val {
+    color: #e2e8f0;
+}
+
+.sq-lbl {
+    font-size: 0.7rem;
+    color: #718096;
+    margin-top: 0.2rem;
+}
+
+body.dark-mode .sq-lbl {
+    color: #a0aec0;
+}
+
+.sq-sub {
+    font-size: 0.65rem;
+    color: #a0aec0;
+    margin-top: 0.1rem;
+}
+
+/* =============================================
+   MA-FAVORITOBJEKTE
+   ============================================= */
+.mf-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+}
+
+.mf-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.4rem 0.6rem;
+    background: #f7fafc;
+    border-radius: 6px;
+    font-size: 0.8rem;
+}
+
+body.dark-mode .mf-row {
+    background: #2d3748;
+}
+
+.mf-ma {
+    font-weight: 700;
+    color: #2d3748;
+    min-width: 120px;
+}
+
+body.dark-mode .mf-ma {
+    color: #e2e8f0;
+}
+
+.mf-obj {
+    flex: 1;
+    color: #4299e1;
+    font-weight: 600;
+}
+
+.mf-count {
+    font-weight: 700;
+    color: #38a169;
+    min-width: 70px;
+    text-align: right;
+}
+
+.mf-info {
+    font-size: 0.65rem;
+    color: #a0aec0;
+    min-width: 90px;
+    text-align: right;
+}
+
+/* =============================================
+   OBJEKT-EINSATZ-KALENDER
+   ============================================= */
+.oek-cal {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.8rem;
+}
+
+.oek-cal th {
+    font-size: 0.7rem;
+    color: #718096;
+    padding: 0.3rem;
+    text-align: center;
+    font-weight: 600;
+}
+
+body.dark-mode .oek-cal th {
+    color: #a0aec0;
+}
+
+.oek-day {
+    text-align: center;
+    padding: 0.4rem 0.2rem;
+    border: 1px solid #edf2f7;
+    font-size: 0.75rem;
+    color: #4a5568;
+    vertical-align: top;
+    position: relative;
+}
+
+body.dark-mode .oek-day {
+    border-color: #4a5568;
+    color: #cbd5e0;
+}
+
+.oek-has {
+    background: #ebf8ff;
+    font-weight: 700;
+    color: #2b6cb0;
+}
+
+body.dark-mode .oek-has {
+    background: #2a4365;
+    color: #63b3ed;
+}
+
+.oek-count {
+    position: absolute;
+    top: 1px;
+    right: 2px;
+    font-size: 0.55rem;
+    background: #4299e1;
+    color: #fff;
+    border-radius: 50%;
+    width: 14px;
+    height: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+}
+
+.oek-summary {
+    text-align: center;
+    margin-top: 0.5rem;
+    font-size: 0.8rem;
+    color: #4a5568;
+    font-weight: 600;
+}
+
+body.dark-mode .oek-summary {
+    color: #cbd5e0;
+}
+
+/* =============================================
+   WACHBUCH-SUCHFUNKTION
+   ============================================= */
+.wbs-info {
+    font-size: 0.75rem;
+    color: #4299e1;
+    font-weight: 600;
+    margin-bottom: 0.3rem;
+}
+
+.wbs-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+}
+
+.wbs-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.4rem 0.6rem;
+    background: #f7fafc;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    border-left: 3px solid #4299e1;
+}
+
+body.dark-mode .wbs-item {
+    background: #2d3748;
+}
+
+.wbs-date {
+    font-family: monospace;
+    font-size: 0.7rem;
+    color: #718096;
+    min-width: 100px;
+    flex-shrink: 0;
+}
+
+body.dark-mode .wbs-date {
+    color: #a0aec0;
+}
+
+.wbs-obj {
+    font-weight: 700;
+    color: #2d3748;
+    min-width: 80px;
+    flex-shrink: 0;
+}
+
+body.dark-mode .wbs-obj {
+    color: #e2e8f0;
+}
+
+.wbs-text {
+    flex: 1;
+    color: #4a5568;
+}
+
+body.dark-mode .wbs-text {
+    color: #cbd5e0;
+}
+
+.wbs-text mark {
+    background: #fefcbf;
+    padding: 0 2px;
+    border-radius: 2px;
+}
+
+body.dark-mode .wbs-text mark {
+    background: #d69e2e;
+    color: #1a202c;
+}
+
+/* =============================================
+   AUTO-ERINNERUNGEN
+   ============================================= */
+.ae-header {
+    font-size: 0.75rem;
+    color: #718096;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+}
+
+body.dark-mode .ae-header {
+    color: #a0aec0;
+}
+
+.ae-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.ae-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.35rem 0.6rem;
+    border-radius: 6px;
+    font-size: 0.75rem;
+}
+
+.ae-abgelaufen {
+    background: #fff5f5;
+    border-left: 3px solid #e53e3e;
+}
+
+body.dark-mode .ae-abgelaufen {
+    background: #4a1d1d;
+    border-left-color: #fc8181;
+}
+
+.ae-bald {
+    background: #fffff0;
+    border-left: 3px solid #d69e2e;
+}
+
+body.dark-mode .ae-bald {
+    background: #4a3f1d;
+    border-left-color: #f6e05e;
+}
+
+.ae-info {
+    background: #f0fff4;
+    border-left: 3px solid #38a169;
+}
+
+body.dark-mode .ae-info {
+    background: #1d4a2e;
+    border-left-color: #68d391;
+}
+
+.ae-icon {
+    font-size: 0.85rem;
+    flex-shrink: 0;
+}
+
+.ae-bereich {
+    font-weight: 700;
+    color: #4a5568;
+    min-width: 70px;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+}
+
+body.dark-mode .ae-bereich {
+    color: #cbd5e0;
+}
+
+.ae-ma {
+    font-weight: 600;
+    color: #2d3748;
+    min-width: 100px;
+}
+
+body.dark-mode .ae-ma {
+    color: #e2e8f0;
+}
+
+.ae-detail {
+    flex: 1;
+    color: #718096;
+}
+
+body.dark-mode .ae-detail {
+    color: #a0aec0;
+}
+
 @media (max-width: 768px) {
     .ob-item {
         flex-direction: column;
@@ -9522,5 +9867,21 @@ body.dark-mode .cl-detail {
 
     .cl-detail {
         white-space: normal;
+    }
+
+    .sq-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .mf-row {
+        flex-wrap: wrap;
+    }
+
+    .wbs-item {
+        flex-wrap: wrap;
+    }
+
+    .ae-item {
+        flex-wrap: wrap;
     }
 }

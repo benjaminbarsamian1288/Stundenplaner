@@ -763,6 +763,13 @@
                         <div id="dauerStatistikContent"></div>
                     </div>
                 </div>
+
+                <div class="dashboard-details" style="margin-top:1rem">
+                    <div class="detail-card full-width">
+                        <h3>Einsatz-Stornoquote &amp; Trend</h3>
+                        <div id="stornoquoteContent"></div>
+                    </div>
+                </div>
         </div>
 
         <!-- TAB: Objekte -->
@@ -1231,6 +1238,25 @@
                 </div>
                 <button type="button" class="btn-primary" onclick="objektBewertenSpeichern()" style="margin-top:0.5rem">Bewertung abgeben</button>
                 <div id="objektBewertungenContent" style="margin-top:0.5rem"></div>
+            </section>
+
+            <section class="form-section">
+                <div class="list-header">
+                    <h2>Objekt-Einsatz-Kalender</h2>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="oekObjekt">Objekt</label>
+                        <select id="oekObjekt" onchange="renderObjektEinsatzKalender()">
+                            <option value="">Objekt w&auml;hlen...</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="oekMonat">Monat</label>
+                        <input type="month" id="oekMonat" onchange="renderObjektEinsatzKalender()">
+                    </div>
+                </div>
+                <div id="oekContent" style="margin-top:0.5rem"></div>
             </section>
 
             <section class="form-section">
@@ -1769,6 +1795,13 @@
                 </div>
                 <div id="maHeatmapContent"></div>
             </section>
+
+            <section class="form-section">
+                <div class="list-header">
+                    <h2>MA-Favoritobjekte</h2>
+                </div>
+                <div id="maFavoritContent"></div>
+            </section>
         </div>
 
         <!-- TAB: Vorfälle -->
@@ -1971,6 +2004,18 @@
                 <div id="uebergabeContent" style="margin-top:1rem"></div>
             </section>
 
+            <section class="form-section">
+                <div class="list-header">
+                    <h2>Wachbuch-Suche</h2>
+                </div>
+                <div class="form-row">
+                    <div class="form-group" style="flex:3">
+                        <input type="text" id="wbSuche" placeholder="Wachbuch durchsuchen..." oninput="wachbuchSuchen()">
+                    </div>
+                </div>
+                <div id="wbSucheErgebnis" style="margin-top:0.5rem"></div>
+            </section>
+
             <section class="list-section">
                 <div class="list-header">
                     <h2>Wachbuch-Eintr&auml;ge</h2>
@@ -2074,6 +2119,9 @@
                         <input type="number" id="einstWocheMax" step="1" min="1" max="168" placeholder="48" onchange="speichereEinstellungen()">
                     </div>
                 </div>
+
+                <h2 style="margin-top:1.5rem">Auto-Erinnerungen (Ablaufende Dokumente &amp; Zertifikate)</h2>
+                <div id="autoErinnerungenContent" style="margin-bottom:1rem"></div>
 
                 <h2 style="margin-top:1.5rem">Tages-Sondernotizen</h2>
                 <div class="form-row">
