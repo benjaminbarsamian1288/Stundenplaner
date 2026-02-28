@@ -368,6 +368,7 @@
                 <h2>Monats&uuml;bersicht</h2>
                 <div class="dashboard-filter">
                     <select id="dashboardMonat"></select>
+                    <button class="btn-secondary" onclick="exportDashboard()">Dashboard drucken</button>
                 </div>
 
                 <div class="kpi-leiste" id="kpiLeiste"></div>
@@ -1071,6 +1072,13 @@
                 </div>
                 <div id="vorfaelleContent"></div>
                 <p class="empty-message" id="vorfaelleEmpty">Keine Vorfallsberichte vorhanden.</p>
+            </section>
+
+            <section class="form-section">
+                <div class="list-header">
+                    <h2>Vorfallsstatistik</h2>
+                </div>
+                <div id="vorfallsStatsContent"></div>
             </section>
         </div>
 

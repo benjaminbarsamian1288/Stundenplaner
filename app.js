@@ -85,7 +85,7 @@ document.querySelectorAll('.nav-btn').forEach(btn => {
         if (this.dataset.tab === 'kalender') { renderKalender(); renderDienstplan(); renderJahresuebersicht(); }
         if (this.dataset.tab === 'abrechnung') updateAbrechnung();
         if (this.dataset.tab === 'mitarbeiter') { renderMitarbeiter(); renderDokumente(); renderUeberstunden(); renderKontaktliste(); renderUrlaubskonto(); renderArbeitszeitkonto(); renderQualMatrix(); updateSchichtHistorieSelect(); renderNotfallkontakte(); updateMAKalSelect(); }
-        if (this.dataset.tab === 'vorfaelle') renderVorfaelle();
+        if (this.dataset.tab === 'vorfaelle') { renderVorfaelle(); renderVorfallsStatistik(); }
         if (this.dataset.tab === 'wachbuch') { renderWachbuch(); renderUebergaben(); renderWachbuchStats(); }
         if (this.dataset.tab === 'einstellungen') { updateDatenStats(); updateSpeicherStats(); ladeEinstellungen(); }
     });
@@ -506,7 +506,7 @@ function renderTabelle() {
 
         tr.innerHTML = `
             <td class="no-print"><input type="checkbox" class="bulk-cb bulk-item-cb" data-id="${e.id}" onchange="bulkUpdateCount()"></td>
-            <td><span class="ampel" style="background:${getEinsatzAmpel(e).farbe}" title="${getEinsatzAmpel(e).label}"></span>${formatDatum(e.datum)}${e.status && e.status !== 'geplant' ? '<br><span class="status-badge status-' + e.status + '">' + escapeHtml(STATUS_LABELS[e.status] || e.status) + '</span>' : ''}</td>
+            <td><span class="ampel" style="background:${getEinsatzAmpel(e).farbe}" title="${getEinsatzAmpel(e).label}"></span>${formatDatum(e.datum)}${e.status && e.status !== 'geplant' ? '<br><span class="status-badge status-' + e.status + '">' + escapeHtml(STATUS_LABELS[e.status] || e.status) + '</span>' : ''}${renderEinsatzTags(e)}</td>
             <td><span class="obj-farbe" style="background:${getObjektFarbe(e.objekt)}"></span>${escapeHtml(e.objekt)}</td>
             <td>${escapeHtml(e.mitarbeiter || '\u2014')}</td>
             <td>${e.zeitVon}</td>
@@ -1186,8 +1186,9 @@ function renderObjekte() {
             vertragInfo = `<br><span class="vertrag-status-badge ${cls}">${escapeHtml(VERTRAG_STATUS[o.vertragStatus] || o.vertragStatus)}</span>`;
             if (o.vertragNr) vertragInfo += ` <small>${escapeHtml(o.vertragNr)}</small>`;
         }
+        const istFav = favObjekte.includes(o.name);
         tr.innerHTML = `
-            <td>${escapeHtml(o.name)}${vertragInfo}</td>
+            <td><span class="fav-stern ${istFav ? 'fav-aktiv' : ''}" onclick="toggleFavObjekt('${escapeHtml(o.name)}')">${istFav ? '\u2605' : '\u2606'}</span> ${escapeHtml(o.name)}${vertragInfo}</td>
             <td>${escapeHtml(o.adresse || '\u2014')}</td>
             <td>${o.stundensatz ? formatEuro(o.stundensatz) + '/Std.' : '\u2014'}</td>
             <td>${escapeHtml(o.ansprechpartner || '\u2014')}</td>
@@ -5673,6 +5674,175 @@ function speichereEinstellungen() {
         wocheMax: parseFloat(document.getElementById('einstWocheMax').value) || 48
     };
     localStorage.setItem('bbprotect_einstellungen', JSON.stringify(einstellungen));
+}
+
+// =============================================
+// EINSATZ-TAGS
+// =============================================
+const EINSATZ_TAGS = ['VIP', 'Nacht', 'Notfall', 'Doppelt', 'Einarbeitung', 'Sonder'];
+
+function einsatzTagToggle(id, tag) {
+    const e = einsaetze.find(x => x.id === id);
+    if (!e) return;
+    if (!e.tags) e.tags = [];
+    const idx = e.tags.indexOf(tag);
+    if (idx !== -1) e.tags.splice(idx, 1);
+    else e.tags.push(tag);
+    speichern();
+    renderTabelle();
+}
+
+function renderEinsatzTags(einsatz) {
+    if (!einsatz.tags || einsatz.tags.length === 0) return '';
+    return einsatz.tags.map(t => `<span class="etag etag-${t.toLowerCase()}">${escapeHtml(t)}</span>`).join(' ');
+}
+
+// =============================================
+// FAVORITEN-OBJEKTE
+// =============================================
+let favObjekte = JSON.parse(localStorage.getItem('bbprotect_favObjekte') || '[]');
+
+function toggleFavObjekt(name) {
+    const idx = favObjekte.indexOf(name);
+    if (idx !== -1) favObjekte.splice(idx, 1);
+    else favObjekte.push(name);
+    localStorage.setItem('bbprotect_favObjekte', JSON.stringify(favObjekte));
+    renderObjekte();
+}
+
+// =============================================
+// DASHBOARD-EXPORT
+// =============================================
+function exportDashboard() {
+    const filterM = document.getElementById('dashboardMonat').value;
+    const jetzt = new Date();
+    const monat = filterM || `${jetzt.getFullYear()}-${String(jetzt.getMonth() + 1).padStart(2, '0')}`;
+    const [j, m] = monat.split('-');
+
+    let gefiltert = einsaetze;
+    if (filterM) gefiltert = gefiltert.filter(e => e.datum.substring(0, 7) === filterM);
+
+    const totalStd = gefiltert.reduce((s, e) => s + e.stunden, 0);
+    const totalUmsatz = gefiltert.reduce((s, e) => s + e.gesamt, 0);
+    const totalZuschlaege = gefiltert.reduce((s, e) => s + e.zuschlagBetrag, 0);
+    const maSet = new Set(gefiltert.filter(e => e.mitarbeiter).map(e => e.mitarbeiter));
+    const firma = einstellungen.firmenname || 'B.B. Protect';
+
+    let html = printHeader();
+    html += `<div class="bericht-section"><h2>Dashboard-Bericht: ${MONATSNAMEN[parseInt(m) - 1]} ${j}</h2>`;
+    html += `<p>Erstellt am: ${jetzt.toLocaleDateString('de-DE')} ${jetzt.toLocaleTimeString('de-DE')}</p></div>`;
+
+    html += '<div class="bericht-section"><h3>Kennzahlen</h3>';
+    html += `<table><tbody>
+        <tr><td><strong>Einsätze gesamt</strong></td><td>${gefiltert.length}</td></tr>
+        <tr><td><strong>Stunden gesamt</strong></td><td>${formatZahl(totalStd)}</td></tr>
+        <tr><td><strong>Umsatz gesamt</strong></td><td>${formatEuro(totalUmsatz)}</td></tr>
+        <tr><td><strong>Zuschläge gesamt</strong></td><td>${formatEuro(totalZuschlaege)}</td></tr>
+        <tr><td><strong>Mitarbeiter aktiv</strong></td><td>${maSet.size}</td></tr>
+        <tr><td><strong>Ø Kosten/Std.</strong></td><td>${totalStd > 0 ? formatEuro(totalUmsatz / totalStd) : '—'}</td></tr>
+        <tr><td><strong>Ø Schichtlänge</strong></td><td>${gefiltert.length > 0 ? formatZahl(totalStd / gefiltert.length) + ' Std.' : '—'}</td></tr>
+    </tbody></table></div>`;
+
+    // Objekt-Aufschlüsselung
+    const objStats = {};
+    gefiltert.forEach(e => {
+        if (!objStats[e.objekt]) objStats[e.objekt] = { cnt: 0, std: 0, umsatz: 0 };
+        objStats[e.objekt].cnt++;
+        objStats[e.objekt].std += e.stunden;
+        objStats[e.objekt].umsatz += e.gesamt;
+    });
+
+    html += '<div class="bericht-section"><h3>Nach Objekt</h3>';
+    html += '<table><thead><tr><th>Objekt</th><th>Einsätze</th><th>Stunden</th><th>Umsatz</th></tr></thead><tbody>';
+    Object.entries(objStats).sort((a, b) => b[1].umsatz - a[1].umsatz).forEach(([obj, d]) => {
+        html += `<tr><td>${escapeHtml(obj)}</td><td>${d.cnt}</td><td>${formatZahl(d.std)}</td><td>${formatEuro(d.umsatz)}</td></tr>`;
+    });
+    html += '</tbody></table></div>';
+
+    // MA-Aufschlüsselung
+    const maStats = {};
+    gefiltert.forEach(e => {
+        const name = e.mitarbeiter || 'Nicht zugewiesen';
+        if (!maStats[name]) maStats[name] = { cnt: 0, std: 0, umsatz: 0 };
+        maStats[name].cnt++;
+        maStats[name].std += e.stunden;
+        maStats[name].umsatz += e.gesamt;
+    });
+
+    html += '<div class="bericht-section"><h3>Nach Mitarbeiter</h3>';
+    html += '<table><thead><tr><th>Mitarbeiter</th><th>Einsätze</th><th>Stunden</th><th>Umsatz</th></tr></thead><tbody>';
+    Object.entries(maStats).sort((a, b) => b[1].std - a[1].std).forEach(([name, d]) => {
+        html += `<tr><td>${escapeHtml(name)}</td><td>${d.cnt}</td><td>${formatZahl(d.std)}</td><td>${formatEuro(d.umsatz)}</td></tr>`;
+    });
+    html += '</tbody></table></div>';
+
+    html += printFooter();
+    document.getElementById('printArea').innerHTML = html;
+    window.print();
+}
+
+// =============================================
+// ERWEITERTE VORFALLSSTATISTIK
+// =============================================
+function renderVorfallsStatistik() {
+    const el = document.getElementById('vorfallsStatsContent');
+    if (!el) return;
+
+    if (vorfaelle.length === 0) {
+        el.innerHTML = '<p style="color:#a0aec0">Keine Vorfälle für Statistiken.</p>';
+        return;
+    }
+
+    // Typ-Verteilung
+    const typCount = {};
+    vorfaelle.forEach(v => {
+        typCount[v.typ] = (typCount[v.typ] || 0) + 1;
+    });
+
+    const maxTyp = Math.max(...Object.values(typCount), 1);
+
+    // Schwere-Verteilung
+    const schwereCount = { gering: 0, mittel: 0, hoch: 0, kritisch: 0 };
+    vorfaelle.forEach(v => {
+        schwereCount[v.schwere] = (schwereCount[v.schwere] || 0) + 1;
+    });
+
+    // Monatstrend
+    const monatsTrend = {};
+    vorfaelle.forEach(v => {
+        const m = v.datum.substring(0, 7);
+        monatsTrend[m] = (monatsTrend[m] || 0) + 1;
+    });
+
+    let html = '<div class="vfs-grid">';
+    html += `<div class="vfs-card"><div class="vfs-val">${vorfaelle.length}</div><div class="vfs-label">Vorfälle gesamt</div></div>`;
+    html += `<div class="vfs-card vfs-${schwereCount.kritisch > 0 ? 'kritisch' : 'ok'}"><div class="vfs-val">${schwereCount.kritisch}</div><div class="vfs-label">Kritisch</div></div>`;
+    html += `<div class="vfs-card"><div class="vfs-val">${schwereCount.hoch}</div><div class="vfs-label">Hoch</div></div>`;
+    html += `<div class="vfs-card"><div class="vfs-val">${vorfaelle.filter(v => v.polizei).length}</div><div class="vfs-label">Polizei</div></div>`;
+    html += '</div>';
+
+    // Typ-Balken
+    html += '<div class="vfs-section"><strong>Vorfallstypen:</strong></div>';
+    Object.entries(typCount).sort((a, b) => b[1] - a[1]).forEach(([typ, count]) => {
+        const pct = (count / maxTyp) * 100;
+        html += `<div class="stat-row"><span class="stat-row-label">${escapeHtml(VORFALL_TYPEN[typ] || typ)}</span><div class="stat-bar"><div class="stat-bar-fill feiertag" style="width:${pct}%"></div></div><span class="stat-row-value">${count}</span></div>`;
+    });
+
+    // Monatstrend
+    const trendMonate = Object.keys(monatsTrend).sort().slice(-6);
+    if (trendMonate.length >= 2) {
+        html += '<div class="vfs-section" style="margin-top:0.75rem"><strong>Monatstrend:</strong></div>';
+        const maxTrend = Math.max(...trendMonate.map(m => monatsTrend[m]), 1);
+        html += '<div class="vfs-trend">';
+        trendMonate.forEach(m => {
+            const [j, mo] = m.split('-');
+            const pct = (monatsTrend[m] / maxTrend) * 100;
+            html += `<div class="vfs-trend-col"><div class="vfs-trend-bar" style="height:${pct}%"></div><div class="vfs-trend-label">${MONATSNAMEN[parseInt(mo) - 1].substring(0, 3)}</div><div class="vfs-trend-val">${monatsTrend[m]}</div></div>`;
+        });
+        html += '</div>';
+    }
+
+    el.innerHTML = html;
 }
 
 // =============================================
