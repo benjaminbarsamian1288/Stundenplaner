@@ -36,6 +36,12 @@ let uebergaben = JSON.parse(localStorage.getItem('bbprotect_uebergaben') || '[]'
 // Notfallkontakte
 let notfallkontakte = JSON.parse(localStorage.getItem('bbprotect_notfallkontakte') || '[]');
 
+// Audit-Log
+let auditLog = JSON.parse(localStorage.getItem('bbprotect_auditlog') || '[]');
+
+// Objekt-Kontakte
+let objektKontakte = JSON.parse(localStorage.getItem('bbprotect_objektkontakte') || '[]');
+
 // Kalender-State
 let kalenderJahr = new Date().getFullYear();
 let kalenderMonat = new Date().getMonth();
@@ -81,13 +87,13 @@ document.querySelectorAll('.nav-btn').forEach(btn => {
         document.getElementById('tab-' + this.dataset.tab).classList.add('active');
 
         if (this.dataset.tab === 'dashboard') updateDashboard();
-        if (this.dataset.tab === 'objekte') { renderObjekte(); renderVertraege(); renderObjektAuslastung(); updateChecklisteObjekte(); updateObjektHistorieSelect(); }
+        if (this.dataset.tab === 'objekte') { renderObjekte(); renderVertraege(); renderObjektAuslastung(); updateChecklisteObjekte(); updateObjektHistorieSelect(); updateObjektKontakteSelect(); renderObjektKontakte(); }
         if (this.dataset.tab === 'kalender') { renderKalender(); renderDienstplan(); renderJahresuebersicht(); }
         if (this.dataset.tab === 'abrechnung') updateAbrechnung();
-        if (this.dataset.tab === 'mitarbeiter') { renderMitarbeiter(); renderDokumente(); renderUeberstunden(); renderKontaktliste(); renderUrlaubskonto(); renderArbeitszeitkonto(); renderQualMatrix(); updateSchichtHistorieSelect(); renderNotfallkontakte(); updateMAKalSelect(); }
+        if (this.dataset.tab === 'mitarbeiter') { renderMitarbeiter(); renderDokumente(); renderUeberstunden(); renderKontaktliste(); renderUrlaubskonto(); renderArbeitszeitkonto(); renderQualMatrix(); updateSchichtHistorieSelect(); renderNotfallkontakte(); updateMAKalSelect(); renderVerfuegbarkeitWoche(); renderDoppelschichtWarnungen(); }
         if (this.dataset.tab === 'vorfaelle') { renderVorfaelle(); renderVorfallsStatistik(); }
         if (this.dataset.tab === 'wachbuch') { renderWachbuch(); renderUebergaben(); renderWachbuchStats(); }
-        if (this.dataset.tab === 'einstellungen') { updateDatenStats(); updateSpeicherStats(); ladeEinstellungen(); }
+        if (this.dataset.tab === 'einstellungen') { updateDatenStats(); updateSpeicherStats(); ladeEinstellungen(); renderAuditLog(); }
     });
 });
 
@@ -192,10 +198,12 @@ form.addEventListener('submit', function (e) {
         if (idx !== -1) {
             einsatz.id = editId;
             einsaetze[idx] = einsatz;
+            logAudit('bearbeitet', 'Einsatz', `${einsatz.objekt} am ${formatDatum(einsatz.datum)} (${einsatz.zeitVon}-${einsatz.zeitBis})`);
         }
         cancelEdit();
     } else {
         einsaetze.push(einsatz);
+        logAudit('erstellt', 'Einsatz', `${einsatz.objekt} am ${formatDatum(einsatz.datum)} (${einsatz.zeitVon}-${einsatz.zeitBis})`);
     }
 
     speichern();
@@ -511,7 +519,7 @@ function renderTabelle() {
             <td>${escapeHtml(e.mitarbeiter || '\u2014')}</td>
             <td>${e.zeitVon}</td>
             <td>${e.zeitBis}</td>
-            <td>${formatZahl(e.stunden)}</td>
+            <td>${formatZahl(e.stunden)}${e.pauseMinuten > 0 ? '<span class="pause-badge" title="Pflichtpause §4 ArbZG">' + e.pauseMinuten + 'min</span>' : ''}</td>
             <td>${formatEuro(e.stundensatz)}/Std.</td>
             <td>${zuschlagBadges}</td>
             <td><strong>${formatEuro(e.gesamt)}</strong></td>
@@ -605,6 +613,8 @@ function updateMitarbeiterFilter() {
 
 function loescheEinsatz(id) {
     if (!confirm('Diesen Einsatz wirklich löschen?')) return;
+    const e = einsaetze.find(x => x.id === id);
+    if (e) logAudit('geloescht', 'Einsatz', `${e.objekt} am ${formatDatum(e.datum)} (${e.zeitVon}-${e.zeitBis})`);
     einsaetze = einsaetze.filter(e => e.id !== id);
     speichern();
     renderTabelle();
@@ -1458,7 +1468,13 @@ document.getElementById('mitarbeiterForm').addEventListener('submit', function (
     const idx = mitarbeiterListe_.findIndex(m => m.name === vollname);
     const ma = { name: vollname, vorname, nachname, telefon, email, qualifikation, stundensatz, qualAblauf, sollStunden, urlaubstage, bemerkung };
 
-    if (idx !== -1) mitarbeiterListe_[idx] = ma; else mitarbeiterListe_.push(ma);
+    if (idx !== -1) {
+        mitarbeiterListe_[idx] = ma;
+        logAudit('bearbeitet', 'Mitarbeiter', vollname);
+    } else {
+        mitarbeiterListe_.push(ma);
+        logAudit('erstellt', 'Mitarbeiter', vollname);
+    }
 
     localStorage.setItem('bbprotect_mitarbeiter', JSON.stringify(mitarbeiterListe_));
     renderMitarbeiter();
@@ -1531,7 +1547,7 @@ function loescheMitarbeiter(index) {
 // =============================================
 function erstelleBackup() {
     const backup = {
-        version: 10,
+        version: 11,
         datum: new Date().toISOString(),
         einsaetze,
         objekte,
@@ -1544,7 +1560,9 @@ function erstelleBackup() {
         wochenvorlagen,
         tagesnotizen,
         uebergaben,
-        notfallkontakte
+        notfallkontakte,
+        auditLog,
+        objektKontakte
     };
 
     const json = JSON.stringify(backup, null, 2);
@@ -1581,6 +1599,8 @@ function stelleWiederHer(event) {
             tagesnotizen = data.tagesnotizen || {};
             uebergaben = data.uebergaben || [];
             notfallkontakte = data.notfallkontakte || [];
+            auditLog = data.auditLog || [];
+            objektKontakte = data.objektKontakte || [];
 
             speichern();
             localStorage.setItem('bbprotect_objekte', JSON.stringify(objekte));
@@ -1594,6 +1614,8 @@ function stelleWiederHer(event) {
             localStorage.setItem('bbprotect_tagesnotizen', JSON.stringify(tagesnotizen));
             localStorage.setItem('bbprotect_uebergaben', JSON.stringify(uebergaben));
             localStorage.setItem('bbprotect_notfallkontakte', JSON.stringify(notfallkontakte));
+            localStorage.setItem('bbprotect_auditlog', JSON.stringify(auditLog));
+            localStorage.setItem('bbprotect_objektkontakte', JSON.stringify(objektKontakte));
 
             renderTabelle();
             updateAlleFilter();
@@ -1628,6 +1650,8 @@ function loescheAlleDaten() {
     tagesnotizen = {};
     uebergaben = [];
     notfallkontakte = [];
+    auditLog = [];
+    objektKontakte = [];
 
     localStorage.removeItem('bbprotect_einsaetze');
     localStorage.removeItem('bbprotect_objekte');
@@ -1641,6 +1665,8 @@ function loescheAlleDaten() {
     localStorage.removeItem('bbprotect_tagesnotizen');
     localStorage.removeItem('bbprotect_uebergaben');
     localStorage.removeItem('bbprotect_notfallkontakte');
+    localStorage.removeItem('bbprotect_auditlog');
+    localStorage.removeItem('bbprotect_objektkontakte');
 
     renderTabelle();
     updateAlleFilter();
@@ -5842,6 +5868,308 @@ function renderVorfallsStatistik() {
         html += '</div>';
     }
 
+    el.innerHTML = html;
+}
+
+// =============================================
+// AUDIT-LOG (Änderungsverlauf)
+// =============================================
+function logAudit(aktion, typ, details) {
+    auditLog.unshift({
+        id: Date.now(),
+        zeitpunkt: new Date().toISOString(),
+        aktion,
+        typ,
+        details
+    });
+    // Max 500 Einträge behalten
+    if (auditLog.length > 500) auditLog = auditLog.slice(0, 500);
+    localStorage.setItem('bbprotect_auditlog', JSON.stringify(auditLog));
+}
+
+function renderAuditLog() {
+    const el = document.getElementById('auditLogContent');
+    if (!el) return;
+
+    const filterTyp = document.getElementById('auditFilterTyp');
+    const typ = filterTyp ? filterTyp.value : '';
+
+    let gefiltert = auditLog;
+    if (typ) gefiltert = gefiltert.filter(a => a.typ === typ);
+
+    if (gefiltert.length === 0) {
+        el.innerHTML = '<p style="color:#a0aec0">Keine Änderungen protokolliert.</p>';
+        return;
+    }
+
+    const AKTION_ICONS = { erstellt: '+', bearbeitet: '~', geloescht: 'X', status: '\u2192', importiert: '\u2191', archiviert: '\u2193' };
+    const AKTION_LABELS = { erstellt: 'Erstellt', bearbeitet: 'Bearbeitet', geloescht: 'Gelöscht', status: 'Status', importiert: 'Importiert', archiviert: 'Archiviert' };
+
+    let html = '<div class="audit-liste">';
+    gefiltert.slice(0, 50).forEach(a => {
+        const d = new Date(a.zeitpunkt);
+        const zeit = `${String(d.getDate()).padStart(2, '0')}.${String(d.getMonth() + 1).padStart(2, '0')}.${d.getFullYear()} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+        html += `<div class="audit-eintrag audit-${a.aktion}">
+            <span class="audit-icon">${AKTION_ICONS[a.aktion] || '?'}</span>
+            <span class="audit-zeit">${zeit}</span>
+            <span class="audit-typ-badge">${escapeHtml(a.typ)}</span>
+            <span class="audit-aktion">${AKTION_LABELS[a.aktion] || a.aktion}</span>
+            <span class="audit-details">${escapeHtml(a.details)}</span>
+        </div>`;
+    });
+    html += '</div>';
+    if (gefiltert.length > 50) html += `<p style="color:#718096;font-size:0.8rem;margin-top:0.5rem">${gefiltert.length - 50} weitere Einträge...</p>`;
+
+    el.innerHTML = html;
+}
+
+function auditLogLeeren() {
+    if (!confirm('Alle Audit-Log-Einträge löschen?')) return;
+    auditLog = [];
+    localStorage.setItem('bbprotect_auditlog', JSON.stringify(auditLog));
+    renderAuditLog();
+}
+
+// =============================================
+// OBJEKT-KONTAKTLISTE
+// =============================================
+function objektKontaktSpeichern() {
+    const objekt = document.getElementById('okObjekt').value;
+    const rolle = document.getElementById('okRolle').value.trim();
+    const name = document.getElementById('okName').value.trim();
+    const telefon = document.getElementById('okTelefon').value.trim();
+    const email = document.getElementById('okEmail').value.trim();
+
+    if (!objekt || !name) { alert('Bitte Objekt und Name ausfüllen.'); return; }
+
+    objektKontakte.push({
+        id: Date.now(),
+        objekt, rolle, name, telefon, email
+    });
+    localStorage.setItem('bbprotect_objektkontakte', JSON.stringify(objektKontakte));
+    logAudit('erstellt', 'Objekt-Kontakt', `${name} (${rolle}) für ${objekt}`);
+    renderObjektKontakte();
+
+    document.getElementById('okRolle').value = '';
+    document.getElementById('okName').value = '';
+    document.getElementById('okTelefon').value = '';
+    document.getElementById('okEmail').value = '';
+}
+
+function renderObjektKontakte() {
+    const el = document.getElementById('objektKontakteContent');
+    if (!el) return;
+
+    const selObj = document.getElementById('okObjekt');
+    const objekt = selObj ? selObj.value : '';
+
+    const gefiltert = objekt ? objektKontakte.filter(k => k.objekt === objekt) : objektKontakte;
+
+    if (gefiltert.length === 0) {
+        el.innerHTML = '<p style="color:#a0aec0">Keine Kontakte für dieses Objekt.</p>';
+        return;
+    }
+
+    let html = '<table class="ok-tabelle"><thead><tr><th>Objekt</th><th>Rolle</th><th>Name</th><th>Telefon</th><th>E-Mail</th><th>Akt.</th></tr></thead><tbody>';
+    gefiltert.forEach(k => {
+        html += `<tr>
+            <td>${escapeHtml(k.objekt)}</td>
+            <td>${escapeHtml(k.rolle || '\u2014')}</td>
+            <td><strong>${escapeHtml(k.name)}</strong></td>
+            <td>${k.telefon ? '<a href="tel:' + escapeHtml(k.telefon) + '">' + escapeHtml(k.telefon) + '</a>' : '\u2014'}</td>
+            <td>${k.email ? '<a href="mailto:' + escapeHtml(k.email) + '">' + escapeHtml(k.email) + '</a>' : '\u2014'}</td>
+            <td><button class="btn-delete" onclick="loescheObjektKontakt(${k.id})">X</button></td>
+        </tr>`;
+    });
+    html += '</tbody></table>';
+    el.innerHTML = html;
+}
+
+function loescheObjektKontakt(id) {
+    if (!confirm('Kontakt löschen?')) return;
+    const k = objektKontakte.find(x => x.id === id);
+    objektKontakte = objektKontakte.filter(x => x.id !== id);
+    localStorage.setItem('bbprotect_objektkontakte', JSON.stringify(objektKontakte));
+    if (k) logAudit('geloescht', 'Objekt-Kontakt', `${k.name} (${k.objekt})`);
+    renderObjektKontakte();
+}
+
+function updateObjektKontakteSelect() {
+    const sel = document.getElementById('okObjekt');
+    if (!sel) return;
+    const val = sel.value;
+    sel.innerHTML = '<option value="">Alle Objekte</option>';
+    objekte.forEach(o => {
+        sel.innerHTML += `<option value="${escapeHtml(o.name)}" ${o.name === val ? 'selected' : ''}>${escapeHtml(o.name)}</option>`;
+    });
+}
+
+// =============================================
+// VERFÜGBARKEITS-WOCHENANSICHT
+// =============================================
+function renderVerfuegbarkeitWoche() {
+    const el = document.getElementById('verfWocheContent');
+    if (!el) return;
+
+    const heute = new Date();
+    const montag = new Date(heute);
+    const tag = montag.getDay();
+    const diff = tag === 0 ? 6 : tag - 1;
+    montag.setDate(montag.getDate() - diff);
+    montag.setHours(0, 0, 0, 0);
+
+    const wochentage = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
+    const tage = [];
+    for (let i = 0; i < 7; i++) {
+        const d = new Date(montag);
+        d.setDate(d.getDate() + i);
+        tage.push(d.toISOString().split('T')[0]);
+    }
+
+    const maListe = mitarbeiterListe_.map(m => m.name);
+    if (maListe.length === 0) {
+        el.innerHTML = '<p style="color:#a0aec0">Keine Mitarbeiter vorhanden.</p>';
+        return;
+    }
+
+    const VERF_FARBEN = { urlaub: '#e53e3e', krank: '#ed8936', frei: '#a0aec0', fortbildung: '#805ad5' };
+
+    let html = '<div class="vw-grid">';
+    html += '<div class="vw-header vw-ma-col">Mitarbeiter</div>';
+    tage.forEach((t, i) => {
+        const d = new Date(t + 'T12:00:00');
+        const istHeute = t === heute.toISOString().split('T')[0];
+        html += `<div class="vw-header ${istHeute ? 'vw-heute' : ''}">${wochentage[i]}<br><small>${String(d.getDate()).padStart(2, '0')}.${String(d.getMonth() + 1).padStart(2, '0')}.</small></div>`;
+    });
+
+    maListe.forEach(ma => {
+        html += `<div class="vw-ma-col">${escapeHtml(ma)}</div>`;
+        tage.forEach(t => {
+            const abw = verfuegbarkeit.find(v => v.mitarbeiter === ma && v.von <= t && v.bis >= t);
+            const einsaetzeHeute = einsaetze.filter(e => e.mitarbeiter === ma && e.datum === t);
+
+            let cls = 'vw-frei';
+            let inhalt = '';
+            if (abw) {
+                cls = 'vw-abwesend';
+                inhalt = `<span class="vw-badge" style="background:${VERF_FARBEN[abw.typ] || '#a0aec0'}">${abw.typ.substring(0, 1).toUpperCase()}</span>`;
+            } else if (einsaetzeHeute.length > 0) {
+                cls = 'vw-eingeteilt';
+                const std = einsaetzeHeute.reduce((s, e) => s + e.stunden, 0);
+                inhalt = `<span class="vw-std">${formatZahl(std)}h</span>`;
+            }
+            html += `<div class="vw-zelle ${cls}">${inhalt}</div>`;
+        });
+    });
+
+    html += '</div>';
+
+    html += '<div class="vw-legende">';
+    html += '<span class="vw-leg-item"><span class="vw-leg-box vw-eingeteilt"></span>Eingeteilt</span>';
+    html += '<span class="vw-leg-item"><span class="vw-leg-box" style="background:#e53e3e"></span>Urlaub</span>';
+    html += '<span class="vw-leg-item"><span class="vw-leg-box" style="background:#ed8936"></span>Krank</span>';
+    html += '<span class="vw-leg-item"><span class="vw-leg-box" style="background:#a0aec0"></span>Frei</span>';
+    html += '<span class="vw-leg-item"><span class="vw-leg-box" style="background:#805ad5"></span>Fortbildung</span>';
+    html += '<span class="vw-leg-item"><span class="vw-leg-box vw-frei"></span>Verfügbar</span>';
+    html += '</div>';
+
+    el.innerHTML = html;
+}
+
+// =============================================
+// DOPPELSCHICHT-WARNUNG (Ruhezeit §5 ArbZG)
+// =============================================
+function pruefeDoppelschichten() {
+    const warnungen = [];
+    const MIN_RUHEZEIT = 11; // §5 ArbZG: 11 Stunden Ruhezeit
+
+    // Gruppiere Einsätze nach Mitarbeiter
+    const maEinsaetze = {};
+    einsaetze.forEach(e => {
+        if (!e.mitarbeiter) return;
+        if (!maEinsaetze[e.mitarbeiter]) maEinsaetze[e.mitarbeiter] = [];
+        maEinsaetze[e.mitarbeiter].push(e);
+    });
+
+    Object.entries(maEinsaetze).forEach(([ma, liste]) => {
+        // Sortiere nach Datum + Startzeit
+        liste.sort((a, b) => (a.datum + a.zeitVon).localeCompare(b.datum + b.zeitVon));
+
+        for (let i = 0; i < liste.length - 1; i++) {
+            const aktuell = liste[i];
+            const naechst = liste[i + 1];
+
+            // Berechne Endzeit des aktuellen Einsatzes
+            const [eh, em] = aktuell.zeitBis.split(':').map(Number);
+            const [sh, sm] = naechst.zeitVon.split(':').map(Number);
+
+            let endMinuten = eh * 60 + em;
+            let startMinuten = sh * 60 + sm;
+
+            // Wenn gleicher Tag
+            if (aktuell.datum === naechst.datum) {
+                if (endMinuten <= aktuell.zeitVon.split(':').map(Number)[0] * 60 + parseInt(aktuell.zeitVon.split(':')[1])) {
+                    // Schicht geht über Mitternacht - nächste Schicht am selben Tag
+                    continue;
+                }
+                const pause = (startMinuten - endMinuten) / 60;
+                if (pause >= 0 && pause < MIN_RUHEZEIT) {
+                    warnungen.push({
+                        ma,
+                        datum: aktuell.datum,
+                        pause: pause,
+                        schicht1: `${aktuell.zeitVon}-${aktuell.zeitBis}`,
+                        schicht2: `${naechst.zeitVon}-${naechst.zeitBis}`
+                    });
+                }
+            } else {
+                // Verschiedene Tage - prüfe Tag-zu-Tag-Übergang
+                const d1 = new Date(aktuell.datum + 'T00:00:00');
+                const d2 = new Date(naechst.datum + 'T00:00:00');
+                const tageDiff = (d2 - d1) / (1000 * 60 * 60 * 24);
+
+                if (tageDiff === 1) {
+                    // Endzeit am aktuellen Tag bis Startzeit am nächsten Tag
+                    const ruhezeit = (24 * 60 - endMinuten + startMinuten) / 60;
+                    if (ruhezeit < MIN_RUHEZEIT) {
+                        warnungen.push({
+                            ma,
+                            datum: aktuell.datum,
+                            pause: ruhezeit,
+                            schicht1: `${formatDatum(aktuell.datum)} ${aktuell.zeitVon}-${aktuell.zeitBis}`,
+                            schicht2: `${formatDatum(naechst.datum)} ${naechst.zeitVon}-${naechst.zeitBis}`
+                        });
+                    }
+                }
+            }
+        }
+    });
+
+    return warnungen;
+}
+
+function renderDoppelschichtWarnungen() {
+    const el = document.getElementById('doppelschichtContent');
+    if (!el) return;
+
+    const warnungen = pruefeDoppelschichten();
+
+    if (warnungen.length === 0) {
+        el.innerHTML = '<p style="color:#48bb78">Keine Ruhezeitverletzungen gefunden.</p>';
+        return;
+    }
+
+    let html = `<div class="ds-hinweis">Es wurden <strong>${warnungen.length}</strong> Ruhezeitverletzungen nach §5 ArbZG (min. 11 Std.) gefunden:</div>`;
+    html += '<div class="ds-liste">';
+    warnungen.forEach(w => {
+        const stunden = formatZahl(w.pause);
+        html += `<div class="ds-warnung">
+            <span class="ds-ma">${escapeHtml(w.ma)}</span>
+            <span class="ds-info">Nur <strong>${stunden} Std.</strong> Ruhezeit</span>
+            <span class="ds-schichten">${escapeHtml(w.schicht1)} → ${escapeHtml(w.schicht2)}</span>
+        </div>`;
+    });
+    html += '</div>';
     el.innerHTML = html;
 }
 

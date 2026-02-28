@@ -688,6 +688,40 @@
                 </div>
                 <div id="objektHistorieContent"></div>
             </section>
+
+            <section class="form-section">
+                <div class="list-header">
+                    <h2>Objekt-Kontaktliste</h2>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="okObjekt">Objekt</label>
+                        <select id="okObjekt" onchange="renderObjektKontakte()">
+                            <option value="">Alle Objekte</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="okRolle">Rolle</label>
+                        <input type="text" id="okRolle" placeholder="z.B. Hausverwaltung, Schl&uuml;sseldienst">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="okName">Name</label>
+                        <input type="text" id="okName" placeholder="Kontaktperson" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="okTelefon">Telefon</label>
+                        <input type="tel" id="okTelefon" placeholder="+49 ...">
+                    </div>
+                    <div class="form-group">
+                        <label for="okEmail">E-Mail</label>
+                        <input type="email" id="okEmail" placeholder="email@beispiel.de">
+                    </div>
+                </div>
+                <button type="button" class="btn-primary" onclick="objektKontaktSpeichern()">Kontakt speichern</button>
+                <div id="objektKontakteContent" style="margin-top:1rem"></div>
+            </section>
         </div>
         <!-- TAB: Mitarbeiter -->
         <div class="tab-content" id="tab-mitarbeiter">
@@ -943,6 +977,20 @@
                     </div>
                 </div>
                 <div id="maKalenderContent"></div>
+            </section>
+
+            <section class="form-section">
+                <div class="list-header">
+                    <h2>Verf&uuml;gbarkeits-Wochen&uuml;bersicht</h2>
+                </div>
+                <div id="verfWocheContent"></div>
+            </section>
+
+            <section class="form-section">
+                <div class="list-header">
+                    <h2>Doppelschicht-Warnung (Ruhezeitpr&uuml;fung &sect;5 ArbZG)</h2>
+                </div>
+                <div id="doppelschichtContent"></div>
             </section>
 
             <section class="form-section">
@@ -1252,6 +1300,24 @@
                 <div class="daten-stats">
                     <h3>Gespeicherte Daten</h3>
                     <div id="datenStats"></div>
+                </div>
+
+                <div class="daten-stats" style="margin-top:1rem">
+                    <h3>&Auml;nderungsverlauf (Audit-Log)</h3>
+                    <div class="form-row" style="margin-bottom:0.5rem">
+                        <div class="form-group">
+                            <select id="auditFilterTyp" onchange="renderAuditLog()" style="font-size:0.8rem">
+                                <option value="">Alle Typen</option>
+                                <option value="Einsatz">Einsatz</option>
+                                <option value="Objekt-Kontakt">Objekt-Kontakt</option>
+                                <option value="Vorfall">Vorfall</option>
+                                <option value="Wachbuch">Wachbuch</option>
+                                <option value="Mitarbeiter">Mitarbeiter</option>
+                            </select>
+                            <button class="btn-secondary btn-small" onclick="auditLogLeeren()" style="margin-left:0.5rem">Log leeren</button>
+                        </div>
+                    </div>
+                    <div id="auditLogContent"></div>
                 </div>
 
                 <div class="daten-stats" style="margin-top:1rem">

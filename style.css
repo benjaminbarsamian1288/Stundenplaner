@@ -5622,3 +5622,391 @@ footer {
         padding: 0.25rem 0.5rem;
     }
 }
+
+/* =============================================
+   PAUSE-BADGE (Pflichtpause §4 ArbZG)
+   ============================================= */
+.pause-badge {
+    display: inline-block;
+    background: #ed8936;
+    color: #fff;
+    font-size: 0.6rem;
+    padding: 0.1rem 0.3rem;
+    border-radius: 3px;
+    margin-left: 0.3rem;
+    vertical-align: middle;
+    font-weight: 600;
+}
+
+body.dark-mode .pause-badge {
+    background: #c05621;
+}
+
+/* =============================================
+   AUDIT-LOG
+   ============================================= */
+.audit-liste {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.audit-eintrag {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.4rem 0.5rem;
+    border-bottom: 1px solid #edf2f7;
+    font-size: 0.8rem;
+}
+
+.audit-eintrag:hover {
+    background: #f7fafc;
+}
+
+body.dark-mode .audit-eintrag {
+    border-bottom-color: #4a5568;
+}
+
+body.dark-mode .audit-eintrag:hover {
+    background: #2d3748;
+}
+
+.audit-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: #e2e8f0;
+    color: #4a5568;
+    font-size: 0.7rem;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+
+.audit-erstellt .audit-icon { background: #c6f6d5; color: #276749; }
+.audit-bearbeitet .audit-icon { background: #bee3f8; color: #2a4365; }
+.audit-geloescht .audit-icon { background: #fed7d7; color: #9b2c2c; }
+.audit-status .audit-icon { background: #fefcbf; color: #975a16; }
+
+body.dark-mode .audit-erstellt .audit-icon { background: #276749; color: #c6f6d5; }
+body.dark-mode .audit-bearbeitet .audit-icon { background: #2a4365; color: #bee3f8; }
+body.dark-mode .audit-geloescht .audit-icon { background: #9b2c2c; color: #fed7d7; }
+body.dark-mode .audit-status .audit-icon { background: #975a16; color: #fefcbf; }
+
+.audit-zeit {
+    color: #a0aec0;
+    font-size: 0.7rem;
+    white-space: nowrap;
+    min-width: 100px;
+}
+
+.audit-typ-badge {
+    display: inline-block;
+    background: #edf2f7;
+    color: #4a5568;
+    font-size: 0.65rem;
+    padding: 0.1rem 0.4rem;
+    border-radius: 3px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+body.dark-mode .audit-typ-badge {
+    background: #4a5568;
+    color: #e2e8f0;
+}
+
+.audit-aktion {
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.audit-details {
+    color: #718096;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+body.dark-mode .audit-details {
+    color: #a0aec0;
+}
+
+/* =============================================
+   OBJEKT-KONTAKTLISTE
+   ============================================= */
+.ok-tabelle {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.8rem;
+}
+
+.ok-tabelle th {
+    background: #edf2f7;
+    padding: 0.5rem;
+    text-align: left;
+    font-weight: 600;
+    border-bottom: 2px solid #e2e8f0;
+}
+
+.ok-tabelle td {
+    padding: 0.4rem 0.5rem;
+    border-bottom: 1px solid #edf2f7;
+}
+
+.ok-tabelle a {
+    color: #3182ce;
+    text-decoration: none;
+}
+
+.ok-tabelle a:hover {
+    text-decoration: underline;
+}
+
+body.dark-mode .ok-tabelle th {
+    background: #2d3748;
+    border-bottom-color: #4a5568;
+}
+
+body.dark-mode .ok-tabelle td {
+    border-bottom-color: #4a5568;
+}
+
+body.dark-mode .ok-tabelle a {
+    color: #63b3ed;
+}
+
+/* =============================================
+   VERFÜGBARKEITS-WOCHENANSICHT
+   ============================================= */
+.vw-grid {
+    display: grid;
+    grid-template-columns: 120px repeat(7, 1fr);
+    gap: 2px;
+    background: #e2e8f0;
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.vw-header {
+    background: #edf2f7;
+    padding: 0.4rem 0.3rem;
+    text-align: center;
+    font-weight: 600;
+    font-size: 0.75rem;
+}
+
+.vw-header.vw-heute {
+    background: #3182ce;
+    color: #fff;
+}
+
+.vw-ma-col {
+    background: #fff;
+    padding: 0.4rem 0.5rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+}
+
+body.dark-mode .vw-grid {
+    background: #4a5568;
+}
+
+body.dark-mode .vw-header {
+    background: #2d3748;
+    color: #e2e8f0;
+}
+
+body.dark-mode .vw-header.vw-heute {
+    background: #2b6cb0;
+}
+
+body.dark-mode .vw-ma-col {
+    background: #1a202c;
+    color: #e2e8f0;
+}
+
+.vw-zelle {
+    padding: 0.3rem;
+    text-align: center;
+    font-size: 0.7rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 32px;
+}
+
+.vw-frei {
+    background: #fff;
+}
+
+body.dark-mode .vw-frei {
+    background: #1a202c;
+}
+
+.vw-eingeteilt {
+    background: #c6f6d5;
+}
+
+body.dark-mode .vw-eingeteilt {
+    background: #276749;
+}
+
+.vw-abwesend {
+    background: #fed7d7;
+}
+
+body.dark-mode .vw-abwesend {
+    background: #742a2a;
+}
+
+.vw-badge {
+    display: inline-block;
+    color: #fff;
+    font-size: 0.6rem;
+    font-weight: 700;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    line-height: 18px;
+    text-align: center;
+}
+
+.vw-std {
+    font-weight: 600;
+    color: #276749;
+    font-size: 0.65rem;
+}
+
+body.dark-mode .vw-std {
+    color: #9ae6b4;
+}
+
+.vw-legende {
+    display: flex;
+    gap: 1rem;
+    margin-top: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.vw-leg-item {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.7rem;
+    color: #718096;
+}
+
+.vw-leg-box {
+    width: 14px;
+    height: 14px;
+    border-radius: 3px;
+    display: inline-block;
+}
+
+.vw-leg-box.vw-eingeteilt {
+    background: #c6f6d5;
+}
+
+.vw-leg-box.vw-frei {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+}
+
+body.dark-mode .vw-leg-item {
+    color: #a0aec0;
+}
+
+body.dark-mode .vw-leg-box.vw-eingeteilt {
+    background: #276749;
+}
+
+body.dark-mode .vw-leg-box.vw-frei {
+    background: #1a202c;
+    border-color: #4a5568;
+}
+
+/* =============================================
+   DOPPELSCHICHT-WARNUNG
+   ============================================= */
+.ds-hinweis {
+    background: #fffbeb;
+    border: 1px solid #f6e05e;
+    border-radius: 6px;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.8rem;
+    color: #975a16;
+    margin-bottom: 0.75rem;
+}
+
+body.dark-mode .ds-hinweis {
+    background: #744210;
+    border-color: #975a16;
+    color: #fefcbf;
+}
+
+.ds-liste {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+
+.ds-warnung {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.5rem 0.75rem;
+    background: #fff5f5;
+    border-left: 3px solid #e53e3e;
+    border-radius: 4px;
+    font-size: 0.8rem;
+}
+
+body.dark-mode .ds-warnung {
+    background: #742a2a;
+    border-left-color: #fc8181;
+}
+
+.ds-ma {
+    font-weight: 600;
+    min-width: 120px;
+}
+
+.ds-info {
+    color: #e53e3e;
+}
+
+body.dark-mode .ds-info {
+    color: #fc8181;
+}
+
+.ds-schichten {
+    color: #718096;
+    font-size: 0.75rem;
+}
+
+body.dark-mode .ds-schichten {
+    color: #a0aec0;
+}
+
+@media (max-width: 768px) {
+    .vw-grid {
+        grid-template-columns: 80px repeat(7, 1fr);
+        font-size: 0.65rem;
+    }
+
+    .audit-eintrag {
+        flex-wrap: wrap;
+        gap: 0.25rem;
+    }
+
+    .ds-warnung {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.25rem;
+    }
+}
