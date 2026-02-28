@@ -86,7 +86,7 @@ document.querySelectorAll('.nav-btn').forEach(btn => {
         if (this.dataset.tab === 'abrechnung') updateAbrechnung();
         if (this.dataset.tab === 'mitarbeiter') { renderMitarbeiter(); renderDokumente(); renderUeberstunden(); renderKontaktliste(); renderUrlaubskonto(); renderArbeitszeitkonto(); renderQualMatrix(); updateSchichtHistorieSelect(); renderNotfallkontakte(); }
         if (this.dataset.tab === 'vorfaelle') renderVorfaelle();
-        if (this.dataset.tab === 'wachbuch') { renderWachbuch(); renderUebergaben(); }
+        if (this.dataset.tab === 'wachbuch') { renderWachbuch(); renderUebergaben(); renderWachbuchStats(); }
         if (this.dataset.tab === 'einstellungen') { updateDatenStats(); updateSpeicherStats(); }
     });
 });
@@ -507,7 +507,7 @@ function renderTabelle() {
         tr.innerHTML = `
             <td class="no-print"><input type="checkbox" class="bulk-cb bulk-item-cb" data-id="${e.id}" onchange="bulkUpdateCount()"></td>
             <td>${formatDatum(e.datum)}${e.status && e.status !== 'geplant' ? '<br><span class="status-badge status-' + e.status + '">' + escapeHtml(STATUS_LABELS[e.status] || e.status) + '</span>' : ''}</td>
-            <td>${escapeHtml(e.objekt)}</td>
+            <td><span class="obj-farbe" style="background:${getObjektFarbe(e.objekt)}"></span>${escapeHtml(e.objekt)}</td>
             <td>${escapeHtml(e.mitarbeiter || '\u2014')}</td>
             <td>${e.zeitVon}</td>
             <td>${e.zeitBis}</td>
@@ -1040,6 +1040,9 @@ function updateDashboard() {
 
     // Wochentage-Verteilung
     renderWochentageVerteilung(gefiltert);
+
+    // MA-Stundenchart
+    renderMAStundenChart(gefiltert);
 
     // Monats-Heatmap
     renderHeatmap(filterM);
@@ -5160,6 +5163,195 @@ function renderEinsatzKommentare(einsatz) {
     });
     html += '</div>';
     return html;
+}
+
+// =============================================
+// EINSATZ-FARBKODIERUNG
+// =============================================
+function getObjektFarbe(objName) {
+    const farben = ['#2b6cb0', '#38a169', '#d69e2e', '#c53030', '#805ad5', '#dd6b20', '#319795', '#d53f8c', '#5a67d8', '#718096'];
+    const alleObjekte = [...new Set(einsaetze.map(e => e.objekt))].sort();
+    const idx = alleObjekte.indexOf(objName);
+    return farben[idx % farben.length];
+}
+
+// =============================================
+// MA-STUNDENÜBERSICHT CHART
+// =============================================
+function renderMAStundenChart(gefiltert) {
+    const el = document.getElementById('maStundenChart');
+    if (!el) return;
+
+    const maStunden = {};
+    gefiltert.forEach(e => {
+        const name = e.mitarbeiter || 'Nicht zugewiesen';
+        if (!maStunden[name]) maStunden[name] = { ist: 0, nacht: 0 };
+        maStunden[name].ist += e.stunden;
+        maStunden[name].nacht += e.nachtStunden;
+    });
+
+    const sorted = Object.entries(maStunden).sort((a, b) => b[1].ist - a[1].ist);
+    if (sorted.length === 0) {
+        el.innerHTML = '<p style="color:#a0aec0;font-size:0.8rem">Keine Daten.</p>';
+        return;
+    }
+
+    const maxStd = Math.max(...sorted.map(([, d]) => d.ist), 1);
+
+    let html = '<div class="msc-chart">';
+    sorted.slice(0, 15).forEach(([name, d]) => {
+        const pctIst = (d.ist / maxStd) * 100;
+        const pctNacht = d.ist > 0 ? (d.nacht / d.ist) * pctIst : 0;
+
+        // Soll-Stunden
+        const ma = mitarbeiterListe_.find(m => m.name === name);
+        const soll = ma && ma.sollStunden ? ma.sollStunden : 0;
+        const sollPct = soll > 0 ? (soll / maxStd) * 100 : 0;
+
+        html += `<div class="msc-row">
+            <div class="msc-name" title="${escapeHtml(name)}">${escapeHtml(name.length > 15 ? name.substring(0, 15) + '...' : name)}</div>
+            <div class="msc-bar-wrap">
+                <div class="msc-bar msc-bar-tag" style="width:${pctIst}%"></div>
+                <div class="msc-bar msc-bar-nacht" style="width:${pctNacht}%"></div>
+                ${sollPct > 0 ? '<div class="msc-soll-marker" style="left:' + Math.min(sollPct, 100) + '%"></div>' : ''}
+            </div>
+            <div class="msc-val">${formatZahl(d.ist)}${soll > 0 ? '/' + formatZahl(soll) : ''}</div>
+        </div>`;
+    });
+    html += '</div>';
+
+    html += '<div class="msc-legende">';
+    html += '<span class="wt-leg-item"><span class="wt-leg-dot msc-bar-tag"></span> Tagstunden</span>';
+    html += '<span class="wt-leg-item"><span class="wt-leg-dot msc-bar-nacht"></span> Nachtstunden</span>';
+    html += '<span class="wt-leg-item"><span class="msc-soll-leg"></span> Soll</span>';
+    html += '</div>';
+
+    el.innerHTML = html;
+}
+
+// =============================================
+// WACHBUCH-STATISTIK
+// =============================================
+function renderWachbuchStats() {
+    const el = document.getElementById('wachbuchStats');
+    if (!el) return;
+
+    if (wachbuch.length === 0) {
+        el.innerHTML = '<p style="color:#a0aec0">Noch keine Wachbuch-Einträge für Statistiken.</p>';
+        return;
+    }
+
+    const KAT_LABELS = {
+        rundgang: 'Kontrollrundgang',
+        schichtuebergabe: 'Schichtübergabe',
+        zugang: 'Zugangsüberwachung',
+        schliessung: 'Schließdienst',
+        alarm: 'Alarm / Störung',
+        besucher: 'Besucherverkehr',
+        lieferung: 'Lieferung',
+        sonstiges: 'Sonstiges'
+    };
+
+    // Kategorieverteilung
+    const katCount = {};
+    wachbuch.forEach(w => {
+        const kat = w.kategorie || 'sonstiges';
+        katCount[kat] = (katCount[kat] || 0) + 1;
+    });
+
+    const maxKat = Math.max(...Object.values(katCount), 1);
+
+    // Objekt-Verteilung
+    const objCount = {};
+    wachbuch.forEach(w => {
+        objCount[w.objekt] = (objCount[w.objekt] || 0) + 1;
+    });
+
+    // MA-Verteilung
+    const maCount = {};
+    wachbuch.forEach(w => {
+        if (w.mitarbeiter) maCount[w.mitarbeiter] = (maCount[w.mitarbeiter] || 0) + 1;
+    });
+
+    let html = '<div class="wbs-grid">';
+
+    // Gesamt
+    html += '<div class="wbs-card"><div class="wbs-val">' + wachbuch.length + '</div><div class="wbs-label">Einträge gesamt</div></div>';
+    html += '<div class="wbs-card"><div class="wbs-val">' + Object.keys(objCount).length + '</div><div class="wbs-label">Objekte</div></div>';
+    html += '<div class="wbs-card"><div class="wbs-val">' + Object.keys(maCount).length + '</div><div class="wbs-label">Mitarbeiter</div></div>';
+    html += '</div>';
+
+    // Kategorien
+    html += '<div class="wbs-section"><strong>Kategorien:</strong></div>';
+    Object.entries(katCount).sort((a, b) => b[1] - a[1]).forEach(([kat, count]) => {
+        const pct = (count / maxKat) * 100;
+        html += `<div class="stat-row"><span class="stat-row-label">${escapeHtml(KAT_LABELS[kat] || kat)}</span><div class="stat-bar"><div class="stat-bar-fill nacht" style="width:${pct}%"></div></div><span class="stat-row-value">${count}</span></div>`;
+    });
+
+    el.innerHTML = html;
+}
+
+// =============================================
+// DATEN-ARCHIVIERUNG
+// =============================================
+function vorschauArchivierung() {
+    const el = document.getElementById('archivVorschau');
+    if (!el) return;
+
+    const monate = parseInt(document.getElementById('archivZeitraum').value) || 6;
+    const grenze = new Date();
+    grenze.setMonth(grenze.getMonth() - monate);
+    const grenzeStr = grenze.toISOString().split('T')[0];
+
+    const zuArchivieren = einsaetze.filter(e =>
+        e.datum < grenzeStr && (e.status === 'abgeschlossen' || e.status === 'storniert')
+    );
+
+    if (zuArchivieren.length === 0) {
+        el.innerHTML = '<p style="color:#a0aec0;font-size:0.8rem">Keine Einsätze zum Archivieren.</p>';
+        return;
+    }
+
+    const totalStd = zuArchivieren.reduce((s, e) => s + e.stunden, 0);
+    el.innerHTML = `<div class="archiv-info">${zuArchivieren.length} Einsätze (${formatZahl(totalStd)} Std.) vor dem ${formatDatum(grenzeStr)} können archiviert werden.</div>`;
+}
+
+function archiviereEinsaetze() {
+    const monate = parseInt(document.getElementById('archivZeitraum').value) || 6;
+    const grenze = new Date();
+    grenze.setMonth(grenze.getMonth() - monate);
+    const grenzeStr = grenze.toISOString().split('T')[0];
+
+    const zuArchivieren = einsaetze.filter(e =>
+        e.datum < grenzeStr && (e.status === 'abgeschlossen' || e.status === 'storniert')
+    );
+
+    if (zuArchivieren.length === 0) {
+        alert('Keine Einsätze zum Archivieren.');
+        return;
+    }
+
+    if (!confirm(`${zuArchivieren.length} abgeschlossene/stornierte Einsätze vor dem ${formatDatum(grenzeStr)} archivieren?\n\nDie Einsätze werden als JSON exportiert und dann entfernt.`)) return;
+
+    // Exportiere Archiv
+    const archiv = {
+        typ: 'Archiv',
+        datum: new Date().toISOString(),
+        zeitraum: `vor ${formatDatum(grenzeStr)}`,
+        anzahl: zuArchivieren.length,
+        einsaetze: zuArchivieren
+    };
+    downloadFile(`BBProtect_Archiv_${new Date().toISOString().split('T')[0]}.json`, JSON.stringify(archiv, null, 2), 'application/json');
+
+    // Entferne archivierte Einsätze
+    einsaetze = einsaetze.filter(e => !(e.datum < grenzeStr && (e.status === 'abgeschlossen' || e.status === 'storniert')));
+    speichern();
+    renderTabelle();
+    updateAlleFilter();
+    updateDatenStats();
+    updateSpeicherStats();
+
+    alert(`${zuArchivieren.length} Einsätze archiviert und exportiert.`);
 }
 
 // =============================================

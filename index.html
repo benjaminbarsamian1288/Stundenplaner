@@ -453,6 +453,13 @@
 
                 <div class="dashboard-details" style="margin-top:1rem">
                     <div class="detail-card full-width">
+                        <h3>MA-Stunden&uuml;bersicht</h3>
+                        <div id="maStundenChart"></div>
+                    </div>
+                </div>
+
+                <div class="dashboard-details" style="margin-top:1rem">
+                    <div class="detail-card full-width">
                         <h3>Monats-Heatmap</h3>
                         <div id="heatmapContent"></div>
                     </div>
@@ -1151,6 +1158,13 @@
                 <div id="wachbuchContent"></div>
                 <p class="empty-message" id="wachbuchEmpty">Noch keine Eintr&auml;ge im Wachbuch.</p>
             </section>
+
+            <section class="form-section">
+                <div class="list-header">
+                    <h2>Wachbuch-Statistik</h2>
+                </div>
+                <div id="wachbuchStats"></div>
+            </section>
         </div>
 
         <!-- TAB: Einstellungen / Daten -->
@@ -1181,6 +1195,26 @@
                 <div class="daten-stats">
                     <h3>Gespeicherte Daten</h3>
                     <div id="datenStats"></div>
+                </div>
+
+                <div class="daten-stats" style="margin-top:1rem">
+                    <h3>Daten-Archivierung</h3>
+                    <p style="font-size:0.8rem;color:#718096;margin-bottom:0.5rem">Archiviere abgeschlossene Eins&auml;tze, die &auml;lter als ein gew&auml;hlter Zeitraum sind, um Speicher zu sparen.</p>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="archivZeitraum">Eins&auml;tze &auml;lter als</label>
+                            <select id="archivZeitraum">
+                                <option value="3">3 Monate</option>
+                                <option value="6" selected>6 Monate</option>
+                                <option value="12">12 Monate</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <button class="btn-secondary" onclick="vorschauArchivierung()" style="margin-top:1.5rem">Vorschau</button>
+                            <button class="btn-primary" onclick="archiviereEinsaetze()" style="margin-top:1.5rem">Archivieren &amp; Exportieren</button>
+                        </div>
+                    </div>
+                    <div id="archivVorschau" style="margin-top:0.5rem"></div>
                 </div>
 
                 <div class="daten-stats" style="margin-top:1rem">
