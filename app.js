@@ -4,6 +4,7 @@
  */
 
 let einsaetze = JSON.parse(localStorage.getItem('bbprotect_einsaetze') || '[]');
+let objekte = JSON.parse(localStorage.getItem('bbprotect_objekte') || '[]');
 
 // --- DOM Referenzen ---
 const form = document.getElementById('einsatzForm');
@@ -12,15 +13,41 @@ const manualZuschlagDiv = document.getElementById('manualZuschlag');
 const einsatzBody = document.getElementById('einsatzBody');
 const emptyMessage = document.getElementById('emptyMessage');
 const filterMonat = document.getElementById('filterMonat');
+const filterObjekt = document.getElementById('filterObjekt');
 const previewSection = document.getElementById('previewSection');
 const previewContent = document.getElementById('previewContent');
+const editIdField = document.getElementById('editId');
+const formTitle = document.getElementById('formTitle');
+const submitBtn = document.getElementById('submitBtn');
+const cancelEditBtn = document.getElementById('cancelEditBtn');
 
 // --- Zuschlag-Sätze (Standard für Sicherheitsgewerbe) ---
-const ZUSCHLAG_NACHT = 25;    // 25% Nachtzuschlag (20:00 - 06:00)
-const ZUSCHLAG_SONNTAG = 50;  // 50% Sonntagszuschlag
-const ZUSCHLAG_FEIERTAG = 100; // 100% Feiertagszuschlag
+const ZUSCHLAG_NACHT = 25;
+const ZUSCHLAG_SONNTAG = 50;
+const ZUSCHLAG_FEIERTAG = 100;
 
-// --- Events ---
+// =============================================
+// TAB-NAVIGATION
+// =============================================
+document.querySelectorAll('.nav-btn').forEach(btn => {
+    btn.addEventListener('click', function () {
+        document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+        this.classList.add('active');
+        document.getElementById('tab-' + this.dataset.tab).classList.add('active');
+
+        if (this.dataset.tab === 'dashboard') {
+            updateDashboard();
+        }
+        if (this.dataset.tab === 'objekte') {
+            renderObjekte();
+        }
+    });
+});
+
+// =============================================
+// EINSATZ-ERFASSUNG
+// =============================================
 autoZuschlagCheckbox.addEventListener('change', function () {
     manualZuschlagDiv.style.display = this.checked ? 'none' : 'block';
 });
@@ -30,15 +57,29 @@ form.addEventListener('submit', function (e) {
     const einsatz = erfasseFormular();
     if (!einsatz) return;
 
-    einsaetze.push(einsatz);
+    const editId = parseInt(editIdField.value);
+    if (editId) {
+        // Bearbeiten: alten Einsatz ersetzen
+        const idx = einsaetze.findIndex(e => e.id === editId);
+        if (idx !== -1) {
+            einsatz.id = editId;
+            einsaetze[idx] = einsatz;
+        }
+        cancelEdit();
+    } else {
+        einsaetze.push(einsatz);
+    }
+
     speichern();
     renderTabelle();
     updateMonatsfilter();
+    updateObjektfilter();
     form.reset();
     autoZuschlagCheckbox.checked = true;
     manualZuschlagDiv.style.display = 'none';
     previewSection.style.display = 'none';
     document.getElementById('datum').valueAsDate = new Date();
+    updateDataLists();
 });
 
 // Live-Vorschau bei Eingabeänderungen
@@ -48,6 +89,16 @@ form.addEventListener('submit', function (e) {
 });
 
 filterMonat.addEventListener('change', renderTabelle);
+filterObjekt.addEventListener('change', renderTabelle);
+
+// Objekt-Auswahl: Stundensatz automatisch setzen
+document.getElementById('objekt').addEventListener('change', function () {
+    const obj = objekte.find(o => o.name === this.value);
+    if (obj && obj.stundensatz) {
+        document.getElementById('stundensatz').value = obj.stundensatz;
+        updatePreview();
+    }
+});
 
 // --- Formular auslesen ---
 function erfasseFormular() {
@@ -76,10 +127,45 @@ function erfasseFormular() {
     };
 }
 
-// --- Stunden- und Zuschlagsberechnung ---
+// --- Bearbeiten ---
+function bearbeiteEinsatz(id) {
+    const e = einsaetze.find(x => x.id === id);
+    if (!e) return;
+
+    editIdField.value = e.id;
+    document.getElementById('objekt').value = e.objekt;
+    document.getElementById('datum').value = e.datum;
+    document.getElementById('zeitVon').value = e.zeitVon;
+    document.getElementById('zeitBis').value = e.zeitBis;
+    document.getElementById('stundensatz').value = e.stundensatz;
+    document.getElementById('mitarbeiter').value = e.mitarbeiter || '';
+    document.getElementById('bemerkung').value = e.bemerkung || '';
+
+    formTitle.textContent = 'Einsatz bearbeiten';
+    submitBtn.textContent = 'Änderungen speichern';
+    cancelEditBtn.style.display = 'inline-block';
+    document.querySelector('.form-section').classList.add('editing');
+
+    // Zum Formular scrollen
+    document.querySelector('.form-section').scrollIntoView({ behavior: 'smooth' });
+    updatePreview();
+}
+
+function cancelEdit() {
+    editIdField.value = '';
+    formTitle.textContent = 'Neuen Einsatz erfassen';
+    submitBtn.textContent = 'Einsatz hinzufügen';
+    cancelEditBtn.style.display = 'none';
+    document.querySelector('.form-section').classList.remove('editing');
+    previewSection.style.display = 'none';
+}
+
+// =============================================
+// BERECHNUNG
+// =============================================
 function berechneEinsatz(datum, zeitVon, zeitBis, stundensatz) {
     const stunden = berechneStunden(zeitVon, zeitBis);
-    const wochentag = new Date(datum).getDay(); // 0 = Sonntag
+    const wochentag = new Date(datum).getDay();
     const feiertag = istFeiertag(datum);
     const autoCalc = autoZuschlagCheckbox.checked;
 
@@ -95,15 +181,12 @@ function berechneEinsatz(datum, zeitVon, zeitBis, stundensatz) {
         feiertagProzent = parseFloat(document.getElementById('feiertagszuschlag').value) || 0;
     }
 
-    // Nachtanteile berechnen (20:00 - 06:00)
     const nachtStunden = berechneNachtStunden(zeitVon, zeitBis);
     const tagStunden = stunden - nachtStunden;
 
-    // Zuschläge
     let zuschlagBetrag = 0;
     const zuschlagDetails = [];
 
-    // Nachtzuschlag
     if (nachtStunden > 0) {
         const nachtZuschlag = nachtStunden * stundensatz * (nachtProzent / 100);
         zuschlagBetrag += nachtZuschlag;
@@ -115,7 +198,6 @@ function berechneEinsatz(datum, zeitVon, zeitBis, stundensatz) {
         });
     }
 
-    // Sonntagszuschlag (auf alle Stunden)
     if (wochentag === 0) {
         const sonntagZuschlag = stunden * stundensatz * (sonntagProzent / 100);
         zuschlagBetrag += sonntagZuschlag;
@@ -127,7 +209,6 @@ function berechneEinsatz(datum, zeitVon, zeitBis, stundensatz) {
         });
     }
 
-    // Feiertagszuschlag (auf alle Stunden, ersetzt Sonntagszuschlag nicht - kumuliert)
     if (feiertag) {
         const feiertagZuschlag = stunden * stundensatz * (feiertagProzent / 100);
         zuschlagBetrag += feiertagZuschlag;
@@ -162,7 +243,6 @@ function berechneStunden(von, bis) {
     let startMin = vh * 60 + vm;
     let endMin = bh * 60 + bm;
 
-    // Wenn Ende vor Start -> Nachtschicht über Mitternacht
     if (endMin <= startMin) {
         endMin += 24 * 60;
     }
@@ -180,20 +260,16 @@ function berechneNachtStunden(von, bis) {
         endMin += 24 * 60;
     }
 
-    // Nachtzeit: 20:00 (1200min) - 06:00 (360min nächster Tag = 1800min)
     let nachtMinuten = 0;
 
-    // Nachtblock 1: 20:00 - 24:00 (1200 - 1440)
     const nacht1Start = 20 * 60;
     const nacht1End = 24 * 60;
     nachtMinuten += ueberschneidung(startMin, endMin, nacht1Start, nacht1End);
 
-    // Nachtblock 2: 00:00 - 06:00 (1440 - 1800 für Schichten über Mitternacht, oder 0 - 360)
     const nacht2Start = 0;
     const nacht2End = 6 * 60;
     nachtMinuten += ueberschneidung(startMin, endMin, nacht2Start, nacht2End);
 
-    // Bei Schichten über Mitternacht: auch 24:00-30:00 (= 00:00-06:00 nächster Tag)
     if (endMin > 24 * 60) {
         const nacht3Start = 24 * 60;
         const nacht3End = 30 * 60;
@@ -209,7 +285,9 @@ function ueberschneidung(s1, e1, s2, e2) {
     return Math.max(0, end - start);
 }
 
-// --- Vorschau ---
+// =============================================
+// VORSCHAU
+// =============================================
 function updatePreview() {
     const datum = document.getElementById('datum').value;
     const zeitVon = document.getElementById('zeitVon').value;
@@ -246,27 +324,30 @@ function updatePreview() {
 }
 
 function detailItem(label, value) {
-    return `<div class="detail-item"><strong>${label}</strong><span>${value}</span></div>`;
+    return `<div class="detail-item"><strong>${escapeHtml(label)}</strong><span>${escapeHtml(value)}</span></div>`;
 }
 
-// --- Tabelle rendern ---
+// =============================================
+// EINSATZ-TABELLE
+// =============================================
 function renderTabelle() {
-    const filter = filterMonat.value;
-    const gefiltert = filter
-        ? einsaetze.filter(e => e.datum.substring(0, 7) === filter)
-        : einsaetze;
+    const filterM = filterMonat.value;
+    const filterO = filterObjekt.value;
 
-    // Sortieren nach Datum
+    let gefiltert = einsaetze;
+    if (filterM) gefiltert = gefiltert.filter(e => e.datum.substring(0, 7) === filterM);
+    if (filterO) gefiltert = gefiltert.filter(e => e.objekt === filterO);
+
     gefiltert.sort((a, b) => a.datum.localeCompare(b.datum) || a.zeitVon.localeCompare(b.zeitVon));
 
     einsatzBody.innerHTML = '';
 
     if (gefiltert.length === 0) {
         emptyMessage.style.display = 'block';
-        document.querySelector('.table-wrapper').style.display = 'none';
+        document.querySelector('#tab-erfassung .table-wrapper').style.display = 'none';
     } else {
         emptyMessage.style.display = 'none';
-        document.querySelector('.table-wrapper').style.display = 'block';
+        document.querySelector('#tab-erfassung .table-wrapper').style.display = 'block';
     }
 
     let totalStunden = 0;
@@ -281,11 +362,11 @@ function renderTabelle() {
             const cls = z.typ === 'Nacht' ? 'zuschlag-nacht'
                 : z.typ === 'Sonntag' ? 'zuschlag-sonntag'
                     : 'zuschlag-feiertag';
-            zuschlagBadges += `<span class="zuschlag-badge ${cls}">${z.typ} ${z.prozent}% = ${formatEuro(z.betrag)}</span> `;
+            zuschlagBadges += `<span class="zuschlag-badge ${cls}">${escapeHtml(z.typ)} ${z.prozent}% = ${formatEuro(z.betrag)}</span> `;
         });
 
         if (e.zuschlagDetails.length === 0) {
-            zuschlagBadges = '<span style="color:#a0aec0">—</span>';
+            zuschlagBadges = '<span style="color:#a0aec0">&mdash;</span>';
         }
 
         tr.innerHTML = `
@@ -298,7 +379,10 @@ function renderTabelle() {
             <td>${formatEuro(e.stundensatz)}/Std.</td>
             <td>${zuschlagBadges}</td>
             <td><strong>${formatEuro(e.gesamt)}</strong></td>
-            <td><button class="btn-delete" onclick="loescheEinsatz(${e.id})">Löschen</button></td>
+            <td class="no-print">
+                <button class="btn-edit" onclick="bearbeiteEinsatz(${e.id})">Bearb.</button>
+                <button class="btn-delete" onclick="loescheEinsatz(${e.id})">Löschen</button>
+            </td>
         `;
         einsatzBody.appendChild(tr);
 
@@ -312,7 +396,7 @@ function renderTabelle() {
     document.getElementById('totalGesamt').textContent = formatEuro(totalGesamt);
 }
 
-// --- Monatsfilter aktualisieren ---
+// --- Filter ---
 function updateMonatsfilter() {
     const monate = new Set();
     einsaetze.forEach(e => monate.add(e.datum.substring(0, 7)));
@@ -332,29 +416,67 @@ function updateMonatsfilter() {
     });
 
     filterMonat.value = aktuellerFilter;
+
+    // Dashboard Monatsfilter synchronisieren
+    const dashMonat = document.getElementById('dashboardMonat');
+    if (dashMonat) {
+        const dashFilter = dashMonat.value;
+        dashMonat.innerHTML = '<option value="">Alle Monate</option>';
+        Array.from(monate).sort().reverse().forEach(m => {
+            const [j, mon] = m.split('-');
+            const opt = document.createElement('option');
+            opt.value = m;
+            opt.textContent = `${monatsnamen[parseInt(mon) - 1]} ${j}`;
+            dashMonat.appendChild(opt);
+        });
+        dashMonat.value = dashFilter;
+    }
 }
 
-// --- Einsatz löschen ---
+function updateObjektfilter() {
+    const objektNamen = new Set();
+    einsaetze.forEach(e => objektNamen.add(e.objekt));
+
+    const aktuellerFilter = filterObjekt.value;
+    filterObjekt.innerHTML = '<option value="">Alle Objekte</option>';
+
+    Array.from(objektNamen).sort().forEach(name => {
+        const opt = document.createElement('option');
+        opt.value = name;
+        opt.textContent = name;
+        filterObjekt.appendChild(opt);
+    });
+
+    filterObjekt.value = aktuellerFilter;
+}
+
+// --- Löschen ---
 function loescheEinsatz(id) {
+    if (!confirm('Diesen Einsatz wirklich löschen?')) return;
     einsaetze = einsaetze.filter(e => e.id !== id);
     speichern();
     renderTabelle();
     updateMonatsfilter();
+    updateObjektfilter();
 }
 
-// --- CSV Export ---
+// =============================================
+// CSV EXPORT
+// =============================================
 function exportCSV() {
-    const filter = filterMonat.value;
-    const gefiltert = filter
-        ? einsaetze.filter(e => e.datum.substring(0, 7) === filter)
-        : einsaetze;
+    const filterM = filterMonat.value;
+    const filterO = filterObjekt.value;
+
+    let gefiltert = einsaetze;
+    if (filterM) gefiltert = gefiltert.filter(e => e.datum.substring(0, 7) === filterM);
+    if (filterO) gefiltert = gefiltert.filter(e => e.objekt === filterO);
 
     if (gefiltert.length === 0) {
         alert('Keine Einsätze zum Exportieren vorhanden.');
         return;
     }
 
-    const header = 'Datum;Objekt;Mitarbeiter;Von;Bis;Stunden;Stundensatz;Zuschläge;Gesamt;Bemerkung';
+    const header = 'Datum;Objekt;Mitarbeiter;Von;Bis;Stunden;Stundensatz;Grundlohn;Zuschläge;Zuschlagsbetrag;Gesamt;Bemerkung';
     const rows = gefiltert.map(e => {
         const zuschlagText = e.zuschlagDetails.map(z => `${z.typ} ${z.prozent}%`).join(', ') || 'keine';
         return [
@@ -365,8 +487,10 @@ function exportCSV() {
             e.zeitBis,
             formatZahl(e.stunden),
             formatZahl(e.stundensatz),
-            zuschlagText + ' (' + formatZahl(e.zuschlagBetrag) + '€)',
-            formatZahl(e.gesamt) + '€',
+            formatZahl(e.grundlohn),
+            zuschlagText,
+            formatZahl(e.zuschlagBetrag),
+            formatZahl(e.gesamt),
             e.bemerkung || ''
         ].map(v => `"${v}"`).join(';');
     });
@@ -377,20 +501,312 @@ function exportCSV() {
     const a = document.createElement('a');
     a.href = url;
 
-    const filterLabel = filter || 'Alle';
+    const filterLabel = filterM || 'Alle';
     a.download = `BBProtect_Einsaetze_${filterLabel}.csv`;
     a.click();
     URL.revokeObjectURL(url);
 }
 
-// --- Hilfsfunktionen ---
+// =============================================
+// DRUCKANSICHT / MONATSBERICHT
+// =============================================
+function druckeMonatsbericht() {
+    const filterM = filterMonat.value;
+    const filterO = filterObjekt.value;
+
+    let gefiltert = einsaetze;
+    if (filterM) gefiltert = gefiltert.filter(e => e.datum.substring(0, 7) === filterM);
+    if (filterO) gefiltert = gefiltert.filter(e => e.objekt === filterO);
+
+    if (gefiltert.length === 0) {
+        alert('Keine Einsätze zum Drucken vorhanden.');
+        return;
+    }
+
+    gefiltert.sort((a, b) => a.datum.localeCompare(b.datum) || a.zeitVon.localeCompare(b.zeitVon));
+
+    const monatsnamen = ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni',
+        'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'];
+
+    let zeitraum = 'Alle Einsätze';
+    if (filterM) {
+        const [j, m] = filterM.split('-');
+        zeitraum = `${monatsnamen[parseInt(m) - 1]} ${j}`;
+    }
+
+    let totalStunden = 0, totalGrund = 0, totalZuschlag = 0, totalGesamt = 0;
+    gefiltert.forEach(e => {
+        totalStunden += e.stunden;
+        totalGrund += e.grundlohn;
+        totalZuschlag += e.zuschlagBetrag;
+        totalGesamt += e.gesamt;
+    });
+
+    let html = `
+        <h1>B.B. Protect</h1>
+        <h2>Einsatzbericht &mdash; ${escapeHtml(zeitraum)}${filterO ? ' &mdash; ' + escapeHtml(filterO) : ''}</h2>
+        <div class="print-meta">
+            Erstellt am: ${formatDatum(new Date().toISOString().split('T')[0])} |
+            Anzahl Einsätze: ${gefiltert.length} |
+            Zeitraum: ${escapeHtml(zeitraum)}
+        </div>
+        <div class="print-summary">
+            <div><strong>Stunden gesamt:</strong> ${formatZahl(totalStunden)}</div>
+            <div><strong>Grundlohn:</strong> ${formatEuro(totalGrund)}</div>
+            <div><strong>Zuschläge:</strong> ${formatEuro(totalZuschlag)}</div>
+            <div><strong>Gesamtbetrag:</strong> ${formatEuro(totalGesamt)}</div>
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th>Datum</th>
+                    <th>Objekt</th>
+                    <th>Mitarbeiter</th>
+                    <th>Von</th>
+                    <th>Bis</th>
+                    <th>Stunden</th>
+                    <th>Satz</th>
+                    <th>Zuschläge</th>
+                    <th>Gesamt</th>
+                </tr>
+            </thead>
+            <tbody>
+    `;
+
+    gefiltert.forEach(e => {
+        const zuschlagText = e.zuschlagDetails.map(z =>
+            `${z.typ} ${z.prozent}%`
+        ).join(', ') || '—';
+
+        html += `
+            <tr>
+                <td>${formatDatum(e.datum)}</td>
+                <td>${escapeHtml(e.objekt)}</td>
+                <td>${escapeHtml(e.mitarbeiter || '—')}</td>
+                <td>${e.zeitVon}</td>
+                <td>${e.zeitBis}</td>
+                <td>${formatZahl(e.stunden)}</td>
+                <td>${formatEuro(e.stundensatz)}</td>
+                <td>${escapeHtml(zuschlagText)} (${formatEuro(e.zuschlagBetrag)})</td>
+                <td>${formatEuro(e.gesamt)}</td>
+            </tr>
+        `;
+    });
+
+    html += `
+            </tbody>
+            <tfoot>
+                <tr class="total-row">
+                    <td colspan="5"><strong>GESAMT</strong></td>
+                    <td><strong>${formatZahl(totalStunden)}</strong></td>
+                    <td></td>
+                    <td><strong>${formatEuro(totalZuschlag)}</strong></td>
+                    <td><strong>${formatEuro(totalGesamt)}</strong></td>
+                </tr>
+            </tfoot>
+        </table>
+        <div class="print-footer">
+            B.B. Protect &mdash; Sicherheitseinsatz-Planer | Erstellt: ${new Date().toLocaleDateString('de-DE')}
+        </div>
+    `;
+
+    document.getElementById('printArea').innerHTML = html;
+    window.print();
+}
+
+// =============================================
+// DASHBOARD
+// =============================================
+document.getElementById('dashboardMonat').addEventListener('change', updateDashboard);
+
+function updateDashboard() {
+    const filterM = document.getElementById('dashboardMonat').value;
+    let gefiltert = einsaetze;
+    if (filterM) gefiltert = gefiltert.filter(e => e.datum.substring(0, 7) === filterM);
+
+    // Statistiken
+    const totalStunden = gefiltert.reduce((s, e) => s + e.stunden, 0);
+    const totalNacht = gefiltert.reduce((s, e) => s + e.nachtStunden, 0);
+    const totalZuschlaege = gefiltert.reduce((s, e) => s + e.zuschlagBetrag, 0);
+    const totalGesamt = gefiltert.reduce((s, e) => s + e.gesamt, 0);
+    const mitarbeiterSet = new Set(gefiltert.filter(e => e.mitarbeiter).map(e => e.mitarbeiter));
+
+    document.getElementById('statStunden').textContent = formatZahl(totalStunden);
+    document.getElementById('statEinsaetze').textContent = gefiltert.length;
+    document.getElementById('statGesamt').textContent = formatEuro(totalGesamt);
+    document.getElementById('statNacht').textContent = formatZahl(totalNacht);
+    document.getElementById('statZuschlaege').textContent = formatEuro(totalZuschlaege);
+    document.getElementById('statMitarbeiter').textContent = mitarbeiterSet.size;
+
+    // Objekt-Aufschlüsselung
+    const objektMap = {};
+    gefiltert.forEach(e => {
+        if (!objektMap[e.objekt]) objektMap[e.objekt] = { stunden: 0, gesamt: 0, count: 0 };
+        objektMap[e.objekt].stunden += e.stunden;
+        objektMap[e.objekt].gesamt += e.gesamt;
+        objektMap[e.objekt].count++;
+    });
+
+    const maxObjStunden = Math.max(...Object.values(objektMap).map(o => o.stunden), 1);
+    let objektHtml = '';
+    Object.entries(objektMap).sort((a, b) => b[1].stunden - a[1].stunden).forEach(([name, data]) => {
+        const pct = (data.stunden / maxObjStunden) * 100;
+        objektHtml += `
+            <div class="stat-row">
+                <span class="stat-row-label">${escapeHtml(name)}</span>
+                <div class="stat-bar"><div class="stat-bar-fill" style="width:${pct}%"></div></div>
+                <span class="stat-row-value">${formatZahl(data.stunden)} Std. / ${formatEuro(data.gesamt)}</span>
+            </div>`;
+    });
+    document.getElementById('objektStats').innerHTML = objektHtml || '<p style="color:#a0aec0">Keine Daten</p>';
+
+    // Mitarbeiter-Aufschlüsselung
+    const maMap = {};
+    gefiltert.forEach(e => {
+        const name = e.mitarbeiter || 'Nicht zugewiesen';
+        if (!maMap[name]) maMap[name] = { stunden: 0, gesamt: 0, count: 0 };
+        maMap[name].stunden += e.stunden;
+        maMap[name].gesamt += e.gesamt;
+        maMap[name].count++;
+    });
+
+    const maxMaStunden = Math.max(...Object.values(maMap).map(o => o.stunden), 1);
+    let maHtml = '';
+    Object.entries(maMap).sort((a, b) => b[1].stunden - a[1].stunden).forEach(([name, data]) => {
+        const pct = (data.stunden / maxMaStunden) * 100;
+        maHtml += `
+            <div class="stat-row">
+                <span class="stat-row-label">${escapeHtml(name)}</span>
+                <div class="stat-bar"><div class="stat-bar-fill" style="width:${pct}%"></div></div>
+                <span class="stat-row-value">${formatZahl(data.stunden)} Std. / ${formatEuro(data.gesamt)}</span>
+            </div>`;
+    });
+    document.getElementById('mitarbeiterStats').innerHTML = maHtml || '<p style="color:#a0aec0">Keine Daten</p>';
+
+    // Zuschlagsverteilung
+    let nachtTotal = 0, sonntagTotal = 0, feiertagTotal = 0;
+    gefiltert.forEach(e => {
+        e.zuschlagDetails.forEach(z => {
+            if (z.typ === 'Nacht') nachtTotal += z.betrag;
+            else if (z.typ === 'Sonntag') sonntagTotal += z.betrag;
+            else feiertagTotal += z.betrag;
+        });
+    });
+
+    const maxZ = Math.max(nachtTotal, sonntagTotal, feiertagTotal, 1);
+    let zHtml = '';
+    [
+        { label: 'Nachtzuschläge', betrag: nachtTotal, cls: 'nacht' },
+        { label: 'Sonntagszuschläge', betrag: sonntagTotal, cls: 'sonntag' },
+        { label: 'Feiertagszuschläge', betrag: feiertagTotal, cls: 'feiertag' }
+    ].forEach(z => {
+        const pct = (z.betrag / maxZ) * 100;
+        zHtml += `
+            <div class="stat-row">
+                <span class="stat-row-label">${z.label}</span>
+                <div class="stat-bar"><div class="stat-bar-fill ${z.cls}" style="width:${pct}%"></div></div>
+                <span class="stat-row-value">${formatEuro(z.betrag)}</span>
+            </div>`;
+    });
+    document.getElementById('zuschlagStats').innerHTML = zHtml;
+}
+
+// =============================================
+// OBJEKT-VERWALTUNG
+// =============================================
+document.getElementById('objektForm').addEventListener('submit', function (e) {
+    e.preventDefault();
+    const name = document.getElementById('objektName').value.trim();
+    const adresse = document.getElementById('objektAdresse').value.trim();
+    const stundensatz = parseFloat(document.getElementById('objektStundensatz').value) || 0;
+    const ansprechpartner = document.getElementById('objektAnsprechpartner').value.trim();
+
+    if (!name) return;
+
+    // Prüfen ob Objekt schon existiert (Update)
+    const idx = objekte.findIndex(o => o.name === name);
+    const obj = { name, adresse, stundensatz, ansprechpartner };
+
+    if (idx !== -1) {
+        objekte[idx] = obj;
+    } else {
+        objekte.push(obj);
+    }
+
+    localStorage.setItem('bbprotect_objekte', JSON.stringify(objekte));
+    renderObjekte();
+    updateDataLists();
+    this.reset();
+});
+
+function renderObjekte() {
+    const body = document.getElementById('objekteBody');
+    const empty = document.getElementById('objekteEmpty');
+
+    body.innerHTML = '';
+
+    if (objekte.length === 0) {
+        empty.style.display = 'block';
+        return;
+    }
+
+    empty.style.display = 'none';
+    objekte.forEach((o, i) => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td>${escapeHtml(o.name)}</td>
+            <td>${escapeHtml(o.adresse || '—')}</td>
+            <td>${o.stundensatz ? formatEuro(o.stundensatz) + '/Std.' : '—'}</td>
+            <td>${escapeHtml(o.ansprechpartner || '—')}</td>
+            <td><button class="btn-delete" onclick="loescheObjekt(${i})">Löschen</button></td>
+        `;
+        body.appendChild(tr);
+    });
+}
+
+function loescheObjekt(index) {
+    if (!confirm('Dieses Objekt wirklich löschen?')) return;
+    objekte.splice(index, 1);
+    localStorage.setItem('bbprotect_objekte', JSON.stringify(objekte));
+    renderObjekte();
+    updateDataLists();
+}
+
+// --- DataLists für Autocomplete ---
+function updateDataLists() {
+    // Objekt-Liste
+    const objektListe = document.getElementById('objektListe');
+    objektListe.innerHTML = '';
+    const alleObjekte = new Set(objekte.map(o => o.name));
+    einsaetze.forEach(e => alleObjekte.add(e.objekt));
+    alleObjekte.forEach(name => {
+        const opt = document.createElement('option');
+        opt.value = name;
+        objektListe.appendChild(opt);
+    });
+
+    // Mitarbeiter-Liste
+    const maListe = document.getElementById('mitarbeiterListe');
+    maListe.innerHTML = '';
+    const alleMa = new Set();
+    einsaetze.forEach(e => { if (e.mitarbeiter) alleMa.add(e.mitarbeiter); });
+    alleMa.forEach(name => {
+        const opt = document.createElement('option');
+        opt.value = name;
+        maListe.appendChild(opt);
+    });
+}
+
+// =============================================
+// HILFSFUNKTIONEN
+// =============================================
 function formatDatum(d) {
     const [j, m, t] = d.split('-');
     return `${t}.${m}.${j}`;
 }
 
 function formatEuro(betrag) {
-    return betrag.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €';
+    return betrag.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' \u20AC';
 }
 
 function formatZahl(n) {
@@ -407,7 +823,12 @@ function speichern() {
     localStorage.setItem('bbprotect_einsaetze', JSON.stringify(einsaetze));
 }
 
-// --- Initialisierung ---
+// =============================================
+// INITIALISIERUNG
+// =============================================
 document.getElementById('datum').valueAsDate = new Date();
 renderTabelle();
 updateMonatsfilter();
+updateObjektfilter();
+updateDataLists();
+renderObjekte();

@@ -12,130 +12,261 @@
             <h1>B.B. Protect</h1>
             <p class="subtitle">Stundenplaner &mdash; Sicherheitseinsätze</p>
         </div>
+        <nav class="header-nav">
+            <button class="nav-btn active" data-tab="erfassung">Erfassung</button>
+            <button class="nav-btn" data-tab="dashboard">Dashboard</button>
+            <button class="nav-btn" data-tab="objekte">Objekte</button>
+        </nav>
     </header>
 
     <main>
-        <section class="form-section">
-            <h2>Neuen Einsatz erfassen</h2>
-            <form id="einsatzForm">
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="objekt">Objekt / Einsatzort</label>
-                        <input type="text" id="objekt" placeholder="z.B. Einkaufszentrum Mitte" required>
+        <!-- TAB: Erfassung -->
+        <div class="tab-content active" id="tab-erfassung">
+            <section class="form-section">
+                <h2 id="formTitle">Neuen Einsatz erfassen</h2>
+                <form id="einsatzForm">
+                    <input type="hidden" id="editId" value="">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="objekt">Objekt / Einsatzort</label>
+                            <input type="text" id="objekt" list="objektListe" placeholder="z.B. Einkaufszentrum Mitte" required>
+                            <datalist id="objektListe"></datalist>
+                        </div>
+                        <div class="form-group">
+                            <label for="datum">Datum</label>
+                            <input type="date" id="datum" required>
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label for="datum">Datum</label>
-                        <input type="date" id="datum" required>
-                    </div>
-                </div>
 
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="zeitVon">Zeit von</label>
-                        <input type="time" id="zeitVon" required>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="zeitVon">Zeit von</label>
+                            <input type="time" id="zeitVon" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="zeitBis">Zeit bis</label>
+                            <input type="time" id="zeitBis" required>
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label for="zeitBis">Zeit bis</label>
-                        <input type="time" id="zeitBis" required>
-                    </div>
-                </div>
 
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="stundensatz">Stundensatz (€)</label>
-                        <input type="number" id="stundensatz" step="0.01" min="0" placeholder="z.B. 15.00" required>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="stundensatz">Stundensatz (&euro;)</label>
+                            <input type="number" id="stundensatz" step="0.01" min="0" placeholder="z.B. 15.00" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="mitarbeiter">Mitarbeiter</label>
+                            <input type="text" id="mitarbeiter" list="mitarbeiterListe" placeholder="Name des Mitarbeiters">
+                            <datalist id="mitarbeiterListe"></datalist>
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label for="mitarbeiter">Mitarbeiter</label>
-                        <input type="text" id="mitarbeiter" placeholder="Name des Mitarbeiters">
-                    </div>
-                </div>
 
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="bemerkung">Bemerkung</label>
-                        <input type="text" id="bemerkung" placeholder="Optionale Bemerkung">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="bemerkung">Bemerkung</label>
+                            <input type="text" id="bemerkung" placeholder="Optionale Bemerkung">
+                        </div>
                     </div>
-                </div>
 
-                <div class="zuschlag-optionen">
-                    <h3>Zuschläge</h3>
-                    <div class="checkbox-row">
-                        <label class="checkbox-label">
-                            <input type="checkbox" id="autoZuschlag" checked>
-                            Zuschläge automatisch berechnen (Nacht/Sonntag/Feiertag B.B.)
-                        </label>
-                    </div>
-                    <div class="manual-zuschlag" id="manualZuschlag" style="display:none;">
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="nachtzuschlag">Nachtzuschlag (%)</label>
-                                <input type="number" id="nachtzuschlag" value="25" min="0" max="100" step="1">
-                            </div>
-                            <div class="form-group">
-                                <label for="sonntagszuschlag">Sonntagszuschlag (%)</label>
-                                <input type="number" id="sonntagszuschlag" value="50" min="0" max="100" step="1">
-                            </div>
-                            <div class="form-group">
-                                <label for="feiertagszuschlag">Feiertagszuschlag (%)</label>
-                                <input type="number" id="feiertagszuschlag" value="100" min="0" max="100" step="1">
+                    <div class="zuschlag-optionen">
+                        <h3>Zuschläge</h3>
+                        <div class="checkbox-row">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="autoZuschlag" checked>
+                                Zuschläge automatisch berechnen (Nacht/Sonntag/Feiertag B.B.)
+                            </label>
+                        </div>
+                        <div class="manual-zuschlag" id="manualZuschlag" style="display:none;">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="nachtzuschlag">Nachtzuschlag (%)</label>
+                                    <input type="number" id="nachtzuschlag" value="25" min="0" max="100" step="1">
+                                </div>
+                                <div class="form-group">
+                                    <label for="sonntagszuschlag">Sonntagszuschlag (%)</label>
+                                    <input type="number" id="sonntagszuschlag" value="50" min="0" max="100" step="1">
+                                </div>
+                                <div class="form-group">
+                                    <label for="feiertagszuschlag">Feiertagszuschlag (%)</label>
+                                    <input type="number" id="feiertagszuschlag" value="100" min="0" max="100" step="1">
+                                </div>
                             </div>
                         </div>
                     </div>
+
+                    <div class="form-buttons">
+                        <button type="submit" class="btn-primary" id="submitBtn">Einsatz hinzufügen</button>
+                        <button type="button" class="btn-secondary" id="cancelEditBtn" style="display:none;" onclick="cancelEdit()">Abbrechen</button>
+                    </div>
+                </form>
+            </section>
+
+            <section class="preview-section" id="previewSection" style="display:none;">
+                <h2>Vorschau Berechnung</h2>
+                <div id="previewContent"></div>
+            </section>
+
+            <section class="list-section">
+                <div class="list-header">
+                    <h2>Einsatzübersicht</h2>
+                    <div class="list-actions">
+                        <select id="filterMonat">
+                            <option value="">Alle Monate</option>
+                        </select>
+                        <select id="filterObjekt">
+                            <option value="">Alle Objekte</option>
+                        </select>
+                        <button class="btn-secondary" onclick="exportCSV()">CSV Export</button>
+                        <button class="btn-secondary" onclick="druckeMonatsbericht()">Drucken</button>
+                    </div>
+                </div>
+                <div class="table-wrapper">
+                    <table id="einsatzTabelle">
+                        <thead>
+                            <tr>
+                                <th>Datum</th>
+                                <th>Objekt</th>
+                                <th>Mitarbeiter</th>
+                                <th>Von</th>
+                                <th>Bis</th>
+                                <th>Stunden</th>
+                                <th>Stundensatz</th>
+                                <th>Zuschläge</th>
+                                <th>Gesamt</th>
+                                <th class="no-print">Aktionen</th>
+                            </tr>
+                        </thead>
+                        <tbody id="einsatzBody">
+                        </tbody>
+                        <tfoot>
+                            <tr class="total-row">
+                                <td colspan="5"><strong>Gesamt</strong></td>
+                                <td id="totalStunden">0,00</td>
+                                <td></td>
+                                <td id="totalZuschlaege">0,00 &euro;</td>
+                                <td id="totalGesamt">0,00 &euro;</td>
+                                <td class="no-print"></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+                <p class="empty-message" id="emptyMessage">Noch keine Einsätze erfasst.</p>
+            </section>
+        </div>
+
+        <!-- TAB: Dashboard -->
+        <div class="tab-content" id="tab-dashboard">
+            <section class="dashboard-section">
+                <h2>Monatsübersicht</h2>
+                <div class="dashboard-filter">
+                    <select id="dashboardMonat"></select>
                 </div>
 
-                <button type="submit" class="btn-primary">Einsatz hinzufügen</button>
-            </form>
-        </section>
-
-        <section class="preview-section" id="previewSection" style="display:none;">
-            <h2>Vorschau Berechnung</h2>
-            <div id="previewContent"></div>
-        </section>
-
-        <section class="list-section">
-            <div class="list-header">
-                <h2>Einsatzübersicht</h2>
-                <div class="list-actions">
-                    <select id="filterMonat">
-                        <option value="">Alle Monate</option>
-                    </select>
-                    <button class="btn-secondary" onclick="exportCSV()">CSV Export</button>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon">&#128337;</div>
+                        <div class="stat-value" id="statStunden">0</div>
+                        <div class="stat-label">Stunden gesamt</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">&#128197;</div>
+                        <div class="stat-value" id="statEinsaetze">0</div>
+                        <div class="stat-label">Einsätze</div>
+                    </div>
+                    <div class="stat-card accent">
+                        <div class="stat-icon">&#128176;</div>
+                        <div class="stat-value" id="statGesamt">0,00 &euro;</div>
+                        <div class="stat-label">Umsatz gesamt</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">&#127769;</div>
+                        <div class="stat-value" id="statNacht">0</div>
+                        <div class="stat-label">Nachtstunden</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">&#128200;</div>
+                        <div class="stat-value" id="statZuschlaege">0,00 &euro;</div>
+                        <div class="stat-label">Zuschläge gesamt</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">&#128101;</div>
+                        <div class="stat-value" id="statMitarbeiter">0</div>
+                        <div class="stat-label">Mitarbeiter</div>
+                    </div>
                 </div>
-            </div>
-            <div class="table-wrapper">
-                <table id="einsatzTabelle">
-                    <thead>
-                        <tr>
-                            <th>Datum</th>
-                            <th>Objekt</th>
-                            <th>Mitarbeiter</th>
-                            <th>Von</th>
-                            <th>Bis</th>
-                            <th>Stunden</th>
-                            <th>Stundensatz</th>
-                            <th>Zuschläge</th>
-                            <th>Gesamt</th>
-                            <th>Aktionen</th>
-                        </tr>
-                    </thead>
-                    <tbody id="einsatzBody">
-                    </tbody>
-                    <tfoot>
-                        <tr class="total-row">
-                            <td colspan="5"><strong>Gesamt</strong></td>
-                            <td id="totalStunden">0,00</td>
-                            <td></td>
-                            <td id="totalZuschlaege">0,00 €</td>
-                            <td id="totalGesamt">0,00 €</td>
-                            <td></td>
-                        </tr>
-                    </tfoot>
-                </table>
-            </div>
-            <p class="empty-message" id="emptyMessage">Noch keine Einsätze erfasst.</p>
-        </section>
+
+                <div class="dashboard-details">
+                    <div class="detail-card">
+                        <h3>Aufschlüsselung nach Objekt</h3>
+                        <div id="objektStats"></div>
+                    </div>
+                    <div class="detail-card">
+                        <h3>Aufschlüsselung nach Mitarbeiter</h3>
+                        <div id="mitarbeiterStats"></div>
+                    </div>
+                </div>
+
+                <div class="dashboard-details">
+                    <div class="detail-card full-width">
+                        <h3>Zuschlagsverteilung</h3>
+                        <div id="zuschlagStats"></div>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- TAB: Objekte -->
+        <div class="tab-content" id="tab-objekte">
+            <section class="form-section">
+                <h2>Objekt / Einsatzort verwalten</h2>
+                <form id="objektForm">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="objektName">Objektname</label>
+                            <input type="text" id="objektName" placeholder="z.B. Einkaufszentrum Mitte" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="objektAdresse">Adresse</label>
+                            <input type="text" id="objektAdresse" placeholder="Straße, PLZ Ort">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="objektStundensatz">Standard-Stundensatz (&euro;)</label>
+                            <input type="number" id="objektStundensatz" step="0.01" min="0" placeholder="z.B. 15.00">
+                        </div>
+                        <div class="form-group">
+                            <label for="objektAnsprechpartner">Ansprechpartner</label>
+                            <input type="text" id="objektAnsprechpartner" placeholder="Name / Telefon">
+                        </div>
+                    </div>
+                    <button type="submit" class="btn-primary">Objekt speichern</button>
+                </form>
+            </section>
+
+            <section class="list-section">
+                <h2>Gespeicherte Objekte</h2>
+                <div class="table-wrapper">
+                    <table id="objekteTabelle">
+                        <thead>
+                            <tr>
+                                <th>Objektname</th>
+                                <th>Adresse</th>
+                                <th>Stundensatz</th>
+                                <th>Ansprechpartner</th>
+                                <th>Aktionen</th>
+                            </tr>
+                        </thead>
+                        <tbody id="objekteBody"></tbody>
+                    </table>
+                </div>
+                <p class="empty-message" id="objekteEmpty">Noch keine Objekte gespeichert.</p>
+            </section>
+        </div>
     </main>
+
+    <!-- Druckansicht (wird per JS befüllt) -->
+    <div id="printArea" class="print-area"></div>
 
     <footer>
         <p>&copy; 2026 B.B. Protect &mdash; Sicherheitseinsatz-Planer</p>
