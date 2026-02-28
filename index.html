@@ -181,6 +181,7 @@
                 <div class="list-header">
                     <h2>Einsatz&uuml;bersicht</h2>
                     <div class="list-actions">
+                        <input type="text" id="suchfeld" placeholder="Suche..." class="such-input" oninput="renderTabelle()">
                         <select id="filterMonat">
                             <option value="">Alle Monate</option>
                         </select>
@@ -282,6 +283,7 @@
                         <option value="">Alle Mitarbeiter</option>
                     </select>
                     <button class="btn-secondary" onclick="druckeAbrechnung()">Abrechnung drucken</button>
+                    <button class="btn-secondary" onclick="druckeStundenzettel()">Stundenzettel</button>
                 </div>
                 <div id="abrechnungContent"></div>
             </section>
@@ -343,6 +345,13 @@
                     <div class="detail-card full-width">
                         <h3>Zuschlagsverteilung</h3>
                         <div id="zuschlagStats"></div>
+                    </div>
+                </div>
+
+                <div class="dashboard-details">
+                    <div class="detail-card full-width">
+                        <h3>Monatsvergleich</h3>
+                        <div id="monatsVergleich"></div>
                     </div>
                 </div>
             </section>

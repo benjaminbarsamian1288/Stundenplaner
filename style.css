@@ -1692,6 +1692,33 @@ body.dark-mode textarea {
     border-color: #30363d;
 }
 
+body.dark-mode .such-input {
+    background: #0d1117;
+    color: #c9d1d9;
+    border-color: #30363d;
+}
+
+body.dark-mode .such-input:focus {
+    border-color: #388bfd;
+    box-shadow: 0 0 0 3px rgba(56, 139, 253, 0.2);
+}
+
+body.dark-mode .mv-bar {
+    background: linear-gradient(180deg, #30363d, #484f58);
+}
+
+body.dark-mode .mv-spalte.mv-aktuell .mv-bar {
+    background: linear-gradient(180deg, #1f6feb, #388bfd);
+}
+
+body.dark-mode .mv-label {
+    color: #8b949e;
+}
+
+body.dark-mode .mv-umsatz {
+    color: #c9d1d9;
+}
+
 /* Vorfallsbericht */
 .vorfall-card {
     background: #fff;
@@ -2020,6 +2047,99 @@ body.dark-mode textarea {
     font-size: 0.6rem;
     font-weight: 700;
     margin-top: 0.1rem;
+}
+
+/* Suchfeld */
+.such-input {
+    padding: 0.5rem 0.8rem;
+    border: 1px solid #cbd5e0;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    width: 150px;
+    transition: border-color 0.2s, width 0.2s;
+}
+
+.such-input:focus {
+    outline: none;
+    border-color: #1a1a2e;
+    box-shadow: 0 0 0 3px rgba(26, 26, 46, 0.1);
+    width: 200px;
+}
+
+/* Monatsvergleich Chart */
+.monatsvergleich-grid {
+    display: flex;
+    gap: 0.5rem;
+    align-items: flex-end;
+    height: 200px;
+    padding-top: 1rem;
+}
+
+.mv-spalte {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    height: 100%;
+}
+
+.mv-spalte.mv-aktuell .mv-bar {
+    background: linear-gradient(180deg, #1a1a2e, #2d3748);
+}
+
+.mv-werte {
+    text-align: center;
+    margin-bottom: 0.3rem;
+    min-height: 50px;
+}
+
+.mv-umsatz {
+    font-weight: 700;
+    font-size: 0.8rem;
+}
+
+.mv-detail {
+    font-size: 0.65rem;
+    color: #718096;
+}
+
+.trend-up {
+    color: #38a169;
+    font-size: 0.65rem;
+    font-weight: 600;
+}
+
+.trend-down {
+    color: #e53e3e;
+    font-size: 0.65rem;
+    font-weight: 600;
+}
+
+.trend-equal {
+    color: #718096;
+    font-size: 0.65rem;
+}
+
+.mv-bar-container {
+    flex: 1;
+    width: 100%;
+    display: flex;
+    align-items: flex-end;
+}
+
+.mv-bar {
+    width: 100%;
+    background: linear-gradient(180deg, #a0aec0, #cbd5e0);
+    border-radius: 4px 4px 0 0;
+    transition: height 0.5s;
+    min-height: 4px;
+}
+
+.mv-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    margin-top: 0.3rem;
+    color: #4a5568;
 }
 
 /* Legende Abwesend */

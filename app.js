@@ -419,6 +419,18 @@ function renderTabelle() {
     if (filterM) gefiltert = gefiltert.filter(e => e.datum.substring(0, 7) === filterM);
     if (filterO) gefiltert = gefiltert.filter(e => e.objekt === filterO);
 
+    // Suchfilter
+    const suchfeld = document.getElementById('suchfeld');
+    const suche = suchfeld ? suchfeld.value.toLowerCase().trim() : '';
+    if (suche) {
+        gefiltert = gefiltert.filter(e =>
+            e.objekt.toLowerCase().includes(suche) ||
+            (e.mitarbeiter || '').toLowerCase().includes(suche) ||
+            formatDatum(e.datum).includes(suche) ||
+            (e.bemerkung || '').toLowerCase().includes(suche)
+        );
+    }
+
     // Sortierung
     gefiltert.sort((a, b) => {
         let cmp = 0;
@@ -975,7 +987,68 @@ function updateDashboard() {
         </div>`;
     });
     document.getElementById('zuschlagStats').innerHTML = zHtml;
+
+    // Monatsvergleich
+    renderMonatsVergleich(filterM);
 }
+
+function renderMonatsVergleich(aktuellerMonat) {
+    const el = document.getElementById('monatsVergleich');
+    if (!el) return;
+
+    // Sammle alle Monate
+    const monatsDaten = {};
+    einsaetze.forEach(e => {
+        const m = e.datum.substring(0, 7);
+        if (!monatsDaten[m]) monatsDaten[m] = { stunden: 0, umsatz: 0, einsaetze: 0, zuschlaege: 0 };
+        monatsDaten[m].stunden += e.stunden;
+        monatsDaten[m].umsatz += e.gesamt;
+        monatsDaten[m].einsaetze++;
+        monatsDaten[m].zuschlaege += e.zuschlagBetrag;
+    });
+
+    const monateKeys = Object.keys(monatsDaten).sort().reverse().slice(0, 6).reverse();
+
+    if (monateKeys.length < 2) {
+        el.innerHTML = '<p style="color:#a0aec0">Mindestens 2 Monate Daten nötig für den Vergleich.</p>';
+        return;
+    }
+
+    const maxUmsatz = Math.max(...monateKeys.map(k => monatsDaten[k].umsatz), 1);
+
+    let html = '<div class="monatsvergleich-grid">';
+    monateKeys.forEach((key, i) => {
+        const d = monatsDaten[key];
+        const [j, m] = key.split('-');
+        const label = `${MONATSNAMEN[parseInt(m) - 1].substring(0, 3)} ${j.substring(2)}`;
+        const pct = (d.umsatz / maxUmsatz) * 100;
+        const istAktuell = key === aktuellerMonat;
+
+        // Trend-Pfeil zum Vormonat
+        let trend = '';
+        if (i > 0) {
+            const prev = monatsDaten[monateKeys[i - 1]];
+            const diff = d.umsatz - prev.umsatz;
+            if (diff > 0) trend = `<span class="trend-up">+${formatEuro(diff)}</span>`;
+            else if (diff < 0) trend = `<span class="trend-down">${formatEuro(diff)}</span>`;
+            else trend = '<span class="trend-equal">=</span>';
+        }
+
+        html += `<div class="mv-spalte ${istAktuell ? 'mv-aktuell' : ''}">
+            <div class="mv-werte">
+                <div class="mv-umsatz">${formatEuro(d.umsatz)}</div>
+                <div class="mv-detail">${d.einsaetze} Eins. / ${formatZahl(d.stunden)} Std.</div>
+                ${trend}
+            </div>
+            <div class="mv-bar-container">
+                <div class="mv-bar" style="height:${pct}%"></div>
+            </div>
+            <div class="mv-label">${label}</div>
+        </div>`;
+    });
+    html += '</div>';
+
+    el.innerHTML = html;
 
 function renderBarStats(elementId, daten, keyFn) {
     const map = {};
@@ -2051,6 +2124,102 @@ function neuenEinsatzAnTag(datumStr) {
 document.getElementById('tagesModal').addEventListener('click', function (e) {
     if (e.target === this) schliesseModal();
 });
+
+// =============================================
+// STUNDENZETTEL (EINZELNER MA)
+// =============================================
+function druckeStundenzettel() {
+    const filterM = document.getElementById('abrechnungMonat').value;
+    const filterMA = document.getElementById('abrechnungMitarbeiter').value;
+
+    if (!filterMA) { alert('Bitte einen Mitarbeiter auswählen.'); return; }
+    if (!filterM) { alert('Bitte einen Monat auswählen.'); return; }
+
+    const gefiltert = einsaetze.filter(e => e.datum.substring(0, 7) === filterM && e.mitarbeiter === filterMA);
+
+    if (gefiltert.length === 0) { alert('Keine Einsätze für diesen Mitarbeiter in diesem Monat.'); return; }
+
+    gefiltert.sort((a, b) => a.datum.localeCompare(b.datum) || a.zeitVon.localeCompare(b.zeitVon));
+
+    const [j, m] = filterM.split('-');
+    const monat = `${MONATSNAMEN[parseInt(m) - 1]} ${j}`;
+
+    // MA-Info
+    const maInfo = mitarbeiterListe_.find(ma => ma.name === filterMA);
+    const qualLabel = maInfo ? (QUAL_LABELS[maInfo.qualifikation] || maInfo.qualifikation) : '';
+
+    let totalStd = 0, totalNacht = 0, totalGrund = 0, totalZuschlag = 0, totalGesamt = 0, totalPause = 0;
+    gefiltert.forEach(e => {
+        totalStd += e.stunden;
+        totalNacht += e.nachtStunden;
+        totalGrund += e.grundlohn;
+        totalZuschlag += e.zuschlagBetrag;
+        totalGesamt += e.gesamt;
+        totalPause += e.pauseMinuten || 0;
+    });
+
+    const arbeitstage = new Set(gefiltert.map(e => e.datum)).size;
+
+    let html = `<h1>B.B. Protect</h1>
+        <h2>Stundenzettel</h2>
+        <div class="print-meta">
+            <strong>${escapeHtml(filterMA)}</strong>${qualLabel ? ' | ' + escapeHtml(qualLabel) : ''}<br>
+            Zeitraum: ${monat} | Erstellt: ${formatDatum(new Date().toISOString().split('T')[0])}
+        </div>
+        <div class="print-summary">
+            <div><strong>Arbeitstage:</strong> ${arbeitstage}</div>
+            <div><strong>Stunden:</strong> ${formatZahl(totalStd)}</div>
+            <div><strong>davon Nacht:</strong> ${formatZahl(totalNacht)}</div>
+            <div><strong>Pausen:</strong> ${totalPause} Min.</div>
+        </div>
+        <table><thead><tr>
+            <th>Nr.</th><th>Datum</th><th>Tag</th><th>Objekt</th><th>Von</th><th>Bis</th>
+            <th>Std.</th><th>Nacht</th><th>Pause</th><th>Grund</th><th>Zuschlag</th><th>Gesamt</th>
+        </tr></thead><tbody>`;
+
+    const wochentage = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'];
+
+    gefiltert.forEach((e, i) => {
+        const wt = wochentage[new Date(e.datum).getDay()];
+        html += `<tr>
+            <td>${i + 1}</td>
+            <td>${formatDatum(e.datum)}</td>
+            <td>${wt}</td>
+            <td>${escapeHtml(e.objekt)}</td>
+            <td>${e.zeitVon}</td>
+            <td>${e.zeitBis}</td>
+            <td>${formatZahl(e.stunden)}</td>
+            <td>${formatZahl(e.nachtStunden)}</td>
+            <td>${e.pauseMinuten || 0}</td>
+            <td>${formatEuro(e.grundlohn)}</td>
+            <td>${formatEuro(e.zuschlagBetrag)}</td>
+            <td>${formatEuro(e.gesamt)}</td>
+        </tr>`;
+    });
+
+    html += `</tbody><tfoot><tr class="total-row">
+        <td colspan="6"><strong>GESAMT</strong></td>
+        <td><strong>${formatZahl(totalStd)}</strong></td>
+        <td><strong>${formatZahl(totalNacht)}</strong></td>
+        <td><strong>${totalPause}</strong></td>
+        <td><strong>${formatEuro(totalGrund)}</strong></td>
+        <td><strong>${formatEuro(totalZuschlag)}</strong></td>
+        <td><strong>${formatEuro(totalGesamt)}</strong></td>
+    </tr></tfoot></table>`;
+
+    html += `<div style="margin-top:2rem;display:flex;justify-content:space-between">
+        <div style="border-top:1px solid #000;width:200px;text-align:center;padding-top:0.3rem">
+            Unterschrift Mitarbeiter
+        </div>
+        <div style="border-top:1px solid #000;width:200px;text-align:center;padding-top:0.3rem">
+            Unterschrift Arbeitgeber
+        </div>
+    </div>`;
+
+    html += printFooter();
+    document.getElementById('printArea').innerHTML = html;
+    window.print();
+}
 
 // =============================================
 // INITIALISIERUNG
