@@ -512,6 +512,13 @@
                         <div id="chronikContent"></div>
                     </div>
                 </div>
+
+                <div class="dashboard-details" style="margin-top:1rem">
+                    <div class="detail-card full-width">
+                        <h3>Einsatz-Analytics</h3>
+                        <div id="analyticsContent"></div>
+                    </div>
+                </div>
             </section>
         </div>
 
@@ -783,6 +790,47 @@
                     </div>
                 </div>
                 <div id="objektKostenContent"></div>
+            </section>
+
+            <section class="form-section">
+                <div class="list-header">
+                    <h2>Vertrags-Countdown</h2>
+                </div>
+                <div id="vertragsCountdownContent"></div>
+            </section>
+
+            <section class="form-section">
+                <h2>Personalbedarfsrechner</h2>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="pbStdProTag">Stunden/Tag Bedarf</label>
+                        <input type="number" id="pbStdProTag" value="24" step="1" min="1" max="24">
+                    </div>
+                    <div class="form-group">
+                        <label for="pbTageProWoche">Tage/Woche</label>
+                        <input type="number" id="pbTageProWoche" value="7" step="1" min="1" max="7">
+                    </div>
+                    <div class="form-group">
+                        <label for="pbSchichtlaenge">Schichtl&auml;nge (Std.)</label>
+                        <input type="number" id="pbSchichtlaenge" value="8" step="0.5" min="4" max="12">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="pbMaxWoche">Max. Std./Woche/MA</label>
+                        <input type="number" id="pbMaxWoche" value="48" step="1" min="20" max="60">
+                    </div>
+                    <div class="form-group">
+                        <label for="pbUrlaub">Urlaubstage/Jahr</label>
+                        <input type="number" id="pbUrlaub" value="30" step="1" min="0">
+                    </div>
+                    <div class="form-group">
+                        <label for="pbKrank">Kranktage/Jahr (Ø)</label>
+                        <input type="number" id="pbKrank" value="10" step="1" min="0">
+                    </div>
+                </div>
+                <button type="button" class="btn-primary" onclick="berechnePersonalbedarf()">Bedarf berechnen</button>
+                <div id="personalBedarfResult" style="margin-top:0.75rem"></div>
             </section>
         </div>
         <!-- TAB: Mitarbeiter -->
@@ -1350,6 +1398,32 @@
                         <input type="number" id="einstWocheMax" step="1" min="1" max="168" placeholder="48" onchange="speichereEinstellungen()">
                     </div>
                 </div>
+
+                <h2 style="margin-top:1.5rem">Tages-Sondernotizen</h2>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="snDatum">Datum</label>
+                        <input type="date" id="snDatum">
+                    </div>
+                    <div class="form-group">
+                        <label for="snTyp">Typ</label>
+                        <select id="snTyp">
+                            <option value="hinweis">Hinweis</option>
+                            <option value="wetter">Wetter</option>
+                            <option value="event">Veranstaltung</option>
+                            <option value="warnung">Warnung</option>
+                            <option value="sonstiges">Sonstiges</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="flex:2">
+                        <label for="snText">Notiz</label>
+                        <input type="text" id="snText" placeholder="z.B. Sturm erwartet, Konzert im Stadion...">
+                    </div>
+                    <div class="form-group">
+                        <button type="button" class="btn-primary" onclick="speichereSondernotiz()" style="margin-top:1.5rem">Speichern</button>
+                    </div>
+                </div>
+                <div id="sonderNotizenContent" style="margin-top:0.5rem"></div>
 
                 <h2 style="margin-top:1.5rem">Datensicherung &amp; Import</h2>
                 <p class="daten-info">Alle Daten werden lokal im Browser gespeichert (localStorage). Erstelle regelm&auml;&szlig;ig ein Backup, damit nichts verloren geht.</p>

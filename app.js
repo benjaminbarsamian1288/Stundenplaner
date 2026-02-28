@@ -86,14 +86,14 @@ document.querySelectorAll('.nav-btn').forEach(btn => {
         this.classList.add('active');
         document.getElementById('tab-' + this.dataset.tab).classList.add('active');
 
-        if (this.dataset.tab === 'dashboard') { updateDashboard(); renderEinsatzChronik(); }
-        if (this.dataset.tab === 'objekte') { renderObjekte(); renderVertraege(); renderObjektAuslastung(); updateChecklisteObjekte(); updateObjektHistorieSelect(); updateObjektKontakteSelect(); renderObjektKontakte(); updateObjektAnweisungenSelect(); renderObjektAnweisungen(); updateObjektKostenMonat(); renderObjektKostenanalyse(); }
+        if (this.dataset.tab === 'dashboard') { updateDashboard(); renderEinsatzChronik(); renderEinsatzAnalytics(); }
+        if (this.dataset.tab === 'objekte') { renderObjekte(); renderVertraege(); renderObjektAuslastung(); updateChecklisteObjekte(); updateObjektHistorieSelect(); updateObjektKontakteSelect(); renderObjektKontakte(); updateObjektAnweisungenSelect(); renderObjektAnweisungen(); updateObjektKostenMonat(); renderObjektKostenanalyse(); renderVertragsCountdown(); }
         if (this.dataset.tab === 'kalender') { renderKalender(); renderDienstplan(); renderJahresuebersicht(); }
         if (this.dataset.tab === 'abrechnung') { updateAbrechnung(); updateLohnvorschauSelects(); renderDuplikatCheck(); }
         if (this.dataset.tab === 'mitarbeiter') { renderMitarbeiter(); renderDokumente(); renderUeberstunden(); renderKontaktliste(); renderUrlaubskonto(); renderArbeitszeitkonto(); renderQualMatrix(); updateSchichtHistorieSelect(); renderNotfallkontakte(); updateMAKalSelect(); renderVerfuegbarkeitWoche(); renderDoppelschichtWarnungen(); renderMALeistung(); renderKrankenstatistik(); }
         if (this.dataset.tab === 'vorfaelle') { renderVorfaelle(); renderVorfallsStatistik(); }
         if (this.dataset.tab === 'wachbuch') { renderWachbuch(); renderUebergaben(); renderWachbuchStats(); }
-        if (this.dataset.tab === 'einstellungen') { updateDatenStats(); updateSpeicherStats(); ladeEinstellungen(); renderAuditLog(); }
+        if (this.dataset.tab === 'einstellungen') { updateDatenStats(); updateSpeicherStats(); ladeEinstellungen(); renderAuditLog(); renderSondernotizen(); }
     });
 });
 
@@ -3907,6 +3907,7 @@ function bulkStatusAendern(neuerStatus) {
         if (e) e.status = neuerStatus;
     });
 
+    logAudit('status', 'Einsatz', `${ids.length} Einsätze → ${STATUS_LABELS[neuerStatus]}`);
     speichern();
     renderTabelle();
     bulkAbwaehlen();
@@ -3919,6 +3920,7 @@ function bulkLoeschen() {
     if (!confirm(`${ids.length} Einsätze wirklich löschen?`)) return;
     if (ids.length > 5 && !confirm(`Wirklich ${ids.length} Einsätze unwiderruflich löschen?`)) return;
 
+    logAudit('geloescht', 'Einsatz', `${ids.length} Einsätze per Bulk gelöscht`);
     einsaetze = einsaetze.filter(e => !ids.includes(e.id));
     speichern();
     renderTabelle();
@@ -6707,6 +6709,245 @@ function renderEinsatzChronik() {
 }
 
 // =============================================
+// EINSATZ-STATISTIK-DASHBOARD (Analytics)
+// =============================================
+function renderEinsatzAnalytics() {
+    const el = document.getElementById('analyticsContent');
+    if (!el) return;
+
+    if (einsaetze.length === 0) {
+        el.innerHTML = '<p style="color:#a0aec0">Keine Einsätze für Analyse.</p>';
+        return;
+    }
+
+    const aktiv = einsaetze.filter(e => e.status !== 'storniert');
+
+    // Wochentag-Verteilung
+    const wtVerteilung = [0, 0, 0, 0, 0, 0, 0]; // Mo-So
+    const wtStunden = [0, 0, 0, 0, 0, 0, 0];
+    aktiv.forEach(e => {
+        const d = new Date(e.datum + 'T12:00:00');
+        const wt = d.getDay();
+        const idx = wt === 0 ? 6 : wt - 1; // Mo=0...So=6
+        wtVerteilung[idx]++;
+        wtStunden[idx] += e.stunden;
+    });
+
+    const wtLabels = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
+    const maxWT = Math.max(...wtVerteilung, 1);
+
+    // Stundensatz-Verteilung
+    const satzBereiche = { 'bis 12€': 0, '12-15€': 0, '15-18€': 0, '18-22€': 0, 'über 22€': 0 };
+    aktiv.forEach(e => {
+        if (e.stundensatz <= 12) satzBereiche['bis 12€']++;
+        else if (e.stundensatz <= 15) satzBereiche['12-15€']++;
+        else if (e.stundensatz <= 18) satzBereiche['15-18€']++;
+        else if (e.stundensatz <= 22) satzBereiche['18-22€']++;
+        else satzBereiche['über 22€']++;
+    });
+
+    // Schichtlängen-Verteilung
+    const laengen = { 'bis 4h': 0, '4-6h': 0, '6-8h': 0, '8-10h': 0, '10-12h': 0, 'über 12h': 0 };
+    aktiv.forEach(e => {
+        if (e.stunden <= 4) laengen['bis 4h']++;
+        else if (e.stunden <= 6) laengen['4-6h']++;
+        else if (e.stunden <= 8) laengen['6-8h']++;
+        else if (e.stunden <= 10) laengen['8-10h']++;
+        else if (e.stunden <= 12) laengen['10-12h']++;
+        else laengen['über 12h']++;
+    });
+
+    let html = '<div class="ana-grid">';
+
+    // Wochentag-Balken
+    html += '<div class="ana-card"><div class="ana-title">Einsätze nach Wochentag</div><div class="ana-wt">';
+    wtLabels.forEach((wt, i) => {
+        const pct = (wtVerteilung[i] / maxWT) * 100;
+        html += `<div class="ana-wt-col"><div class="ana-wt-bar" style="height:${pct}%"></div><div class="ana-wt-label">${wt}</div><div class="ana-wt-val">${wtVerteilung[i]}</div></div>`;
+    });
+    html += '</div></div>';
+
+    // Stundensatz-Verteilung
+    const maxSatz = Math.max(...Object.values(satzBereiche), 1);
+    html += '<div class="ana-card"><div class="ana-title">Stundensatz-Verteilung</div>';
+    Object.entries(satzBereiche).forEach(([bereich, count]) => {
+        const pct = (count / maxSatz) * 100;
+        html += `<div class="stat-row"><span class="stat-row-label">${bereich}</span><div class="stat-bar"><div class="stat-bar-fill" style="width:${pct}%"></div></div><span class="stat-row-value">${count}</span></div>`;
+    });
+    html += '</div>';
+
+    // Schichtlängen-Verteilung
+    const maxLen = Math.max(...Object.values(laengen), 1);
+    html += '<div class="ana-card"><div class="ana-title">Schichtlängen-Verteilung</div>';
+    Object.entries(laengen).forEach(([bereich, count]) => {
+        const pct = (count / maxLen) * 100;
+        html += `<div class="stat-row"><span class="stat-row-label">${bereich}</span><div class="stat-bar"><div class="stat-bar-fill feiertag" style="width:${pct}%"></div></div><span class="stat-row-value">${count}</span></div>`;
+    });
+    html += '</div>';
+
+    // Kennzahlen
+    const avgStd = aktiv.reduce((s, e) => s + e.stunden, 0) / aktiv.length;
+    const avgSatz = aktiv.reduce((s, e) => s + e.stundensatz, 0) / aktiv.length;
+    const nachtAnteil = aktiv.filter(e => e.nachtStunden > 0).length / aktiv.length * 100;
+    const zuschlagAnteil = aktiv.reduce((s, e) => s + e.zuschlagBetrag, 0) / aktiv.reduce((s, e) => s + e.gesamt, 0) * 100;
+
+    html += '<div class="ana-card"><div class="ana-title">Kennzahlen</div><div class="ana-kz">';
+    html += `<div class="ana-kz-item"><span class="ana-kz-val">${formatZahl(avgStd)}</span><span class="ana-kz-label">Ø Schichtdauer (Std.)</span></div>`;
+    html += `<div class="ana-kz-item"><span class="ana-kz-val">${formatEuro(avgSatz)}</span><span class="ana-kz-label">Ø Stundensatz</span></div>`;
+    html += `<div class="ana-kz-item"><span class="ana-kz-val">${formatZahl(nachtAnteil)}%</span><span class="ana-kz-label">Nachtschicht-Anteil</span></div>`;
+    html += `<div class="ana-kz-item"><span class="ana-kz-val">${formatZahl(zuschlagAnteil)}%</span><span class="ana-kz-label">Zuschlagsanteil am Umsatz</span></div>`;
+    html += '</div></div>';
+
+    html += '</div>';
+    el.innerHTML = html;
+}
+
+// =============================================
+// PERSONALPLANUNG / BEDARFSRECHNER
+// =============================================
+function berechnePersonalbedarf() {
+    const el = document.getElementById('personalBedarfResult');
+    if (!el) return;
+
+    const stdProTag = parseFloat(document.getElementById('pbStdProTag').value) || 24;
+    const tageProWoche = parseInt(document.getElementById('pbTageProWoche').value) || 7;
+    const schichtlaenge = parseFloat(document.getElementById('pbSchichtlaenge').value) || 8;
+    const maxWocheStd = parseFloat(document.getElementById('pbMaxWoche').value) || 48;
+    const urlaubsTage = parseInt(document.getElementById('pbUrlaub').value) || 30;
+    const krankTage = parseInt(document.getElementById('pbKrank').value) || 10;
+
+    // Berechnung
+    const wochenStdBedarf = stdProTag * tageProWoche;
+    const schichtenProTag = Math.ceil(stdProTag / schichtlaenge);
+    const schichtenProWoche = schichtenProTag * tageProWoche;
+
+    // MA-Kapazität pro Jahr
+    const arbeitsWochen = 52 - Math.ceil(urlaubsTage / 5) - Math.ceil(krankTage / 5);
+    const maxJahresStd = arbeitsWochen * maxWocheStd;
+    const jahresBedarf = wochenStdBedarf * 52;
+
+    const minMA = Math.ceil(jahresBedarf / maxJahresStd);
+    const empfMA = Math.ceil(minMA * 1.15); // 15% Puffer
+
+    let html = `<div class="pb-result">
+        <div class="pb-grid">
+            <div class="pb-card pb-highlight"><div class="pb-val">${empfMA}</div><div class="pb-label">Empfohlene MA</div></div>
+            <div class="pb-card"><div class="pb-val">${minMA}</div><div class="pb-label">Minimum MA</div></div>
+            <div class="pb-card"><div class="pb-val">${schichtenProWoche}</div><div class="pb-label">Schichten/Woche</div></div>
+            <div class="pb-card"><div class="pb-val">${formatZahl(wochenStdBedarf)}</div><div class="pb-label">Std./Woche Bedarf</div></div>
+        </div>
+        <div class="pb-detail">
+            <p><strong>Annahmen:</strong> ${schichtenProTag} Schicht(en)/Tag à ${schichtlaenge}h, ${tageProWoche} Tage/Woche</p>
+            <p><strong>MA-Kapazität:</strong> ${arbeitsWochen} Arbeitswochen/Jahr à ${maxWocheStd}h = ${formatZahl(maxJahresStd)} Std./Jahr</p>
+            <p><strong>Jahresbedarf:</strong> ${formatZahl(jahresBedarf)} Stunden (inkl. 15% Puffer: ${formatZahl(jahresBedarf * 1.15)})</p>
+        </div>
+    </div>`;
+
+    el.innerHTML = html;
+}
+
+// =============================================
+// VERTRAGS-COUNTDOWN
+// =============================================
+function renderVertragsCountdown() {
+    const el = document.getElementById('vertragsCountdownContent');
+    if (!el) return;
+
+    const heute = new Date();
+    const heuteStr = heute.toISOString().split('T')[0];
+
+    const mitVertrag = objekte.filter(o => o.vertragEnde && o.vertragStatus === 'aktiv');
+    if (mitVertrag.length === 0) {
+        el.innerHTML = '<p style="color:#a0aec0">Keine aktiven Verträge mit Enddatum.</p>';
+        return;
+    }
+
+    mitVertrag.sort((a, b) => a.vertragEnde.localeCompare(b.vertragEnde));
+
+    let html = '<div class="vc-liste">';
+    mitVertrag.forEach(o => {
+        const ende = new Date(o.vertragEnde + 'T00:00:00');
+        const diffMs = ende - heute;
+        const diffTage = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+
+        let cls = 'vc-ok';
+        if (diffTage <= 0) cls = 'vc-abgelaufen';
+        else if (diffTage <= 30) cls = 'vc-kritisch';
+        else if (diffTage <= 90) cls = 'vc-warnung';
+
+        html += `<div class="vc-item ${cls}">
+            <div class="vc-obj"><strong>${escapeHtml(o.name)}</strong></div>
+            <div class="vc-countdown">${diffTage <= 0 ? '<span class="vc-expired">ABGELAUFEN</span>' : `<span class="vc-tage">${diffTage}</span> Tage`}</div>
+            <div class="vc-datum">Vertragsende: ${formatDatum(o.vertragEnde)}</div>
+        </div>`;
+    });
+    html += '</div>';
+    el.innerHTML = html;
+}
+
+// =============================================
+// TAGES-SONDERNOTIZEN
+// =============================================
+let tagesSondernotizen = JSON.parse(localStorage.getItem('bbprotect_tagesnotizen_extra') || '{}');
+
+function speichereSondernotiz() {
+    const datum = document.getElementById('snDatum').value;
+    const notiz = document.getElementById('snText').value.trim();
+    const typ = document.getElementById('snTyp').value;
+
+    if (!datum || !notiz) { alert('Bitte Datum und Notiz ausfüllen.'); return; }
+
+    if (!tagesSondernotizen[datum]) tagesSondernotizen[datum] = [];
+    tagesSondernotizen[datum].push({
+        id: Date.now(),
+        text: notiz,
+        typ,
+        erstellt: new Date().toISOString()
+    });
+
+    localStorage.setItem('bbprotect_tagesnotizen_extra', JSON.stringify(tagesSondernotizen));
+    renderSondernotizen();
+    document.getElementById('snText').value = '';
+}
+
+function renderSondernotizen() {
+    const el = document.getElementById('sonderNotizenContent');
+    if (!el) return;
+
+    const alleDaten = Object.keys(tagesSondernotizen).sort().reverse();
+    if (alleDaten.length === 0) {
+        el.innerHTML = '<p style="color:#a0aec0">Keine Sondernotizen.</p>';
+        return;
+    }
+
+    const SN_TYPEN = { wetter: 'Wetter', event: 'Veranstaltung', hinweis: 'Hinweis', warnung: 'Warnung', sonstiges: 'Sonstiges' };
+    const SN_FARBEN = { wetter: '#3182ce', event: '#805ad5', hinweis: '#38a169', warnung: '#e53e3e', sonstiges: '#718096' };
+
+    let html = '<div class="sn-liste">';
+    alleDaten.slice(0, 10).forEach(datum => {
+        const notizen = tagesSondernotizen[datum];
+        html += `<div class="sn-datum-header">${formatDatum(datum)}</div>`;
+        notizen.forEach(n => {
+            html += `<div class="sn-item">
+                <span class="sn-typ" style="background:${SN_FARBEN[n.typ] || '#718096'}">${SN_TYPEN[n.typ] || n.typ}</span>
+                <span class="sn-text">${escapeHtml(n.text)}</span>
+                <button class="btn-delete btn-small" onclick="loescheSondernotiz('${datum}',${n.id})">X</button>
+            </div>`;
+        });
+    });
+    html += '</div>';
+    el.innerHTML = html;
+}
+
+function loescheSondernotiz(datum, id) {
+    if (!tagesSondernotizen[datum]) return;
+    tagesSondernotizen[datum] = tagesSondernotizen[datum].filter(n => n.id !== id);
+    if (tagesSondernotizen[datum].length === 0) delete tagesSondernotizen[datum];
+    localStorage.setItem('bbprotect_tagesnotizen_extra', JSON.stringify(tagesSondernotizen));
+    renderSondernotizen();
+}
+
+// =============================================
 // INITIALISIERUNG
 // =============================================
 document.getElementById('datum').valueAsDate = new Date();
@@ -6731,6 +6972,7 @@ ladeEinstellungen();
 document.getElementById('vfDatum').valueAsDate = new Date();
 document.getElementById('wbDatum').valueAsDate = new Date();
 document.getElementById('ugDatum').valueAsDate = new Date();
+document.getElementById('snDatum').valueAsDate = new Date();
 const jetztInit = new Date();
 document.getElementById('wbZeit').value = `${String(jetztInit.getHours()).padStart(2, '0')}:${String(jetztInit.getMinutes()).padStart(2, '0')}`;
 document.getElementById('ugZeit').value = `${String(jetztInit.getHours()).padStart(2, '0')}:${String(jetztInit.getMinutes()).padStart(2, '0')}`;

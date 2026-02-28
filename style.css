@@ -6522,3 +6522,299 @@ body.dark-mode .chronik-ma {
         grid-template-columns: repeat(2, 1fr);
     }
 }
+
+/* =============================================
+   EINSATZ-ANALYTICS
+   ============================================= */
+.ana-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 0.75rem;
+}
+
+.ana-card {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 0.75rem;
+}
+
+body.dark-mode .ana-card {
+    background: #2d3748;
+    border-color: #4a5568;
+}
+
+.ana-title {
+    font-weight: 600;
+    font-size: 0.8rem;
+    margin-bottom: 0.5rem;
+    padding-bottom: 0.3rem;
+    border-bottom: 1px solid #edf2f7;
+}
+
+body.dark-mode .ana-title {
+    border-bottom-color: #4a5568;
+}
+
+.ana-wt {
+    display: flex;
+    gap: 3px;
+    align-items: flex-end;
+    height: 100px;
+}
+
+.ana-wt-col {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.ana-wt-bar {
+    width: 100%;
+    background: #3182ce;
+    border-radius: 3px 3px 0 0;
+    min-height: 3px;
+    transition: height 0.3s;
+}
+
+body.dark-mode .ana-wt-bar {
+    background: #63b3ed;
+}
+
+.ana-wt-label {
+    font-size: 0.65rem;
+    font-weight: 600;
+    margin-top: 0.2rem;
+}
+
+.ana-wt-val {
+    font-size: 0.6rem;
+    color: #718096;
+}
+
+.ana-kz {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+}
+
+.ana-kz-item {
+    text-align: center;
+    padding: 0.4rem;
+    background: #f7fafc;
+    border-radius: 6px;
+}
+
+body.dark-mode .ana-kz-item {
+    background: #1a202c;
+}
+
+.ana-kz-val {
+    font-size: 1rem;
+    font-weight: 700;
+    display: block;
+}
+
+.ana-kz-label {
+    font-size: 0.65rem;
+    color: #718096;
+}
+
+/* =============================================
+   PERSONALBEDARFSRECHNER
+   ============================================= */
+.pb-result {
+    background: #f7fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 1rem;
+}
+
+body.dark-mode .pb-result {
+    background: #2d3748;
+    border-color: #4a5568;
+}
+
+.pb-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+}
+
+.pb-card {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    padding: 0.5rem;
+    text-align: center;
+}
+
+body.dark-mode .pb-card {
+    background: #1a202c;
+    border-color: #4a5568;
+}
+
+.pb-highlight {
+    border-color: #3182ce;
+    background: #ebf8ff;
+}
+
+body.dark-mode .pb-highlight {
+    border-color: #63b3ed;
+    background: #2a4365;
+}
+
+.pb-val {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: #3182ce;
+}
+
+body.dark-mode .pb-val {
+    color: #63b3ed;
+}
+
+.pb-label {
+    font-size: 0.7rem;
+    color: #718096;
+}
+
+.pb-detail {
+    font-size: 0.75rem;
+    color: #718096;
+}
+
+.pb-detail p {
+    margin: 0.2rem 0;
+}
+
+/* =============================================
+   VERTRAGS-COUNTDOWN
+   ============================================= */
+.vc-liste {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+
+.vc-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.5rem 0.75rem;
+    border-radius: 6px;
+    border-left: 4px solid;
+}
+
+.vc-ok {
+    background: #f0fff4;
+    border-left-color: #48bb78;
+}
+
+.vc-warnung {
+    background: #fffbeb;
+    border-left-color: #ed8936;
+}
+
+.vc-kritisch {
+    background: #fff5f5;
+    border-left-color: #e53e3e;
+}
+
+.vc-abgelaufen {
+    background: #fed7d7;
+    border-left-color: #9b2c2c;
+}
+
+body.dark-mode .vc-ok { background: #1c4532; }
+body.dark-mode .vc-warnung { background: #744210; }
+body.dark-mode .vc-kritisch { background: #742a2a; }
+body.dark-mode .vc-abgelaufen { background: #63171b; }
+
+.vc-obj {
+    font-size: 0.85rem;
+}
+
+.vc-countdown {
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.vc-tage {
+    font-size: 1.1rem;
+    font-weight: 700;
+}
+
+.vc-expired {
+    color: #e53e3e;
+    font-weight: 700;
+}
+
+body.dark-mode .vc-expired {
+    color: #fc8181;
+}
+
+.vc-datum {
+    font-size: 0.7rem;
+    color: #718096;
+}
+
+/* =============================================
+   TAGES-SONDERNOTIZEN
+   ============================================= */
+.sn-liste {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.sn-datum-header {
+    font-weight: 700;
+    font-size: 0.75rem;
+    padding: 0.3rem 0;
+    border-bottom: 1px solid #e2e8f0;
+    margin-top: 0.3rem;
+}
+
+body.dark-mode .sn-datum-header {
+    border-bottom-color: #4a5568;
+}
+
+.sn-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.3rem 0.5rem;
+    font-size: 0.8rem;
+}
+
+.sn-typ {
+    display: inline-block;
+    color: #fff;
+    font-size: 0.6rem;
+    padding: 0.1rem 0.4rem;
+    border-radius: 3px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.sn-text {
+    flex: 1;
+}
+
+@media (max-width: 768px) {
+    .ana-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .pb-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .vc-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.25rem;
+    }
+}
