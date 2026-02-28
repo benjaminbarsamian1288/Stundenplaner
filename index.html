@@ -209,6 +209,38 @@
                 <div id="previewContent"></div>
             </section>
 
+            <section class="form-section">
+                <details>
+                    <summary><strong>Schnellvorlagen</strong> (1-Klick-Erfassung)</summary>
+                    <div class="form-row" style="margin-top:0.5rem">
+                        <div class="form-group">
+                            <label for="svLabel">Bezeichnung</label>
+                            <input type="text" id="svLabel" placeholder="z.B. Nachtschicht EKZ">
+                        </div>
+                        <div class="form-group">
+                            <label for="svObjekt">Objekt</label>
+                            <input type="text" id="svObjekt" list="objektListe" placeholder="Objekt">
+                        </div>
+                        <div class="form-group">
+                            <label for="svZeitVon">Von</label>
+                            <input type="time" id="svZeitVon">
+                        </div>
+                        <div class="form-group">
+                            <label for="svZeitBis">Bis</label>
+                            <input type="time" id="svZeitBis">
+                        </div>
+                        <div class="form-group">
+                            <label for="svStundensatz">Satz (&euro;)</label>
+                            <input type="number" id="svStundensatz" step="0.01" min="0" placeholder="15.00">
+                        </div>
+                        <div class="form-group">
+                            <button type="button" class="btn-primary" onclick="schnellvorlageSpeichern()" style="margin-top:1.5rem">+ Vorlage</button>
+                        </div>
+                    </div>
+                </details>
+                <div id="schnellvorlagenContent" style="margin-top:0.5rem"></div>
+            </section>
+
             <section class="list-section">
                 <div class="list-header">
                     <h2>Einsatz&uuml;bersicht</h2>
@@ -537,6 +569,13 @@
                         <div id="analyticsContent"></div>
                     </div>
                 </div>
+
+                <div class="dashboard-details" style="margin-top:1rem">
+                    <div class="detail-card full-width">
+                        <h3>Wochen-Report</h3>
+                        <div id="wochenReportContent"></div>
+                    </div>
+                </div>
             </section>
         </div>
 
@@ -835,6 +874,38 @@
                 </div>
                 <button type="button" class="btn-primary" onclick="speichereRevierplan()" style="margin-top:0.5rem">Revierplan speichern</button>
                 <div id="revierplanContent" style="margin-top:0.5rem"></div>
+            </section>
+
+            <section class="form-section">
+                <div class="list-header">
+                    <h2>Besichtigungs-Protokoll</h2>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="besObjekt">Objekt</label>
+                        <select id="besObjekt" onchange="renderBesichtigungen()">
+                            <option value="">Alle Objekte</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="besDatum">Datum</label>
+                        <input type="date" id="besDatum">
+                    </div>
+                    <div class="form-group">
+                        <label for="besErgebnis">Ergebnis</label>
+                        <select id="besErgebnis">
+                            <option value="ok">OK</option>
+                            <option value="maengel">M&auml;ngel</option>
+                            <option value="kritisch">Kritisch</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="besNotiz">Bemerkung / Befund</label>
+                    <input type="text" id="besNotiz" placeholder="z.B. Beleuchtung defekt, Zaun besch&auml;digt">
+                </div>
+                <button type="button" class="btn-primary" onclick="besichtigungSpeichern()" style="margin-top:0.5rem">Besichtigung protokollieren</button>
+                <div id="besichtigungenContent" style="margin-top:0.5rem"></div>
             </section>
 
             <section class="form-section">
@@ -1170,6 +1241,13 @@
                     <h2>Geburtstage &amp; Jubil&auml;en</h2>
                 </div>
                 <div id="geburtstageContent"></div>
+            </section>
+
+            <section class="form-section">
+                <div class="list-header">
+                    <h2>MA-Skills &amp; Zusatzqualifikationen</h2>
+                </div>
+                <div id="maSkillsContent"></div>
             </section>
 
             <section class="form-section">

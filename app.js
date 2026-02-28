@@ -86,11 +86,11 @@ document.querySelectorAll('.nav-btn').forEach(btn => {
         this.classList.add('active');
         document.getElementById('tab-' + this.dataset.tab).classList.add('active');
 
-        if (this.dataset.tab === 'dashboard') { updateDashboard(); renderEinsatzChronik(); renderEinsatzAnalytics(); }
-        if (this.dataset.tab === 'objekte') { renderObjekte(); renderVertraege(); renderObjektAuslastung(); updateChecklisteObjekte(); updateObjektHistorieSelect(); updateObjektKontakteSelect(); renderObjektKontakte(); updateObjektAnweisungenSelect(); renderObjektAnweisungen(); updateObjektKostenMonat(); renderObjektKostenanalyse(); renderVertragsCountdown(); updateRevierplanSelect(); renderRevierplan(); }
+        if (this.dataset.tab === 'dashboard') { updateDashboard(); renderEinsatzChronik(); renderEinsatzAnalytics(); renderWochenReport(); }
+        if (this.dataset.tab === 'objekte') { renderObjekte(); renderVertraege(); renderObjektAuslastung(); updateChecklisteObjekte(); updateObjektHistorieSelect(); updateObjektKontakteSelect(); renderObjektKontakte(); updateObjektAnweisungenSelect(); renderObjektAnweisungen(); updateObjektKostenMonat(); renderObjektKostenanalyse(); renderVertragsCountdown(); updateRevierplanSelect(); renderRevierplan(); updateBesObjektSelect(); renderBesichtigungen(); }
         if (this.dataset.tab === 'kalender') { renderKalender(); renderDienstplan(); renderJahresuebersicht(); }
         if (this.dataset.tab === 'abrechnung') { updateAbrechnung(); updateLohnvorschauSelects(); renderDuplikatCheck(); renderBewertungsUebersicht(); updateMonatsabschlussSelect(); renderMonatsabschluss(); }
-        if (this.dataset.tab === 'mitarbeiter') { renderMitarbeiter(); renderDokumente(); renderUeberstunden(); renderKontaktliste(); renderUrlaubskonto(); renderArbeitszeitkonto(); renderQualMatrix(); updateSchichtHistorieSelect(); renderNotfallkontakte(); updateMAKalSelect(); renderVerfuegbarkeitWoche(); renderDoppelschichtWarnungen(); renderMALeistung(); renderKrankenstatistik(); renderGeburtstageJubilaeen(); }
+        if (this.dataset.tab === 'mitarbeiter') { renderMitarbeiter(); renderDokumente(); renderUeberstunden(); renderKontaktliste(); renderUrlaubskonto(); renderArbeitszeitkonto(); renderQualMatrix(); updateSchichtHistorieSelect(); renderNotfallkontakte(); updateMAKalSelect(); renderVerfuegbarkeitWoche(); renderDoppelschichtWarnungen(); renderMALeistung(); renderKrankenstatistik(); renderGeburtstageJubilaeen(); renderMASkills(); }
         if (this.dataset.tab === 'vorfaelle') { renderVorfaelle(); renderVorfallsStatistik(); }
         if (this.dataset.tab === 'wachbuch') { renderWachbuch(); renderUebergaben(); renderWachbuchStats(); }
         if (this.dataset.tab === 'einstellungen') { updateDatenStats(); updateSpeicherStats(); ladeEinstellungen(); renderAuditLog(); renderSondernotizen(); }
@@ -1550,7 +1550,7 @@ function loescheMitarbeiter(index) {
 // =============================================
 function erstelleBackup() {
     const backup = {
-        version: 13,
+        version: 14,
         datum: new Date().toISOString(),
         einsaetze,
         objekte,
@@ -1570,7 +1570,9 @@ function erstelleBackup() {
         einsatzBewertungen,
         revierplaene,
         monatsabschluesse,
-        tagesSondernotizen
+        tagesSondernotizen,
+        schnellvorlagen,
+        besichtigungen
     };
 
     const json = JSON.stringify(backup, null, 2);
@@ -1614,6 +1616,8 @@ function stelleWiederHer(event) {
             revierplaene = data.revierplaene || {};
             monatsabschluesse = data.monatsabschluesse || {};
             tagesSondernotizen = data.tagesSondernotizen || {};
+            schnellvorlagen = data.schnellvorlagen || [];
+            besichtigungen = data.besichtigungen || [];
 
             speichern();
             localStorage.setItem('bbprotect_objekte', JSON.stringify(objekte));
@@ -1634,6 +1638,8 @@ function stelleWiederHer(event) {
             localStorage.setItem('bbprotect_revierplaene', JSON.stringify(revierplaene));
             localStorage.setItem('bbprotect_monatsabschluesse', JSON.stringify(monatsabschluesse));
             localStorage.setItem('bbprotect_tagesnotizen_extra', JSON.stringify(tagesSondernotizen));
+            localStorage.setItem('bbprotect_schnellvorlagen', JSON.stringify(schnellvorlagen));
+            localStorage.setItem('bbprotect_besichtigungen', JSON.stringify(besichtigungen));
 
             renderTabelle();
             updateAlleFilter();
@@ -1675,6 +1681,8 @@ function loescheAlleDaten() {
     revierplaene = {};
     monatsabschluesse = {};
     tagesSondernotizen = {};
+    schnellvorlagen = [];
+    besichtigungen = [];
 
     localStorage.removeItem('bbprotect_einsaetze');
     localStorage.removeItem('bbprotect_objekte');
@@ -1695,6 +1703,8 @@ function loescheAlleDaten() {
     localStorage.removeItem('bbprotect_revierplaene');
     localStorage.removeItem('bbprotect_monatsabschluesse');
     localStorage.removeItem('bbprotect_tagesnotizen_extra');
+    localStorage.removeItem('bbprotect_schnellvorlagen');
+    localStorage.removeItem('bbprotect_besichtigungen');
 
     renderTabelle();
     updateAlleFilter();
@@ -7265,6 +7275,335 @@ function quickFilter(typ) {
 }
 
 // =============================================
+// EINSATZ-SCHNELLVORLAGEN (1-Klick-Erfassung)
+// =============================================
+let schnellvorlagen = JSON.parse(localStorage.getItem('bbprotect_schnellvorlagen') || '[]');
+
+function schnellvorlageSpeichern() {
+    const label = document.getElementById('svLabel').value.trim();
+    const objekt = document.getElementById('svObjekt').value.trim();
+    const zeitVon = document.getElementById('svZeitVon').value;
+    const zeitBis = document.getElementById('svZeitBis').value;
+    const stundensatz = parseFloat(document.getElementById('svStundensatz').value) || 0;
+
+    if (!label || !objekt || !zeitVon || !zeitBis) { alert('Bitte Label, Objekt, Von und Bis ausfüllen.'); return; }
+
+    schnellvorlagen.push({ id: Date.now(), label, objekt, zeitVon, zeitBis, stundensatz });
+    localStorage.setItem('bbprotect_schnellvorlagen', JSON.stringify(schnellvorlagen));
+    renderSchnellvorlagen();
+
+    document.getElementById('svLabel').value = '';
+    document.getElementById('svObjekt').value = '';
+    document.getElementById('svZeitVon').value = '';
+    document.getElementById('svZeitBis').value = '';
+    document.getElementById('svStundensatz').value = '';
+}
+
+function renderSchnellvorlagen() {
+    const el = document.getElementById('schnellvorlagenContent');
+    if (!el) return;
+
+    if (schnellvorlagen.length === 0) {
+        el.innerHTML = '<p style="color:#a0aec0">Keine Schnellvorlagen. Erstelle eine, um Einsätze mit einem Klick zu erfassen.</p>';
+        return;
+    }
+
+    let html = '<div class="sv-grid">';
+    schnellvorlagen.forEach(sv => {
+        html += `<div class="sv-card" onclick="schnellvorlageAnwenden(${sv.id})" title="${escapeHtml(sv.objekt)} ${sv.zeitVon}-${sv.zeitBis}">
+            <div class="sv-label">${escapeHtml(sv.label)}</div>
+            <div class="sv-detail">${escapeHtml(sv.objekt)}</div>
+            <div class="sv-zeit">${sv.zeitVon} - ${sv.zeitBis}</div>
+            <button class="btn-delete btn-small sv-del" onclick="event.stopPropagation();loescheSchnellvorlage(${sv.id})">X</button>
+        </div>`;
+    });
+    html += '</div>';
+    el.innerHTML = html;
+}
+
+function schnellvorlageAnwenden(id) {
+    const sv = schnellvorlagen.find(s => s.id === id);
+    if (!sv) return;
+
+    const datum = document.getElementById('datum').value || new Date().toISOString().split('T')[0];
+    const berechnung = berechneEinsatz(datum, sv.zeitVon, sv.zeitBis, sv.stundensatz);
+
+    const einsatz = {
+        id: Date.now(),
+        objekt: sv.objekt,
+        datum,
+        zeitVon: sv.zeitVon,
+        zeitBis: sv.zeitBis,
+        stundensatz: sv.stundensatz,
+        mitarbeiter: '',
+        bemerkung: `Schnellvorlage: ${sv.label}`,
+        status: 'geplant',
+        ...berechnung
+    };
+
+    einsaetze.push(einsatz);
+    speichern();
+    logAudit('erstellt', 'Einsatz', `Schnellvorlage "${sv.label}" → ${sv.objekt} am ${formatDatum(datum)}`);
+    renderTabelle();
+    updateAlleFilter();
+}
+
+function loescheSchnellvorlage(id) {
+    schnellvorlagen = schnellvorlagen.filter(s => s.id !== id);
+    localStorage.setItem('bbprotect_schnellvorlagen', JSON.stringify(schnellvorlagen));
+    renderSchnellvorlagen();
+}
+
+// =============================================
+// MA-SKILL-TAGS
+// =============================================
+const SKILL_TAGS = ['Ersthelfer', 'Brandschutzhelfer', 'Evakuierungshelfer', 'Waffensachkunde', 'Hundeführer', 'Fahrerlaubnis B', 'Fahrerlaubnis BE', 'Fremdsprache EN', 'Fremdsprache TR', 'Fremdsprache AR', 'Deeskalation', 'Interventionskraft'];
+
+function toggleMASkill(maName, skill) {
+    const ma = mitarbeiterListe_.find(m => m.name === maName);
+    if (!ma) return;
+    if (!ma.skills) ma.skills = [];
+    const idx = ma.skills.indexOf(skill);
+    if (idx === -1) ma.skills.push(skill); else ma.skills.splice(idx, 1);
+    localStorage.setItem('bbprotect_mitarbeiter', JSON.stringify(mitarbeiterListe_));
+    renderMASkills();
+}
+
+function renderMASkills() {
+    const el = document.getElementById('maSkillsContent');
+    if (!el) return;
+
+    if (mitarbeiterListe_.length === 0) {
+        el.innerHTML = '<p style="color:#a0aec0">Keine Mitarbeiter vorhanden.</p>';
+        return;
+    }
+
+    let html = '<div class="skill-grid">';
+    html += '<div class="skill-header skill-ma">Mitarbeiter</div>';
+    SKILL_TAGS.forEach(s => {
+        html += `<div class="skill-header skill-tag-header" title="${s}">${s.substring(0, 4)}</div>`;
+    });
+
+    mitarbeiterListe_.forEach(m => {
+        const skills = m.skills || [];
+        html += `<div class="skill-ma">${escapeHtml(m.name)}</div>`;
+        SKILL_TAGS.forEach(s => {
+            const hat = skills.includes(s);
+            html += `<div class="skill-zelle ${hat ? 'skill-ja' : 'skill-nein'}" onclick="toggleMASkill('${escapeHtml(m.name).replace(/'/g, "\\'")}','${s}')" title="${s}">${hat ? '\u2713' : ''}</div>`;
+        });
+    });
+    html += '</div>';
+
+    // Zusammenfassung
+    html += '<div class="skill-summary">';
+    SKILL_TAGS.forEach(s => {
+        const count = mitarbeiterListe_.filter(m => (m.skills || []).includes(s)).length;
+        if (count > 0) {
+            html += `<span class="skill-badge">${s}: <strong>${count}</strong></span>`;
+        }
+    });
+    html += '</div>';
+
+    el.innerHTML = html;
+}
+
+// =============================================
+// OBJEKT-BESICHTIGUNGS-NOTIZEN
+// =============================================
+let besichtigungen = JSON.parse(localStorage.getItem('bbprotect_besichtigungen') || '[]');
+
+function besichtigungSpeichern() {
+    const objekt = document.getElementById('besObjekt').value;
+    const datum = document.getElementById('besDatum').value;
+    const notiz = document.getElementById('besNotiz').value.trim();
+    const ergebnis = document.getElementById('besErgebnis').value;
+
+    if (!objekt || !datum || !notiz) { alert('Bitte Objekt, Datum und Notiz ausfüllen.'); return; }
+
+    besichtigungen.push({
+        id: Date.now(),
+        objekt, datum, notiz, ergebnis
+    });
+    localStorage.setItem('bbprotect_besichtigungen', JSON.stringify(besichtigungen));
+    logAudit('erstellt', 'Besichtigung', `${objekt} am ${formatDatum(datum)}`);
+    renderBesichtigungen();
+
+    document.getElementById('besNotiz').value = '';
+}
+
+function renderBesichtigungen() {
+    const el = document.getElementById('besichtigungenContent');
+    if (!el) return;
+
+    const objekt = document.getElementById('besObjekt').value;
+    const gefiltert = objekt ? besichtigungen.filter(b => b.objekt === objekt) : besichtigungen;
+
+    if (gefiltert.length === 0) {
+        el.innerHTML = '<p style="color:#a0aec0">Keine Besichtigungen protokolliert.</p>';
+        return;
+    }
+
+    const ERG_LABELS = { ok: 'OK', maengel: 'Mängel', kritisch: 'Kritisch' };
+    const ERG_FARBEN = { ok: '#48bb78', maengel: '#ed8936', kritisch: '#e53e3e' };
+
+    let html = '<div class="bes-liste">';
+    gefiltert.sort((a, b) => b.datum.localeCompare(a.datum)).slice(0, 20).forEach(b => {
+        html += `<div class="bes-item">
+            <div class="bes-header">
+                <strong>${escapeHtml(b.objekt)}</strong>
+                <span style="color:${ERG_FARBEN[b.ergebnis] || '#718096'};font-weight:600">${ERG_LABELS[b.ergebnis] || b.ergebnis}</span>
+                <span class="bes-datum">${formatDatum(b.datum)}</span>
+                <button class="btn-delete btn-small" onclick="loescheBesichtigung(${b.id})">X</button>
+            </div>
+            <div class="bes-notiz">${escapeHtml(b.notiz)}</div>
+        </div>`;
+    });
+    html += '</div>';
+    el.innerHTML = html;
+}
+
+function loescheBesichtigung(id) {
+    if (!confirm('Besichtigung löschen?')) return;
+    besichtigungen = besichtigungen.filter(b => b.id !== id);
+    localStorage.setItem('bbprotect_besichtigungen', JSON.stringify(besichtigungen));
+    renderBesichtigungen();
+}
+
+function updateBesObjektSelect() {
+    const sel = document.getElementById('besObjekt');
+    if (!sel) return;
+    const val = sel.value;
+    sel.innerHTML = '<option value="">Alle Objekte</option>';
+    objekte.forEach(o => {
+        sel.innerHTML += `<option value="${escapeHtml(o.name)}" ${o.name === val ? 'selected' : ''}>${escapeHtml(o.name)}</option>`;
+    });
+}
+
+// =============================================
+// WOCHEN-ZUSAMMENFASSUNG (Report)
+// =============================================
+function renderWochenReport() {
+    const el = document.getElementById('wochenReportContent');
+    if (!el) return;
+
+    const heute = new Date();
+    const montag = new Date(heute);
+    const tag = montag.getDay();
+    const diff = tag === 0 ? 6 : tag - 1;
+    montag.setDate(montag.getDate() - diff);
+    montag.setHours(0, 0, 0, 0);
+
+    const sonntag = new Date(montag);
+    sonntag.setDate(sonntag.getDate() + 6);
+
+    const montagStr = montag.toISOString().split('T')[0];
+    const sonntagStr = sonntag.toISOString().split('T')[0];
+
+    const wocheE = einsaetze.filter(e => e.datum >= montagStr && e.datum <= sonntagStr && e.status !== 'storniert');
+    const prevMontag = new Date(montag);
+    prevMontag.setDate(prevMontag.getDate() - 7);
+    const prevSonntagStr = new Date(prevMontag);
+    prevSonntagStr.setDate(prevSonntagStr.getDate() + 6);
+    const prevWoche = einsaetze.filter(e => e.datum >= prevMontag.toISOString().split('T')[0] && e.datum <= prevSonntagStr.toISOString().split('T')[0] && e.status !== 'storniert');
+
+    const wStd = wocheE.reduce((s, e) => s + e.stunden, 0);
+    const wUmsatz = wocheE.reduce((s, e) => s + e.gesamt, 0);
+    const pStd = prevWoche.reduce((s, e) => s + e.stunden, 0);
+    const pUmsatz = prevWoche.reduce((s, e) => s + e.gesamt, 0);
+
+    const stdDiff = pStd > 0 ? ((wStd - pStd) / pStd * 100) : 0;
+    const umsatzDiff = pUmsatz > 0 ? ((wUmsatz - pUmsatz) / pUmsatz * 100) : 0;
+
+    const maSet = new Set(wocheE.map(e => e.mitarbeiter).filter(Boolean));
+    const objSet = new Set(wocheE.map(e => e.objekt));
+
+    const kw = getKalenderWoche(heute);
+
+    let html = `<div class="wr-card">
+        <div class="wr-title">Wochenbericht KW ${kw} (${formatDatum(montagStr)} - ${formatDatum(sonntagStr)})</div>
+        <div class="wr-grid">
+            <div class="wr-stat"><span class="wr-val">${wocheE.length}</span><span class="wr-label">Einsätze</span></div>
+            <div class="wr-stat"><span class="wr-val">${formatZahl(wStd)}</span><span class="wr-label">Stunden</span>${pStd > 0 ? '<span class="wr-trend ' + (stdDiff >= 0 ? 'wr-up' : 'wr-down') + '">' + (stdDiff >= 0 ? '+' : '') + formatZahl(stdDiff) + '%</span>' : ''}</div>
+            <div class="wr-stat"><span class="wr-val">${formatEuro(wUmsatz)}</span><span class="wr-label">Umsatz</span>${pUmsatz > 0 ? '<span class="wr-trend ' + (umsatzDiff >= 0 ? 'wr-up' : 'wr-down') + '">' + (umsatzDiff >= 0 ? '+' : '') + formatZahl(umsatzDiff) + '%</span>' : ''}</div>
+            <div class="wr-stat"><span class="wr-val">${maSet.size}</span><span class="wr-label">MA im Einsatz</span></div>
+            <div class="wr-stat"><span class="wr-val">${objSet.size}</span><span class="wr-label">Objekte</span></div>
+        </div>`;
+
+    // Vorfälle dieser Woche
+    const wVorfaelle = vorfaelle.filter(v => v.datum >= montagStr && v.datum <= sonntagStr);
+    if (wVorfaelle.length > 0) {
+        html += `<div class="wr-section"><strong>Vorfälle:</strong> ${wVorfaelle.length} (${wVorfaelle.filter(v => v.schwere === 'kritisch' || v.schwere === 'hoch').length} schwerwiegend)</div>`;
+    }
+
+    // Abwesenheiten
+    const wAbwesend = verfuegbarkeit.filter(v => {
+        return v.von <= sonntagStr && v.bis >= montagStr;
+    });
+    if (wAbwesend.length > 0) {
+        html += `<div class="wr-section"><strong>Abwesend:</strong> ${wAbwesend.map(v => escapeHtml(v.mitarbeiter) + ' (' + v.typ + ')').join(', ')}</div>`;
+    }
+
+    html += '</div>';
+
+    // Druckfunktion
+    html += `<button class="btn-secondary" onclick="druckeWochenReport()" style="margin-top:0.5rem">Report drucken</button>`;
+
+    el.innerHTML = html;
+}
+
+function druckeWochenReport() {
+    const content = document.getElementById('wochenReportContent');
+    if (!content) return;
+    const printArea = document.getElementById('printArea');
+    printArea.innerHTML = '<h2>Wochenbericht - ' + (einstellungen.firmenname || 'B.B. Protect') + '</h2>' + content.innerHTML;
+    window.print();
+}
+
+// =============================================
+// SCHNELLZUWEISUNG IM DIENSTPLAN
+// =============================================
+function dienstplanSchnellzuweisung(datum) {
+    const verfuegbareMA = mitarbeiterListe_.filter(m => {
+        const abwesend = verfuegbarkeit.find(v => v.mitarbeiter === m.name && v.von <= datum && v.bis >= datum);
+        return !abwesend;
+    });
+
+    if (verfuegbareMA.length === 0) {
+        alert('Keine verfügbaren Mitarbeiter für diesen Tag.');
+        return;
+    }
+
+    const unbelegte = einsaetze.filter(e => e.datum === datum && !e.mitarbeiter);
+    if (unbelegte.length === 0) {
+        alert('Keine offenen Einsätze ohne Mitarbeiter an diesem Tag.');
+        return;
+    }
+
+    let zugewiesen = 0;
+    unbelegte.forEach(e => {
+        // Finde besten verfügbaren MA (mit wenigsten Stunden an diesem Tag)
+        const scores = verfuegbareMA.map(m => {
+            const tagesStd = einsaetze.filter(x => x.mitarbeiter === m.name && x.datum === datum).reduce((s, x) => s + x.stunden, 0);
+            return { name: m.name, stunden: tagesStd };
+        }).sort((a, b) => a.stunden - b.stunden);
+
+        if (scores.length > 0 && scores[0].stunden < 10) {
+            e.mitarbeiter = scores[0].name;
+            zugewiesen++;
+        }
+    });
+
+    if (zugewiesen > 0) {
+        speichern();
+        logAudit('bearbeitet', 'Einsatz', `Schnellzuweisung: ${zugewiesen} Einsätze am ${formatDatum(datum)} zugewiesen`);
+        renderDienstplan();
+        alert(`${zugewiesen} Einsatz(e) automatisch zugewiesen.`);
+    } else {
+        alert('Keine Zuweisung möglich (alle MA ausgelastet).');
+    }
+}
+
+// =============================================
 // INITIALISIERUNG
 // =============================================
 document.getElementById('datum').valueAsDate = new Date();
@@ -7285,11 +7624,13 @@ updateChecklisteObjekte();
 renderArbeitszeitkonto();
 renderUebergaben();
 renderNotfallkontakte();
+renderSchnellvorlagen();
 ladeEinstellungen();
 document.getElementById('vfDatum').valueAsDate = new Date();
 document.getElementById('wbDatum').valueAsDate = new Date();
 document.getElementById('ugDatum').valueAsDate = new Date();
 document.getElementById('snDatum').valueAsDate = new Date();
+document.getElementById('besDatum').valueAsDate = new Date();
 const jetztInit = new Date();
 document.getElementById('wbZeit').value = `${String(jetztInit.getHours()).padStart(2, '0')}:${String(jetztInit.getMinutes()).padStart(2, '0')}`;
 document.getElementById('ugZeit').value = `${String(jetztInit.getHours()).padStart(2, '0')}:${String(jetztInit.getMinutes()).padStart(2, '0')}`;
