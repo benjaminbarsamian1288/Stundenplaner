@@ -429,6 +429,28 @@
                 </div>
                 <div id="monatsabschlussContent" style="margin-top:0.75rem"></div>
             </section>
+
+            <section class="form-section">
+                <h2>Einsatz-Export (CSV)</h2>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="csvExportMonat">Monat</label>
+                        <select id="csvExportMonat">
+                            <option value="">Alle Monate</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="csvExportObjekt">Objekt</label>
+                        <select id="csvExportObjekt">
+                            <option value="">Alle Objekte</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="display:flex;align-items:flex-end">
+                        <button type="button" class="btn-primary" onclick="exportiereEinsaetzeCSV()">CSV exportieren</button>
+                    </div>
+                </div>
+                <p style="font-size:0.75rem;color:#718096;margin-top:0.25rem">Exportiert gefilterte Eins&auml;tze als CSV-Datei (Semikolon-getrennt, UTF-8 BOM f&uuml;r Excel).</p>
+            </section>
         </div>
 
         <!-- TAB: Dashboard -->
@@ -594,6 +616,13 @@
                     <div class="detail-card full-width">
                         <h3>Kosten-Trendlinie (6 Monate)</h3>
                         <div id="kostenTrendContent"></div>
+                    </div>
+                </div>
+
+                <div class="dashboard-details" style="margin-top:1rem">
+                    <div class="detail-card full-width">
+                        <h3>Objekt-Umsatz-Ranking</h3>
+                        <div id="objektRankingContent"></div>
                     </div>
                 </div>
             </section>
@@ -1325,6 +1354,19 @@
 
             <section class="form-section">
                 <div class="list-header">
+                    <h2>MA-Verf&uuml;gbarkeits-Kalender</h2>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="mavkMonat">Monat</label>
+                        <input type="month" id="mavkMonat" onchange="renderMAVerfuegbarkeitsKalender()">
+                    </div>
+                </div>
+                <div id="maVerfKalContent"></div>
+            </section>
+
+            <section class="form-section">
+                <div class="list-header">
                     <h2>Schichttausch-Board</h2>
                 </div>
                 <p style="font-size:0.75rem;color:#718096;margin-bottom:0.5rem">Offene Tausch-Anfragen von Mitarbeitern. &Uuml;ber &bdquo;Tausch&ldquo; in der Einsatztabelle k&ouml;nnen MA ihre Schicht zum Tausch anbieten.</p>
@@ -1552,6 +1594,48 @@
                     <h2>Wachbuch-Statistik</h2>
                 </div>
                 <div id="wachbuchStats"></div>
+            </section>
+
+            <section class="form-section">
+                <div class="list-header">
+                    <h2>Schicht&uuml;bergabe-Protokoll</h2>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="suObjekt">Objekt</label>
+                        <select id="suObjekt">
+                            <option value="">Objekt w&auml;hlen...</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="suDatum">Datum</label>
+                        <input type="date" id="suDatum">
+                    </div>
+                    <div class="form-group">
+                        <label for="suVonMA">Von MA</label>
+                        <input type="text" id="suVonMA" list="mitarbeiterFilterListe" placeholder="Abgebender MA">
+                    </div>
+                    <div class="form-group">
+                        <label for="suAnMA">An MA</label>
+                        <input type="text" id="suAnMA" list="mitarbeiterFilterListe" placeholder="&Uuml;bernehmender MA">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="suNotiz">&Uuml;bergabe-Notiz</label>
+                    <textarea id="suNotiz" rows="3" placeholder="Besondere Vorkommnisse, offene Aufgaben, Hinweise f&uuml;r die Folgeschicht..." style="width:100%;padding:0.6rem;border:1px solid #cbd5e0;border-radius:6px;font-family:inherit;font-size:0.85rem;resize:vertical"></textarea>
+                </div>
+                <button type="button" class="btn-primary" onclick="schichtUebergabeSpeichern()" style="margin-top:0.5rem">&Uuml;bergabe protokollieren</button>
+                <div style="margin-top:0.75rem">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="suFilterObjekt">Filter Objekt</label>
+                            <select id="suFilterObjekt" onchange="renderSchichtUebergaben()">
+                                <option value="">Alle Objekte</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div id="schichtUebergabenContent"></div>
+                </div>
             </section>
         </div>
 

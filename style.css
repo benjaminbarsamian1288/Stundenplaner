@@ -7584,3 +7584,291 @@ body.dark-mode .tb-select {
         align-items: flex-start;
     }
 }
+
+/* =============================================
+   EINSATZ-KOMMENTARE
+   ============================================= */
+.ek-row {
+    background: #f7fafc;
+}
+
+body.dark-mode .ek-row {
+    background: #1a202c;
+}
+
+.ek-cell {
+    padding: 0.3rem 0.75rem !important;
+}
+
+.ek-container {
+    max-width: 600px;
+}
+
+.ek-item {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.2rem 0;
+    font-size: 0.75rem;
+    border-bottom: 1px solid #edf2f7;
+}
+
+body.dark-mode .ek-item {
+    border-bottom-color: #4a5568;
+}
+
+.ek-text {
+    flex: 1;
+    color: #4a5568;
+}
+
+body.dark-mode .ek-text {
+    color: #cbd5e0;
+}
+
+.ek-meta {
+    font-size: 0.65rem;
+    color: #a0aec0;
+    white-space: nowrap;
+}
+
+.ek-input-row {
+    display: flex;
+    gap: 0.3rem;
+    margin-top: 0.3rem;
+}
+
+.ek-input {
+    flex: 1;
+    padding: 0.3rem 0.5rem;
+    border: 1px solid #cbd5e0;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-family: inherit;
+}
+
+body.dark-mode .ek-input {
+    background: #4a5568;
+    border-color: #718096;
+    color: #e2e8f0;
+}
+
+/* =============================================
+   MA-VERFÜGBARKEITS-KALENDER
+   ============================================= */
+.mavk-wrapper {
+    overflow-x: auto;
+}
+
+.mavk-tabelle {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.6rem;
+    table-layout: fixed;
+}
+
+.mavk-tabelle th,
+.mavk-tabelle td {
+    padding: 2px;
+    text-align: center;
+    border: 1px solid #e2e8f0;
+    min-width: 18px;
+}
+
+body.dark-mode .mavk-tabelle th,
+body.dark-mode .mavk-tabelle td {
+    border-color: #4a5568;
+}
+
+.mavk-tabelle th {
+    background: #edf2f7;
+    font-weight: 600;
+    position: sticky;
+    top: 0;
+}
+
+body.dark-mode .mavk-tabelle th {
+    background: #2d3748;
+}
+
+.mavk-name {
+    font-weight: 600;
+    white-space: nowrap;
+    text-align: left !important;
+    padding-left: 4px !important;
+    min-width: 40px !important;
+    position: sticky;
+    left: 0;
+    background: #fff;
+    z-index: 1;
+}
+
+body.dark-mode .mavk-name {
+    background: #1a202c;
+}
+
+.mavk-we {
+    background: #faf5ff !important;
+}
+
+body.dark-mode .mavk-we {
+    background: #322659 !important;
+}
+
+.mavk-frei {
+    background: #f0fff4;
+}
+
+body.dark-mode .mavk-frei {
+    background: #1c3829;
+}
+
+.mavk-einsatz {
+    background: #4299e1;
+}
+
+.mavk-urlaub {
+    background: #f6ad55;
+}
+
+.mavk-krank {
+    background: #fc8181;
+}
+
+.mavk-abw {
+    background: #d69e2e;
+}
+
+/* =============================================
+   OBJEKT-UMSATZ-RANKING
+   ============================================= */
+.or-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.or-item {
+    display: flex;
+    gap: 0.75rem;
+    align-items: flex-start;
+}
+
+.or-rank {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #4299e1;
+    min-width: 2rem;
+    text-align: center;
+    padding-top: 0.2rem;
+}
+
+.or-details {
+    flex: 1;
+}
+
+.or-name {
+    font-weight: 600;
+    font-size: 0.85rem;
+    margin-bottom: 0.2rem;
+    color: #2d3748;
+}
+
+body.dark-mode .or-name {
+    color: #e2e8f0;
+}
+
+.or-bar-bg {
+    height: 8px;
+    background: #edf2f7;
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 0.2rem;
+}
+
+body.dark-mode .or-bar-bg {
+    background: #4a5568;
+}
+
+.or-bar-fill {
+    height: 100%;
+    background: linear-gradient(to right, #4299e1, #63b3ed);
+    border-radius: 4px;
+    transition: width 0.3s;
+}
+
+.or-stats {
+    display: flex;
+    gap: 1rem;
+    font-size: 0.7rem;
+    color: #718096;
+    flex-wrap: wrap;
+}
+
+body.dark-mode .or-stats {
+    color: #a0aec0;
+}
+
+/* =============================================
+   SCHICHTÜBERGABE-PROTOKOLL
+   ============================================= */
+.su-item {
+    padding: 0.5rem 0.75rem;
+    background: #f7fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    margin-bottom: 0.3rem;
+    font-size: 0.8rem;
+}
+
+body.dark-mode .su-item {
+    background: #2d3748;
+    border-color: #4a5568;
+}
+
+.su-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.2rem;
+    flex-wrap: wrap;
+    gap: 0.3rem;
+}
+
+.su-ma {
+    font-size: 0.7rem;
+    color: #4299e1;
+    font-weight: 600;
+}
+
+.su-notiz {
+    color: #4a5568;
+    font-size: 0.8rem;
+    line-height: 1.4;
+}
+
+body.dark-mode .su-notiz {
+    color: #cbd5e0;
+}
+
+@media (max-width: 768px) {
+    .mavk-tabelle {
+        font-size: 0.5rem;
+    }
+
+    .mavk-tabelle th,
+    .mavk-tabelle td {
+        min-width: 14px;
+        padding: 1px;
+    }
+
+    .or-stats {
+        flex-direction: column;
+        gap: 0.2rem;
+    }
+
+    .su-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+}

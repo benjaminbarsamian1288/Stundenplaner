@@ -86,13 +86,13 @@ document.querySelectorAll('.nav-btn').forEach(btn => {
         this.classList.add('active');
         document.getElementById('tab-' + this.dataset.tab).classList.add('active');
 
-        if (this.dataset.tab === 'dashboard') { updateDashboard(); renderEinsatzChronik(); renderEinsatzAnalytics(); renderWochenReport(); renderEinsatzTimeline(); renderKostenTrend(); }
+        if (this.dataset.tab === 'dashboard') { updateDashboard(); renderEinsatzChronik(); renderEinsatzAnalytics(); renderWochenReport(); renderEinsatzTimeline(); renderKostenTrend(); renderObjektUmsatzRanking(); }
         if (this.dataset.tab === 'objekte') { renderObjekte(); renderVertraege(); renderObjektAuslastung(); updateChecklisteObjekte(); updateObjektHistorieSelect(); updateObjektKontakteSelect(); renderObjektKontakte(); updateObjektAnweisungenSelect(); renderObjektAnweisungen(); updateObjektKostenMonat(); renderObjektKostenanalyse(); renderVertragsCountdown(); updateRevierplanSelect(); renderRevierplan(); updateBesObjektSelect(); renderBesichtigungen(); updateInfokarteSelect(); }
         if (this.dataset.tab === 'kalender') { renderKalender(); renderDienstplan(); renderJahresuebersicht(); }
-        if (this.dataset.tab === 'abrechnung') { updateAbrechnung(); updateLohnvorschauSelects(); renderDuplikatCheck(); renderBewertungsUebersicht(); updateMonatsabschlussSelect(); renderMonatsabschluss(); }
-        if (this.dataset.tab === 'mitarbeiter') { renderMitarbeiter(); renderDokumente(); renderUeberstunden(); renderKontaktliste(); renderUrlaubskonto(); renderArbeitszeitkonto(); renderQualMatrix(); updateSchichtHistorieSelect(); renderNotfallkontakte(); updateMAKalSelect(); renderVerfuegbarkeitWoche(); renderDoppelschichtWarnungen(); renderMALeistung(); renderKrankenstatistik(); renderGeburtstageJubilaeen(); renderMASkills(); renderTauschBoard(); }
+        if (this.dataset.tab === 'abrechnung') { updateAbrechnung(); updateLohnvorschauSelects(); renderDuplikatCheck(); renderBewertungsUebersicht(); updateMonatsabschlussSelect(); renderMonatsabschluss(); updateCSVExportFilter(); }
+        if (this.dataset.tab === 'mitarbeiter') { renderMitarbeiter(); renderDokumente(); renderUeberstunden(); renderKontaktliste(); renderUrlaubskonto(); renderArbeitszeitkonto(); renderQualMatrix(); updateSchichtHistorieSelect(); renderNotfallkontakte(); updateMAKalSelect(); renderVerfuegbarkeitWoche(); renderDoppelschichtWarnungen(); renderMALeistung(); renderKrankenstatistik(); renderGeburtstageJubilaeen(); renderMASkills(); renderTauschBoard(); renderMAVerfuegbarkeitsKalender(); }
         if (this.dataset.tab === 'vorfaelle') { renderVorfaelle(); renderVorfallsStatistik(); }
-        if (this.dataset.tab === 'wachbuch') { renderWachbuch(); renderUebergaben(); renderWachbuchStats(); }
+        if (this.dataset.tab === 'wachbuch') { renderWachbuch(); renderUebergaben(); renderWachbuchStats(); updateSchichtUebergabeSelects(); renderSchichtUebergaben(); }
         if (this.dataset.tab === 'einstellungen') { updateDatenStats(); updateSpeicherStats(); ladeEinstellungen(); renderAuditLog(); renderSondernotizen(); }
     });
 });
@@ -529,9 +529,26 @@ function renderTabelle() {
                 <button class="btn-secondary btn-small" onclick="dupliziereEinsatz(${e.id})">Dupl.</button>
                 ${e.mitarbeiter ? '<button class="btn-secondary btn-small" onclick="tauscheSchicht(' + e.id + ')">Tausch</button><button class="btn-secondary btn-small" onclick="tauschAnfrageErstellen(' + e.id + ')" title="Tausch-Board Anfrage">TB</button>' : ''}
                 <button class="btn-delete" onclick="loescheEinsatz(${e.id})">X</button>
+                <button class="btn-secondary btn-small" onclick="toggleKommentare(${e.id})" title="Kommentare">${(einsatzKommentare[e.id] || []).length > 0 ? '💬' + (einsatzKommentare[e.id].length) : '💬'}</button>
             </td>
         `;
         einsatzBody.appendChild(tr);
+
+        // Kommentar-Zeile
+        const komRow = document.createElement('tr');
+        komRow.id = 'ek_row_' + e.id;
+        komRow.style.display = 'none';
+        komRow.className = 'ek-row';
+        komRow.innerHTML = `<td colspan="11" class="ek-cell">
+            <div class="ek-container">
+                <div id="ek_list_${e.id}"></div>
+                <div class="ek-input-row">
+                    <input type="text" id="ek_input_${e.id}" placeholder="Kommentar hinzufügen..." class="ek-input" onkeydown="if(event.key==='Enter')kommentarSpeichern(${e.id})">
+                    <button class="btn-primary btn-small" onclick="kommentarSpeichern(${e.id})">+</button>
+                </div>
+            </div>
+        </td>`;
+        einsatzBody.appendChild(komRow);
 
         totalStunden += e.stunden;
         totalZuschlaege += e.zuschlagBetrag;
@@ -1550,7 +1567,7 @@ function loescheMitarbeiter(index) {
 // =============================================
 function erstelleBackup() {
     const backup = {
-        version: 15,
+        version: 16,
         datum: new Date().toISOString(),
         einsaetze,
         objekte,
@@ -1573,7 +1590,9 @@ function erstelleBackup() {
         tagesSondernotizen,
         schnellvorlagen,
         besichtigungen,
-        tauschAnfragen
+        tauschAnfragen,
+        einsatzKommentare,
+        schichtUebergaben
     };
 
     const json = JSON.stringify(backup, null, 2);
@@ -1620,6 +1639,8 @@ function stelleWiederHer(event) {
             schnellvorlagen = data.schnellvorlagen || [];
             besichtigungen = data.besichtigungen || [];
             tauschAnfragen = data.tauschAnfragen || [];
+            einsatzKommentare = data.einsatzKommentare || {};
+            schichtUebergaben = data.schichtUebergaben || [];
 
             speichern();
             localStorage.setItem('bbprotect_objekte', JSON.stringify(objekte));
@@ -1643,6 +1664,8 @@ function stelleWiederHer(event) {
             localStorage.setItem('bbprotect_schnellvorlagen', JSON.stringify(schnellvorlagen));
             localStorage.setItem('bbprotect_besichtigungen', JSON.stringify(besichtigungen));
             localStorage.setItem('bbprotect_tauschanfragen', JSON.stringify(tauschAnfragen));
+            localStorage.setItem('bbprotect_einsatzkommentare', JSON.stringify(einsatzKommentare));
+            localStorage.setItem('bbprotect_schichtuebergaben', JSON.stringify(schichtUebergaben));
 
             renderTabelle();
             updateAlleFilter();
@@ -1687,6 +1710,8 @@ function loescheAlleDaten() {
     schnellvorlagen = [];
     besichtigungen = [];
     tauschAnfragen = [];
+    einsatzKommentare = {};
+    schichtUebergaben = [];
 
     localStorage.removeItem('bbprotect_einsaetze');
     localStorage.removeItem('bbprotect_objekte');
@@ -1710,6 +1735,8 @@ function loescheAlleDaten() {
     localStorage.removeItem('bbprotect_schnellvorlagen');
     localStorage.removeItem('bbprotect_besichtigungen');
     localStorage.removeItem('bbprotect_tauschanfragen');
+    localStorage.removeItem('bbprotect_einsatzkommentare');
+    localStorage.removeItem('bbprotect_schichtuebergaben');
 
     renderTabelle();
     updateAlleFilter();
@@ -7906,6 +7933,286 @@ function renderTauschBoard() {
 }
 
 // =============================================
+// EINSATZ-KOMMENTARE
+// =============================================
+let einsatzKommentare = JSON.parse(localStorage.getItem('bbprotect_einsatzkommentare') || '{}');
+
+function kommentarSpeichern(einsatzId) {
+    const input = document.getElementById('ek_input_' + einsatzId);
+    if (!input || !input.value.trim()) return;
+
+    if (!einsatzKommentare[einsatzId]) einsatzKommentare[einsatzId] = [];
+    einsatzKommentare[einsatzId].push({
+        text: input.value.trim(),
+        zeit: new Date().toISOString(),
+        autor: 'System'
+    });
+
+    localStorage.setItem('bbprotect_einsatzkommentare', JSON.stringify(einsatzKommentare));
+    input.value = '';
+    renderKommentare(einsatzId);
+    logAudit('erstellt', 'Kommentar', `Einsatz #${einsatzId}`);
+}
+
+function kommentarLoeschen(einsatzId, idx) {
+    if (!einsatzKommentare[einsatzId]) return;
+    einsatzKommentare[einsatzId].splice(idx, 1);
+    if (einsatzKommentare[einsatzId].length === 0) delete einsatzKommentare[einsatzId];
+    localStorage.setItem('bbprotect_einsatzkommentare', JSON.stringify(einsatzKommentare));
+    renderKommentare(einsatzId);
+}
+
+function renderKommentare(einsatzId) {
+    const el = document.getElementById('ek_list_' + einsatzId);
+    if (!el) return;
+    const komms = einsatzKommentare[einsatzId] || [];
+    if (komms.length === 0) { el.innerHTML = ''; return; }
+    el.innerHTML = komms.map((k, i) => `<div class="ek-item">
+        <span class="ek-text">${escapeHtml(k.text)}</span>
+        <span class="ek-meta">${k.zeit ? new Date(k.zeit).toLocaleDateString('de-DE') : ''}</span>
+        <button class="btn-delete btn-small" onclick="kommentarLoeschen(${einsatzId},${i})" style="padding:0 0.3rem;font-size:0.6rem">&times;</button>
+    </div>`).join('');
+}
+
+function toggleKommentare(einsatzId) {
+    const row = document.getElementById('ek_row_' + einsatzId);
+    if (!row) return;
+    row.style.display = row.style.display === 'none' ? 'table-row' : 'none';
+    if (row.style.display === 'table-row') renderKommentare(einsatzId);
+}
+
+// =============================================
+// MA-VERFÜGBARKEITS-KALENDER (Monatsansicht)
+// =============================================
+function renderMAVerfuegbarkeitsKalender() {
+    const el = document.getElementById('maVerfKalContent');
+    if (!el) return;
+
+    const monat = document.getElementById('mavkMonat') ? document.getElementById('mavkMonat').value : '';
+    if (!monat) { el.innerHTML = '<p style="color:#a0aec0">Bitte Monat wählen.</p>'; return; }
+
+    const [jahr, mon] = monat.split('-').map(Number);
+    const tageImMonat = new Date(jahr, mon, 0).getDate();
+    const maList = mitarbeiterListe_.slice().sort((a, b) => a.name.localeCompare(b.name));
+
+    if (maList.length === 0) { el.innerHTML = '<p style="color:#a0aec0">Keine Mitarbeiter vorhanden.</p>'; return; }
+
+    let html = '<div class="mavk-wrapper"><table class="mavk-tabelle"><thead><tr><th>MA</th>';
+    for (let d = 1; d <= tageImMonat; d++) {
+        const wt = new Date(jahr, mon - 1, d).getDay();
+        html += `<th class="${wt === 0 || wt === 6 ? 'mavk-we' : ''}">${d}</th>`;
+    }
+    html += '</tr></thead><tbody>';
+
+    maList.forEach(ma => {
+        html += `<tr><td class="mavk-name">${escapeHtml(ma.name.split(' ').map(n => n[0]).join(''))}</td>`;
+        for (let d = 1; d <= tageImMonat; d++) {
+            const datum = `${jahr}-${String(mon).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+            const wt = new Date(jahr, mon - 1, d).getDay();
+
+            // Prüfe Abwesenheiten
+            const abw = verfuegbarkeit.find(v => v.mitarbeiter === ma.name && v.von <= datum && v.bis >= datum);
+            // Prüfe ob Einsatz vorhanden
+            const hatEinsatz = einsaetze.some(e => e.mitarbeiter === ma.name && e.datum === datum && e.status !== 'storniert');
+
+            let cls = 'mavk-frei';
+            let title = 'Verfügbar';
+            if (abw) {
+                if (abw.grund === 'urlaub') { cls = 'mavk-urlaub'; title = 'Urlaub'; }
+                else if (abw.grund === 'krank') { cls = 'mavk-krank'; title = 'Krank'; }
+                else { cls = 'mavk-abw'; title = abw.grund || 'Abwesend'; }
+            } else if (hatEinsatz) {
+                cls = 'mavk-einsatz'; title = 'Einsatz';
+            }
+            if (wt === 0 || wt === 6) cls += ' mavk-we';
+
+            html += `<td class="${cls}" title="${escapeHtml(ma.name)}: ${title}"></td>`;
+        }
+        html += '</tr>';
+    });
+
+    html += '</tbody></table></div>';
+    el.innerHTML = html;
+}
+
+// =============================================
+// OBJEKT-UMSATZ-RANKING
+// =============================================
+function renderObjektUmsatzRanking() {
+    const el = document.getElementById('objektRankingContent');
+    if (!el) return;
+
+    const ranking = {};
+    einsaetze.filter(e => e.status !== 'storniert').forEach(e => {
+        if (!ranking[e.objekt]) ranking[e.objekt] = { stunden: 0, umsatz: 0, einsaetze: 0 };
+        ranking[e.objekt].stunden += e.stunden;
+        ranking[e.objekt].umsatz += e.gesamt;
+        ranking[e.objekt].einsaetze++;
+    });
+
+    const sorted = Object.entries(ranking).sort((a, b) => b[1].umsatz - a[1].umsatz);
+    if (sorted.length === 0) {
+        el.innerHTML = '<p style="color:#a0aec0">Keine Einsatzdaten vorhanden.</p>';
+        return;
+    }
+
+    const maxUmsatz = sorted[0][1].umsatz || 1;
+
+    let html = '<div class="or-list">';
+    sorted.forEach(([name, data], i) => {
+        const pct = (data.umsatz / maxUmsatz) * 100;
+        const stundensatz = data.stunden > 0 ? data.umsatz / data.stunden : 0;
+        html += `<div class="or-item">
+            <div class="or-rank">#${i + 1}</div>
+            <div class="or-details">
+                <div class="or-name">${escapeHtml(name)}</div>
+                <div class="or-bar-bg"><div class="or-bar-fill" style="width:${pct}%"></div></div>
+                <div class="or-stats">
+                    <span>${formatEuro(data.umsatz)} Umsatz</span>
+                    <span>${formatZahl(data.stunden)} Std.</span>
+                    <span>${data.einsaetze} Einsätze</span>
+                    <span>Ø ${formatEuro(stundensatz)}/Std.</span>
+                </div>
+            </div>
+        </div>`;
+    });
+    html += '</div>';
+    el.innerHTML = html;
+}
+
+// =============================================
+// SCHICHTÜBERGABE-PROTOKOLL
+// =============================================
+let schichtUebergaben = JSON.parse(localStorage.getItem('bbprotect_schichtuebergaben') || '[]');
+
+function schichtUebergabeSpeichern() {
+    const objekt = document.getElementById('suObjekt') ? document.getElementById('suObjekt').value : '';
+    const datum = document.getElementById('suDatum') ? document.getElementById('suDatum').value : '';
+    const vonMA = document.getElementById('suVonMA') ? document.getElementById('suVonMA').value.trim() : '';
+    const anMA = document.getElementById('suAnMA') ? document.getElementById('suAnMA').value.trim() : '';
+    const notiz = document.getElementById('suNotiz') ? document.getElementById('suNotiz').value.trim() : '';
+
+    if (!objekt || !datum || !notiz) { alert('Bitte Objekt, Datum und Notiz ausfüllen.'); return; }
+
+    schichtUebergaben.push({
+        id: Date.now(),
+        objekt,
+        datum,
+        vonMA,
+        anMA,
+        notiz,
+        erstellt: new Date().toISOString()
+    });
+
+    localStorage.setItem('bbprotect_schichtuebergaben', JSON.stringify(schichtUebergaben));
+    logAudit('erstellt', 'Schichtübergabe', `${objekt} am ${formatDatum(datum)}`);
+
+    if (document.getElementById('suNotiz')) document.getElementById('suNotiz').value = '';
+    renderSchichtUebergaben();
+}
+
+function renderSchichtUebergaben() {
+    const el = document.getElementById('schichtUebergabenContent');
+    if (!el) return;
+
+    const objekt = document.getElementById('suFilterObjekt') ? document.getElementById('suFilterObjekt').value : '';
+    let gefiltert = objekt ? schichtUebergaben.filter(s => s.objekt === objekt) : schichtUebergaben;
+    gefiltert = gefiltert.sort((a, b) => b.datum.localeCompare(a.datum) || b.erstellt.localeCompare(a.erstellt)).slice(0, 20);
+
+    if (gefiltert.length === 0) {
+        el.innerHTML = '<p style="color:#a0aec0">Keine Übergabeprotokolle vorhanden.</p>';
+        return;
+    }
+
+    let html = '';
+    gefiltert.forEach(s => {
+        html += `<div class="su-item">
+            <div class="su-header">
+                <strong>${escapeHtml(s.objekt)}</strong> | ${formatDatum(s.datum)}
+                ${s.vonMA ? '<span class="su-ma">' + escapeHtml(s.vonMA) + ' → ' + escapeHtml(s.anMA || '?') + '</span>' : ''}
+            </div>
+            <div class="su-notiz">${escapeHtml(s.notiz)}</div>
+        </div>`;
+    });
+    el.innerHTML = html;
+}
+
+function updateSchichtUebergabeSelects() {
+    const suObjekt = document.getElementById('suObjekt');
+    const suFilterObjekt = document.getElementById('suFilterObjekt');
+    if (suObjekt) {
+        suObjekt.innerHTML = '<option value="">Objekt wählen...</option>';
+        objekte.forEach(o => { suObjekt.innerHTML += `<option value="${escapeHtml(o.name)}">${escapeHtml(o.name)}</option>`; });
+    }
+    if (suFilterObjekt) {
+        suFilterObjekt.innerHTML = '<option value="">Alle Objekte</option>';
+        objekte.forEach(o => { suFilterObjekt.innerHTML += `<option value="${escapeHtml(o.name)}">${escapeHtml(o.name)}</option>`; });
+    }
+}
+
+// =============================================
+// EINSATZ-EXPORT (CSV)
+// =============================================
+function exportiereEinsaetzeCSV() {
+    const filterMonat = document.getElementById('csvExportMonat') ? document.getElementById('csvExportMonat').value : '';
+    const filterObjekt = document.getElementById('csvExportObjekt') ? document.getElementById('csvExportObjekt').value : '';
+
+    let gefiltert = einsaetze.filter(e => e.status !== 'storniert');
+    if (filterMonat) gefiltert = gefiltert.filter(e => e.datum.substring(0, 7) === filterMonat);
+    if (filterObjekt) gefiltert = gefiltert.filter(e => e.objekt === filterObjekt);
+
+    if (gefiltert.length === 0) { alert('Keine Einsätze zum Exportieren.'); return; }
+
+    gefiltert.sort((a, b) => a.datum.localeCompare(b.datum) || a.zeitVon.localeCompare(b.zeitVon));
+
+    const header = 'Datum;Objekt;Mitarbeiter;Von;Bis;Stunden;Pause (Min);Stundensatz;Grundlohn;Zuschlag;Gesamt;Status';
+    const rows = gefiltert.map(e => [
+        formatDatum(e.datum),
+        '"' + (e.objekt || '').replace(/"/g, '""') + '"',
+        '"' + (e.mitarbeiter || '').replace(/"/g, '""') + '"',
+        e.zeitVon,
+        e.zeitBis,
+        formatZahl(e.stunden).replace('.', ','),
+        e.pauseMinuten || 0,
+        formatZahl(e.stundensatz).replace('.', ','),
+        formatZahl(e.grundlohn).replace('.', ','),
+        formatZahl(e.zuschlagBetrag).replace('.', ','),
+        formatZahl(e.gesamt).replace('.', ','),
+        e.status || 'aktiv'
+    ].join(';'));
+
+    const csv = '\uFEFF' + header + '\n' + rows.join('\n');
+    const datum = filterMonat || new Date().toISOString().split('T')[0];
+    downloadFile(`BBProtect_Einsaetze_${datum}.csv`, csv, 'text/csv;charset=utf-8');
+
+    logAudit('exportiert', 'CSV-Export', `${gefiltert.length} Einsätze exportiert`);
+}
+
+function updateCSVExportFilter() {
+    const monatSel = document.getElementById('csvExportMonat');
+    const objektSel = document.getElementById('csvExportObjekt');
+    if (!monatSel || !objektSel) return;
+
+    const monate = new Set();
+    const objekte_ = new Set();
+    einsaetze.forEach(e => {
+        monate.add(e.datum.substring(0, 7));
+        objekte_.add(e.objekt);
+    });
+
+    monatSel.innerHTML = '<option value="">Alle Monate</option>';
+    Array.from(monate).sort().reverse().forEach(m => {
+        const [j, mo] = m.split('-');
+        monatSel.innerHTML += `<option value="${m}">${MONATSNAMEN[parseInt(mo) - 1]} ${j}</option>`;
+    });
+
+    objektSel.innerHTML = '<option value="">Alle Objekte</option>';
+    Array.from(objekte_).sort().forEach(o => {
+        objektSel.innerHTML += `<option value="${escapeHtml(o)}">${escapeHtml(o)}</option>`;
+    });
+}
+
+// =============================================
 // INITIALISIERUNG
 // =============================================
 document.getElementById('datum').valueAsDate = new Date();
@@ -7934,6 +8241,8 @@ document.getElementById('ugDatum').valueAsDate = new Date();
 document.getElementById('snDatum').valueAsDate = new Date();
 document.getElementById('besDatum').valueAsDate = new Date();
 document.getElementById('tlDatum').valueAsDate = new Date();
+document.getElementById('suDatum').valueAsDate = new Date();
+document.getElementById('mavkMonat').value = new Date().toISOString().substring(0, 7);
 const jetztInit = new Date();
 document.getElementById('wbZeit').value = `${String(jetztInit.getHours()).padStart(2, '0')}:${String(jetztInit.getMinutes()).padStart(2, '0')}`;
 document.getElementById('ugZeit').value = `${String(jetztInit.getHours()).padStart(2, '0')}:${String(jetztInit.getMinutes()).padStart(2, '0')}`;
