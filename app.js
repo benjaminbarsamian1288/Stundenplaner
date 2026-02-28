@@ -86,11 +86,11 @@ document.querySelectorAll('.nav-btn').forEach(btn => {
         this.classList.add('active');
         document.getElementById('tab-' + this.dataset.tab).classList.add('active');
 
-        if (this.dataset.tab === 'dashboard') { updateDashboard(); renderEinsatzChronik(); renderEinsatzAnalytics(); renderWochenReport(); renderEinsatzTimeline(); renderKostenTrend(); renderObjektUmsatzRanking(); renderStundenkontoChart(); renderDashboardKacheln(); renderSchichtplanVorschau(); renderErweiterteStatistik(); renderTagesPersonal(); renderWetterWidget(); renderDauerStatistik(); renderStornoquote(); }
-        if (this.dataset.tab === 'objekte') { renderObjekte(); renderVertraege(); renderObjektAuslastung(); updateChecklisteObjekte(); updateObjektHistorieSelect(); updateObjektKontakteSelect(); renderObjektKontakte(); updateObjektAnweisungenSelect(); renderObjektAnweisungen(); updateObjektKostenMonat(); renderObjektKostenanalyse(); renderVertragsCountdown(); updateRevierplanSelect(); renderRevierplan(); updateBesObjektSelect(); renderBesichtigungen(); updateInfokarteSelect(); updateWetterObjektSelects(); renderWetterNotizen(); updateObjektChecklisteSelect(); renderObjektCheckliste(); renderVertragslaufzeitBalken(); updateZugangshinweiseSelect(); renderZugangshinweise(); updateObjektBewertungSelect(); renderObjektBewertungen(); updateObjektNotfallSelects(); renderObjektNotfallKontakte(); updateObjektEinsatzKalSelects(); renderObjektEinsatzKalender(); }
+        if (this.dataset.tab === 'dashboard') { updateDashboard(); renderEinsatzChronik(); renderEinsatzAnalytics(); renderWochenReport(); renderEinsatzTimeline(); renderKostenTrend(); renderObjektUmsatzRanking(); renderStundenkontoChart(); renderDashboardKacheln(); renderSchichtplanVorschau(); renderErweiterteStatistik(); renderTagesPersonal(); renderWetterWidget(); renderDauerStatistik(); renderStornoquote(); renderWiederholungsStatistik(); }
+        if (this.dataset.tab === 'objekte') { renderObjekte(); renderVertraege(); renderObjektAuslastung(); updateChecklisteObjekte(); updateObjektHistorieSelect(); updateObjektKontakteSelect(); renderObjektKontakte(); updateObjektAnweisungenSelect(); renderObjektAnweisungen(); updateObjektKostenMonat(); renderObjektKostenanalyse(); renderVertragsCountdown(); updateRevierplanSelect(); renderRevierplan(); updateBesObjektSelect(); renderBesichtigungen(); updateInfokarteSelect(); updateWetterObjektSelects(); renderWetterNotizen(); updateObjektChecklisteSelect(); renderObjektCheckliste(); renderVertragslaufzeitBalken(); updateZugangshinweiseSelect(); renderZugangshinweise(); updateObjektBewertungSelect(); renderObjektBewertungen(); updateObjektNotfallSelects(); renderObjektNotfallKontakte(); updateObjektEinsatzKalSelects(); renderObjektEinsatzKalender(); renderObjektStatusampel(); }
         if (this.dataset.tab === 'kalender') { renderKalender(); renderDienstplan(); renderJahresuebersicht(); }
-        if (this.dataset.tab === 'abrechnung') { updateAbrechnung(); updateLohnvorschauSelects(); renderDuplikatCheck(); renderBewertungsUebersicht(); updateMonatsabschlussSelect(); renderMonatsabschluss(); updateCSVExportFilter(); }
-        if (this.dataset.tab === 'mitarbeiter') { renderMitarbeiter(); renderDokumente(); renderUeberstunden(); renderKontaktliste(); renderUrlaubskonto(); renderArbeitszeitkonto(); renderQualMatrix(); updateSchichtHistorieSelect(); renderNotfallkontakte(); updateMAKalSelect(); renderVerfuegbarkeitWoche(); renderDoppelschichtWarnungen(); renderMALeistung(); renderKrankenstatistik(); renderGeburtstageJubilaeen(); renderMASkills(); renderTauschBoard(); renderMAVerfuegbarkeitsKalender(); renderNachrichtenBoard(); renderZertifikateTracker(); renderJahresarbeitszeitkonto(); renderUeberstundenWarnung(); renderMAEinsatzHeatmap(); renderMAFavoritobjekte(); }
+        if (this.dataset.tab === 'abrechnung') { updateAbrechnung(); updateLohnvorschauSelects(); renderDuplikatCheck(); renderBewertungsUebersicht(); updateMonatsabschlussSelect(); renderMonatsabschluss(); updateCSVExportFilter(); renderDuplikatFinder(); }
+        if (this.dataset.tab === 'mitarbeiter') { renderMitarbeiter(); renderDokumente(); renderUeberstunden(); renderKontaktliste(); renderUrlaubskonto(); renderArbeitszeitkonto(); renderQualMatrix(); updateSchichtHistorieSelect(); renderNotfallkontakte(); updateMAKalSelect(); renderVerfuegbarkeitWoche(); renderDoppelschichtWarnungen(); renderMALeistung(); renderKrankenstatistik(); renderGeburtstageJubilaeen(); renderMASkills(); renderTauschBoard(); renderMAVerfuegbarkeitsKalender(); renderNachrichtenBoard(); renderZertifikateTracker(); renderJahresarbeitszeitkonto(); renderUeberstundenWarnung(); renderMAEinsatzHeatmap(); renderMAFavoritobjekte(); renderMAStreaks(); }
         if (this.dataset.tab === 'vorfaelle') { renderVorfaelle(); renderVorfallsStatistik(); }
         if (this.dataset.tab === 'wachbuch') { renderWachbuch(); renderUebergaben(); renderWachbuchStats(); updateSchichtUebergabeSelects(); renderSchichtUebergaben(); renderTagesprotokoll(); }
         if (this.dataset.tab === 'einstellungen') { updateDatenStats(); updateSpeicherStats(); ladeEinstellungen(); renderAuditLog(); renderSondernotizen(); renderFeiertagsKalender(); renderSpeicherStatistik(); renderDatenChangelog(); renderAutoErinnerungen(); }
@@ -9592,6 +9592,217 @@ function druckeTagesprotokoll() {
 }
 
 // =============================================
+// EINSATZ-WIEDERHOLUNGS-STATISTIK
+// =============================================
+function renderWiederholungsStatistik() {
+    const el = document.getElementById('wiederholungsStatContent');
+    if (!el) return;
+
+    // Gruppiere nach Objekt+ZeitVon+ZeitBis
+    const muster = {};
+    einsaetze.forEach(e => {
+        if (!e.objekt || !e.zeitVon || !e.zeitBis) return;
+        const key = `${e.objekt}|${e.zeitVon}-${e.zeitBis}`;
+        if (!muster[key]) muster[key] = { objekt: e.objekt, zeit: `${e.zeitVon}-${e.zeitBis}`, count: 0 };
+        muster[key].count++;
+    });
+
+    const sorted = Object.values(muster).filter(m => m.count > 1).sort((a, b) => b.count - a.count);
+
+    if (sorted.length === 0) {
+        el.innerHTML = '<span style="color:#a0aec0;font-size:0.8rem">Keine wiederkehrenden Schichtmuster erkannt.</span>';
+        return;
+    }
+
+    let html = '<div class="ws-list">';
+    sorted.slice(0, 10).forEach((m, i) => {
+        html += `<div class="ws-row">
+            <span class="ws-rank">#${i + 1}</span>
+            <span class="ws-obj">${escapeHtml(m.objekt)}</span>
+            <span class="ws-zeit">${m.zeit}</span>
+            <span class="ws-count">${m.count}x</span>
+        </div>`;
+    });
+    html += '</div>';
+    el.innerHTML = html;
+}
+
+// =============================================
+// MA-ARBEITSTAGE-STREAK
+// =============================================
+function renderMAStreaks() {
+    const el = document.getElementById('maStreaksContent');
+    if (!el) return;
+
+    const maDateMap = {};
+    einsaetze.forEach(e => {
+        if (!e.mitarbeiter || !e.datum || e.status === 'storniert') return;
+        if (!maDateMap[e.mitarbeiter]) maDateMap[e.mitarbeiter] = new Set();
+        maDateMap[e.mitarbeiter].add(e.datum);
+    });
+
+    const streaks = Object.entries(maDateMap).map(([ma, daten]) => {
+        const sorted = [...daten].sort();
+        let maxStreak = 1, currentStreak = 1, streakStart = sorted[0], maxStart = sorted[0];
+
+        for (let i = 1; i < sorted.length; i++) {
+            const prev = new Date(sorted[i - 1]);
+            const curr = new Date(sorted[i]);
+            const diff = (curr - prev) / 86400000;
+
+            if (diff === 1) {
+                currentStreak++;
+                if (currentStreak > maxStreak) {
+                    maxStreak = currentStreak;
+                    maxStart = streakStart;
+                }
+            } else {
+                currentStreak = 1;
+                streakStart = sorted[i];
+            }
+        }
+
+        return { ma, maxStreak, startDatum: maxStart, totalTage: sorted.length };
+    }).sort((a, b) => b.maxStreak - a.maxStreak);
+
+    if (streaks.length === 0) {
+        el.innerHTML = '<span style="color:#a0aec0;font-size:0.8rem">Keine Daten vorhanden.</span>';
+        return;
+    }
+
+    let html = '<div class="ms-list">';
+    streaks.slice(0, 10).forEach(s => {
+        const warnCls = s.maxStreak > 6 ? ' ms-warn' : s.maxStreak > 12 ? ' ms-critical' : '';
+        html += `<div class="ms-row${warnCls}">
+            <span class="ms-ma">${escapeHtml(s.ma)}</span>
+            <span class="ms-streak">${s.maxStreak} Tage</span>
+            <span class="ms-start">ab ${formatDatum(s.startDatum)}</span>
+            <span class="ms-total">${s.totalTage} Arbeitstage ges.</span>
+        </div>`;
+    });
+    html += '</div>';
+    if (streaks.some(s => s.maxStreak > 6)) {
+        html += '<div style="font-size:0.65rem;color:#e53e3e;margin-top:0.3rem">⚠️ Streaks > 6 Tage können auf fehlende Ruhetage hinweisen (§9 ArbZG)</div>';
+    }
+    el.innerHTML = html;
+}
+
+// =============================================
+// OBJEKT-STATUSAMPEL
+// =============================================
+function renderObjektStatusampel() {
+    const el = document.getElementById('objektAmpelContent');
+    if (!el) return;
+
+    if (objekte.length === 0) {
+        el.innerHTML = '<span style="color:#a0aec0;font-size:0.8rem">Keine Objekte vorhanden.</span>';
+        return;
+    }
+
+    const heute = new Date().toISOString().split('T')[0];
+    const vor7 = new Date(Date.now() - 7 * 86400000).toISOString().split('T')[0];
+    const vor30 = new Date(Date.now() - 30 * 86400000).toISOString().split('T')[0];
+
+    const ampeln = objekte.map(o => {
+        const objEinsaetze = einsaetze.filter(e => e.objekt === o.name && e.datum >= vor7 && e.status !== 'storniert');
+        const objVorfaelle = vorfaelle.filter(v => v.objekt === o.name && v.datum >= vor30);
+        const kritischeVorfaelle = objVorfaelle.filter(v => v.schwere === 'kritisch' || v.schwere === 'hoch');
+
+        let status = 'gruen';
+        let grund = 'OK';
+
+        if (kritischeVorfaelle.length > 0) {
+            status = 'rot';
+            grund = `${kritischeVorfaelle.length} kritische Vorfälle (30 Tage)`;
+        } else if (objEinsaetze.length === 0) {
+            status = 'gelb';
+            grund = 'Keine Einsätze in letzten 7 Tagen';
+        } else if (objVorfaelle.length > 2) {
+            status = 'gelb';
+            grund = `${objVorfaelle.length} Vorfälle (30 Tage)`;
+        }
+
+        return { name: o.name, status, grund, einsaetze7: objEinsaetze.length, vorfaelle30: objVorfaelle.length };
+    });
+
+    ampeln.sort((a, b) => {
+        const order = { rot: 0, gelb: 1, gruen: 2 };
+        return (order[a.status] || 3) - (order[b.status] || 3);
+    });
+
+    const statusIcons = { gruen: '🟢', gelb: '🟡', rot: '🔴' };
+
+    let html = '<div class="oa-list">';
+    ampeln.forEach(a => {
+        html += `<div class="oa-row oa-${a.status}">
+            <span class="oa-icon">${statusIcons[a.status]}</span>
+            <span class="oa-name">${escapeHtml(a.name)}</span>
+            <span class="oa-grund">${escapeHtml(a.grund)}</span>
+            <span class="oa-stats">${a.einsaetze7} Eins./7T | ${a.vorfaelle30} Vorf./30T</span>
+        </div>`;
+    });
+    html += '</div>';
+    el.innerHTML = html;
+}
+
+// =============================================
+// EINSATZ-DUPLIKAT-FINDER
+// =============================================
+function renderDuplikatFinder() {
+    const el = document.getElementById('duplikatFinderContent');
+    if (!el) return;
+
+    const duplikate = [];
+    for (let i = 0; i < einsaetze.length; i++) {
+        for (let j = i + 1; j < einsaetze.length; j++) {
+            const a = einsaetze[i];
+            const b = einsaetze[j];
+            if (a.datum === b.datum && a.mitarbeiter === b.mitarbeiter && a.objekt === b.objekt && a.zeitVon === b.zeitVon && a.zeitBis === b.zeitBis) {
+                duplikate.push({ a, b, idxA: i, idxB: j });
+            }
+        }
+    }
+
+    if (duplikate.length === 0) {
+        el.innerHTML = '<span style="color:#38a169;font-size:0.8rem">✅ Keine Duplikate gefunden.</span>';
+        return;
+    }
+
+    let html = `<div class="df-warn">⚠️ ${duplikate.length} potenzielle Duplikat(e) gefunden!</div>`;
+    html += '<div class="df-list">';
+    duplikate.slice(0, 10).forEach(d => {
+        html += `<div class="df-row">
+            <span class="df-date">${formatDatum(d.a.datum)}</span>
+            <span class="df-info">${escapeHtml(d.a.mitarbeiter || '—')} @ ${escapeHtml(d.a.objekt)} ${d.a.zeitVon}-${d.a.zeitBis}</span>
+        </div>`;
+    });
+    html += '</div>';
+    el.innerHTML = html;
+}
+
+// =============================================
+// SCHNELL-NOTIZ (Sticky)
+// =============================================
+function schnellNotizSpeichern() {
+    const text = document.getElementById('schnellNotizText') ? document.getElementById('schnellNotizText').value.trim() : '';
+    localStorage.setItem('bbprotect_schnellnotiz', text);
+    renderSchnellNotiz();
+}
+
+function renderSchnellNotiz() {
+    const el = document.getElementById('schnellNotizAnzeige');
+    if (!el) return;
+    const text = localStorage.getItem('bbprotect_schnellnotiz') || '';
+    if (text) {
+        el.innerHTML = `<div class="sn-sticky">📌 ${escapeHtml(text)} <button class="btn-delete btn-small" onclick="localStorage.removeItem('bbprotect_schnellnotiz');renderSchnellNotiz();" style="margin-left:0.5rem;font-size:0.6rem">X</button></div>`;
+        el.style.display = 'block';
+    } else {
+        el.style.display = 'none';
+        el.innerHTML = '';
+    }
+}
+
+// =============================================
 // EINSATZ-STORNOQUOTE
 // =============================================
 function renderStornoquote() {
@@ -9993,6 +10204,7 @@ renderMitarbeiter();
 renderVerfuegbarkeit();
 updateHeaderStats();
 renderQuickStats();
+renderSchnellNotiz();
 pruefeBenachrichtigungen();
 renderDokumente();
 renderUrlaubskonto();

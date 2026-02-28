@@ -32,6 +32,7 @@
     </div>
     <div class="header-stats" id="headerStats"></div>
     <div id="quickStatsLeiste"></div>
+    <div id="schnellNotizAnzeige" style="display:none"></div>
     <div class="benachrichtigungen" id="benachrichtigungen" style="display:none"></div>
     <div class="schnellaktionen">
         <button class="sa-btn" onclick="schnellNeuerEinsatz()">+ Einsatz</button>
@@ -39,6 +40,8 @@
         <button class="sa-btn" onclick="schnellDienstplan()">Dienstplan</button>
         <button class="sa-btn" onclick="schnellAbrechnung()">Abrechnung</button>
         <button class="sa-btn" onclick="erstelleBackup()">Backup</button>
+        <input type="text" id="schnellNotizText" placeholder="Schnell-Notiz..." style="flex:1;min-width:120px;padding:0.4rem 0.6rem;border:1px solid #cbd5e0;border-radius:6px;font-size:0.8rem" onkeydown="if(event.key==='Enter')schnellNotizSpeichern()">
+        <button class="sa-btn" onclick="schnellNotizSpeichern()">&#128204; Merken</button>
     </div>
 
     <main>
@@ -538,6 +541,14 @@
                 </div>
                 <p style="font-size:0.75rem;color:#718096;margin-top:0.25rem">Exportiert gefilterte Eins&auml;tze als CSV-Datei (Semikolon-getrennt, UTF-8 BOM f&uuml;r Excel).</p>
             </section>
+
+            <section class="form-section">
+                <div class="list-header">
+                    <h2>Duplikat-Finder</h2>
+                </div>
+                <p style="font-size:0.7rem;color:#718096;margin-bottom:0.5rem">Erkennt Eins&auml;tze mit identischem MA, Datum, Objekt und Uhrzeit.</p>
+                <div id="duplikatFinderContent"></div>
+            </section>
         </div>
 
         <!-- TAB: Dashboard -->
@@ -768,6 +779,13 @@
                     <div class="detail-card full-width">
                         <h3>Einsatz-Stornoquote &amp; Trend</h3>
                         <div id="stornoquoteContent"></div>
+                    </div>
+                </div>
+
+                <div class="dashboard-details" style="margin-top:1rem">
+                    <div class="detail-card full-width">
+                        <h3>Wiederkehrende Schichtmuster (Top 10)</h3>
+                        <div id="wiederholungsStatContent"></div>
                     </div>
                 </div>
         </div>
@@ -1257,6 +1275,14 @@
                     </div>
                 </div>
                 <div id="oekContent" style="margin-top:0.5rem"></div>
+            </section>
+
+            <section class="form-section">
+                <div class="list-header">
+                    <h2>Objekt-Statusampel</h2>
+                </div>
+                <p style="font-size:0.7rem;color:#718096;margin-bottom:0.5rem">Status basierend auf Eins&auml;tzen (7 Tage) und Vorf&auml;llen (30 Tage)</p>
+                <div id="objektAmpelContent"></div>
             </section>
 
             <section class="form-section">
@@ -1801,6 +1827,14 @@
                     <h2>MA-Favoritobjekte</h2>
                 </div>
                 <div id="maFavoritContent"></div>
+            </section>
+
+            <section class="form-section">
+                <div class="list-header">
+                    <h2>MA-Arbeitstage-Streak</h2>
+                </div>
+                <p style="font-size:0.7rem;color:#718096;margin-bottom:0.5rem">L&auml;ngste ununterbrochene Arbeitstage-Serien pro Mitarbeiter</p>
+                <div id="maStreaksContent"></div>
             </section>
         </div>
 

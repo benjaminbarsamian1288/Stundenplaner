@@ -9841,6 +9841,262 @@ body.dark-mode .ae-detail {
     color: #a0aec0;
 }
 
+/* =============================================
+   WIEDERHOLUNGS-STATISTIK
+   ============================================= */
+.ws-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.ws-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.35rem 0.6rem;
+    background: #f7fafc;
+    border-radius: 6px;
+    font-size: 0.8rem;
+}
+
+body.dark-mode .ws-row {
+    background: #2d3748;
+}
+
+.ws-rank {
+    font-weight: 800;
+    color: #4299e1;
+    min-width: 24px;
+}
+
+.ws-obj {
+    font-weight: 600;
+    color: #2d3748;
+    flex: 1;
+}
+
+body.dark-mode .ws-obj {
+    color: #e2e8f0;
+}
+
+.ws-zeit {
+    font-family: monospace;
+    font-size: 0.75rem;
+    color: #718096;
+    min-width: 90px;
+}
+
+body.dark-mode .ws-zeit {
+    color: #a0aec0;
+}
+
+.ws-count {
+    font-weight: 800;
+    color: #38a169;
+    min-width: 35px;
+    text-align: right;
+}
+
+/* =============================================
+   MA-ARBEITSTAGE-STREAK
+   ============================================= */
+.ms-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.ms-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.4rem 0.6rem;
+    background: #f7fafc;
+    border-radius: 6px;
+    font-size: 0.8rem;
+}
+
+body.dark-mode .ms-row {
+    background: #2d3748;
+}
+
+.ms-warn {
+    border-left: 3px solid #d69e2e;
+}
+
+.ms-critical {
+    border-left: 3px solid #e53e3e;
+}
+
+.ms-ma {
+    font-weight: 700;
+    color: #2d3748;
+    min-width: 120px;
+}
+
+body.dark-mode .ms-ma {
+    color: #e2e8f0;
+}
+
+.ms-streak {
+    font-weight: 800;
+    color: #4299e1;
+    min-width: 70px;
+}
+
+.ms-start {
+    font-size: 0.7rem;
+    color: #718096;
+    min-width: 90px;
+}
+
+body.dark-mode .ms-start {
+    color: #a0aec0;
+}
+
+.ms-total {
+    font-size: 0.65rem;
+    color: #a0aec0;
+    text-align: right;
+    flex: 1;
+}
+
+/* =============================================
+   OBJEKT-STATUSAMPEL
+   ============================================= */
+.oa-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+}
+
+.oa-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.45rem 0.6rem;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    background: #f7fafc;
+    border: 1px solid #e2e8f0;
+}
+
+body.dark-mode .oa-row {
+    background: #2d3748;
+    border-color: #4a5568;
+}
+
+.oa-rot {
+    border-left: 4px solid #e53e3e;
+}
+
+.oa-gelb {
+    border-left: 4px solid #d69e2e;
+}
+
+.oa-gruen {
+    border-left: 4px solid #38a169;
+}
+
+.oa-icon {
+    font-size: 1rem;
+    flex-shrink: 0;
+}
+
+.oa-name {
+    font-weight: 700;
+    color: #2d3748;
+    min-width: 130px;
+}
+
+body.dark-mode .oa-name {
+    color: #e2e8f0;
+}
+
+.oa-grund {
+    flex: 1;
+    color: #4a5568;
+    font-size: 0.75rem;
+}
+
+body.dark-mode .oa-grund {
+    color: #cbd5e0;
+}
+
+.oa-stats {
+    font-size: 0.65rem;
+    color: #a0aec0;
+    white-space: nowrap;
+}
+
+/* =============================================
+   EINSATZ-DUPLIKAT-FINDER
+   ============================================= */
+.df-warn {
+    color: #e53e3e;
+    font-weight: 700;
+    font-size: 0.85rem;
+    margin-bottom: 0.5rem;
+}
+
+.df-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+}
+
+.df-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.35rem 0.6rem;
+    background: #fff5f5;
+    border-left: 3px solid #e53e3e;
+    border-radius: 4px;
+    font-size: 0.8rem;
+}
+
+body.dark-mode .df-row {
+    background: #4a1d1d;
+}
+
+.df-date {
+    font-weight: 700;
+    color: #e53e3e;
+    min-width: 80px;
+}
+
+.df-info {
+    color: #4a5568;
+}
+
+body.dark-mode .df-info {
+    color: #cbd5e0;
+}
+
+/* =============================================
+   SCHNELL-NOTIZ (Sticky)
+   ============================================= */
+.sn-sticky {
+    background: #fefcbf;
+    color: #744210;
+    padding: 0.4rem 0.75rem;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    margin: 0.3rem 1rem;
+    border: 1px solid #ecc94b;
+}
+
+body.dark-mode .sn-sticky {
+    background: #5a4a1a;
+    color: #fefcbf;
+    border-color: #d69e2e;
+}
+
 @media (max-width: 768px) {
     .ob-item {
         flex-direction: column;
@@ -9873,7 +10129,7 @@ body.dark-mode .ae-detail {
         grid-template-columns: 1fr;
     }
 
-    .mf-row {
+    .mf-row, .ws-row, .ms-row, .oa-row {
         flex-wrap: wrap;
     }
 
