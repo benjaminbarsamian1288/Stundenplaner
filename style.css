@@ -3747,6 +3747,174 @@ body.dark-mode .filter-chip.aktiv {
     color: #fff;
 }
 
+/* -- Qualifikationsmatrix -- */
+.qm-table {
+    font-size: 0.75rem;
+}
+
+.qm-table th {
+    font-size: 0.7rem;
+    white-space: nowrap;
+}
+
+.qm-obj {
+    max-width: 80px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.qm-name {
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.qm-hoch {
+    color: #38a169;
+}
+
+.qm-mittel {
+    color: #d69e2e;
+}
+
+.qm-niedrig {
+    color: #a0aec0;
+}
+
+.qm-badge {
+    display: inline-block;
+    background: #667eea;
+    color: #fff;
+    font-size: 0.65rem;
+    padding: 0.1rem 0.35rem;
+    border-radius: 4px;
+    font-weight: 600;
+}
+
+.qm-leer {
+    color: #cbd5e0;
+}
+
+.qm-count {
+    text-align: center;
+}
+
+/* -- Objekt-Einsatzhistorie -- */
+.oh-summary {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-bottom: 0.75rem;
+}
+
+.oh-stat {
+    background: #ebf4ff;
+    color: #2b6cb0;
+    padding: 0.3rem 0.6rem;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.oh-monate {
+    margin-bottom: 0.75rem;
+}
+
+.oh-monat-row {
+    display: flex;
+    gap: 1rem;
+    padding: 0.3rem 0.5rem;
+    font-size: 0.8rem;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.oh-monat-label {
+    font-weight: 600;
+    min-width: 120px;
+}
+
+.oh-detail {
+    font-size: 0.85rem;
+    margin: 0.5rem 0 0.3rem;
+}
+
+.oh-table {
+    font-size: 0.75rem;
+}
+
+/* -- Speicherverbrauch -- */
+.sp-bar-wrap {
+    height: 8px;
+    background: #e2e8f0;
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 0.3rem;
+}
+
+.sp-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #48bb78, #38a169);
+    border-radius: 4px;
+    transition: width 0.3s;
+}
+
+.sp-info {
+    font-size: 0.8rem;
+    color: #4a5568;
+    margin-bottom: 0.5rem;
+}
+
+.sp-details {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+}
+
+.sp-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.75rem;
+    color: #718096;
+    padding: 0.15rem 0;
+    border-bottom: 1px dotted #e2e8f0;
+}
+
+/* -- Integritätsprüfung -- */
+.integ-ok {
+    color: #38a169;
+    font-weight: 600;
+    font-size: 0.85rem;
+    padding: 0.5rem;
+    background: #f0fff4;
+    border-radius: 6px;
+}
+
+.integ-warn {
+    color: #e53e3e;
+    font-weight: 700;
+    font-size: 0.85rem;
+    margin-bottom: 0.3rem;
+}
+
+.integ-liste {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+}
+
+.integ-item {
+    font-size: 0.75rem;
+    color: #c53030;
+    padding: 0.2rem 0.4rem;
+    background: #fff5f5;
+    border-radius: 4px;
+}
+
+.integ-mehr {
+    font-size: 0.75rem;
+    color: #a0aec0;
+    font-style: italic;
+}
+
 body.dark-mode .globale-suche {
     background: #161b22;
     border-color: #30363d;
@@ -3808,6 +3976,38 @@ body.dark-mode .ug-notiz {
 
 body.dark-mode .wt-label {
     color: #8b949e;
+}
+
+body.dark-mode .oh-stat {
+    background: #0d2137;
+    color: #388bfd;
+}
+
+body.dark-mode .oh-monat-row {
+    border-bottom-color: #21262d;
+}
+
+body.dark-mode .sp-bar-wrap {
+    background: #30363d;
+}
+
+body.dark-mode .sp-row {
+    border-bottom-color: #21262d;
+    color: #8b949e;
+}
+
+body.dark-mode .integ-ok {
+    background: #0a2117;
+    color: #3fb950;
+}
+
+body.dark-mode .integ-item {
+    background: #2d1215;
+    color: #f85149;
+}
+
+body.dark-mode .qm-badge {
+    background: #1f6feb;
 }
 
 body.dark-mode .auto-plan {

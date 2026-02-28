@@ -310,6 +310,7 @@
                     <div>
                         <button class="btn-secondary btn-small" onclick="speichereWochenvorlage()">KW speichern</button>
                         <button class="btn-secondary btn-small" onclick="ladeWochenvorlage()">KW laden</button>
+                        <button class="btn-secondary btn-small" onclick="kopiereKW()">KW kopieren</button>
                         <button class="btn-secondary btn-small" onclick="druckeDienstplan()">Drucken</button>
                         <button class="btn-secondary" onclick="dienstplanNav(1)">&rarr;</button>
                     </div>
@@ -612,6 +613,18 @@
                 </div>
                 <div id="checklisteContent"></div>
             </section>
+
+            <section class="form-section">
+                <div class="list-header">
+                    <h2>Objekt-Einsatzhistorie</h2>
+                    <div class="list-actions">
+                        <select id="ohObjekt" onchange="renderObjektHistorie()">
+                            <option value="">Objekt w&auml;hlen...</option>
+                        </select>
+                    </div>
+                </div>
+                <div id="objektHistorieContent"></div>
+            </section>
         </div>
         <!-- TAB: Mitarbeiter -->
         <div class="tab-content" id="tab-mitarbeiter">
@@ -833,6 +846,13 @@
                     </div>
                 </div>
                 <div id="arbeitszeitkontoContent"></div>
+            </section>
+
+            <section class="form-section">
+                <div class="list-header">
+                    <h2>Qualifikationsmatrix</h2>
+                </div>
+                <div id="qualMatrixContent"></div>
             </section>
         </div>
 
@@ -1073,6 +1093,13 @@
                 <div class="daten-stats">
                     <h3>Gespeicherte Daten</h3>
                     <div id="datenStats"></div>
+                </div>
+
+                <div class="daten-stats" style="margin-top:1rem">
+                    <h3>Speicherverbrauch &amp; Integrit&auml;t</h3>
+                    <div id="speicherStats"></div>
+                    <button class="btn-secondary" style="margin-top:0.5rem" onclick="pruefeDatenIntegritaet()">Integrit&auml;tspr&uuml;fung durchf&uuml;hren</button>
+                    <div id="integritaetErgebnis" style="margin-top:0.5rem"></div>
                 </div>
             </section>
         </div>

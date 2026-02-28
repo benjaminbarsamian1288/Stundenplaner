@@ -78,13 +78,13 @@ document.querySelectorAll('.nav-btn').forEach(btn => {
         document.getElementById('tab-' + this.dataset.tab).classList.add('active');
 
         if (this.dataset.tab === 'dashboard') updateDashboard();
-        if (this.dataset.tab === 'objekte') { renderObjekte(); renderVertraege(); renderObjektAuslastung(); updateChecklisteObjekte(); }
+        if (this.dataset.tab === 'objekte') { renderObjekte(); renderVertraege(); renderObjektAuslastung(); updateChecklisteObjekte(); updateObjektHistorieSelect(); }
         if (this.dataset.tab === 'kalender') { renderKalender(); renderDienstplan(); renderJahresuebersicht(); }
         if (this.dataset.tab === 'abrechnung') updateAbrechnung();
-        if (this.dataset.tab === 'mitarbeiter') { renderMitarbeiter(); renderDokumente(); renderUeberstunden(); renderKontaktliste(); renderUrlaubskonto(); renderArbeitszeitkonto(); }
+        if (this.dataset.tab === 'mitarbeiter') { renderMitarbeiter(); renderDokumente(); renderUeberstunden(); renderKontaktliste(); renderUrlaubskonto(); renderArbeitszeitkonto(); renderQualMatrix(); }
         if (this.dataset.tab === 'vorfaelle') renderVorfaelle();
         if (this.dataset.tab === 'wachbuch') { renderWachbuch(); renderUebergaben(); }
-        if (this.dataset.tab === 'einstellungen') updateDatenStats();
+        if (this.dataset.tab === 'einstellungen') { updateDatenStats(); updateSpeicherStats(); }
     });
 });
 
@@ -4490,6 +4490,304 @@ function loescheUebergabe(id) {
     uebergaben = uebergaben.filter(u => u.id !== id);
     localStorage.setItem('bbprotect_uebergaben', JSON.stringify(uebergaben));
     renderUebergaben();
+}
+
+// =============================================
+// QUALIFIKATIONSMATRIX
+// =============================================
+function renderQualMatrix() {
+    const el = document.getElementById('qualMatrixContent');
+    if (!el) return;
+
+    if (mitarbeiterListe_.length === 0) {
+        el.innerHTML = '<p style="color:#a0aec0">Mitarbeiter anlegen, um die Matrix zu sehen.</p>';
+        return;
+    }
+
+    const qualLabels = {
+        'unterrichtung': 'Unterrichtung §34a',
+        '34a': 'Sachkunde §34a',
+        'fachkraft': 'Fachkraft f. Schutz',
+        'meister': 'Meister f. Schutz',
+        'sonstige': 'Sonstige'
+    };
+
+    // Qualifikationshierarchie (höher = besser)
+    const qualRang = { 'unterrichtung': 1, '34a': 2, 'fachkraft': 3, 'meister': 4, 'sonstige': 0 };
+
+    // Sammle alle Objekte mit Einsätzen
+    const objektSet = new Set();
+    einsaetze.forEach(e => { if (e.objekt) objektSet.add(e.objekt); });
+    const objekteNamen = [...objektSet].sort();
+
+    let html = '<div class="table-wrapper"><table class="qm-table"><thead><tr><th>Mitarbeiter</th><th>Qualifikation</th><th>Stufe</th>';
+    objekteNamen.slice(0, 8).forEach(o => {
+        html += `<th class="qm-obj" title="${escapeHtml(o)}">${escapeHtml(o.substring(0, 12))}</th>`;
+    });
+    html += '</tr></thead><tbody>';
+
+    const sorted = [...mitarbeiterListe_].sort((a, b) => (qualRang[b.qualifikation] || 0) - (qualRang[a.qualifikation] || 0));
+
+    sorted.forEach(m => {
+        const rang = qualRang[m.qualifikation] || 0;
+        const stufeClass = rang >= 3 ? 'qm-hoch' : rang >= 2 ? 'qm-mittel' : 'qm-niedrig';
+        const stufeDots = '\u2605'.repeat(rang) + '\u2606'.repeat(4 - rang);
+
+        html += `<tr><td class="qm-name">${escapeHtml(m.name)}</td>`;
+        html += `<td>${escapeHtml(qualLabels[m.qualifikation] || m.qualifikation)}</td>`;
+        html += `<td class="${stufeClass}">${stufeDots}</td>`;
+
+        objekteNamen.slice(0, 8).forEach(o => {
+            const count = einsaetze.filter(e => e.mitarbeiter === m.name && e.objekt === o).length;
+            html += `<td class="qm-count">${count > 0 ? '<span class="qm-badge">' + count + '</span>' : '<span class="qm-leer">\u2014</span>'}</td>`;
+        });
+
+        html += '</tr>';
+    });
+
+    html += '</tbody></table></div>';
+    el.innerHTML = html;
+}
+
+// =============================================
+// OBJEKT-EINSATZHISTORIE
+// =============================================
+function updateObjektHistorieSelect() {
+    const sel = document.getElementById('ohObjekt');
+    if (!sel) return;
+    const current = sel.value;
+    sel.innerHTML = '<option value="">Objekt wählen...</option>';
+    objekte.forEach(o => {
+        sel.innerHTML += `<option value="${escapeHtml(o.name)}">${escapeHtml(o.name)}</option>`;
+    });
+    if (current) sel.value = current;
+}
+
+function renderObjektHistorie() {
+    const el = document.getElementById('objektHistorieContent');
+    if (!el) return;
+
+    const objName = document.getElementById('ohObjekt').value;
+    if (!objName) {
+        el.innerHTML = '<p style="color:#a0aec0">Objekt auswählen, um die Einsatzhistorie zu sehen.</p>';
+        return;
+    }
+
+    const objEinsaetze = einsaetze.filter(e => e.objekt === objName).sort((a, b) => b.datum.localeCompare(a.datum));
+
+    if (objEinsaetze.length === 0) {
+        el.innerHTML = '<p style="color:#a0aec0">Keine Einsätze für dieses Objekt.</p>';
+        return;
+    }
+
+    // Zusammenfassung
+    const totalStd = objEinsaetze.reduce((s, e) => s + e.stunden, 0);
+    const totalUmsatz = objEinsaetze.reduce((s, e) => s + e.gesamt, 0);
+    const maSet = new Set(objEinsaetze.filter(e => e.mitarbeiter).map(e => e.mitarbeiter));
+
+    // Nach Monat gruppieren
+    const monatsGruppen = {};
+    objEinsaetze.forEach(e => {
+        const m = e.datum.substring(0, 7);
+        if (!monatsGruppen[m]) monatsGruppen[m] = { count: 0, stunden: 0, umsatz: 0 };
+        monatsGruppen[m].count++;
+        monatsGruppen[m].stunden += e.stunden;
+        monatsGruppen[m].umsatz += e.gesamt;
+    });
+
+    let html = '<div class="oh-summary">';
+    html += `<span class="oh-stat">${objEinsaetze.length} Einsätze</span>`;
+    html += `<span class="oh-stat">${formatZahl(totalStd)} Stunden</span>`;
+    html += `<span class="oh-stat">${formatEuro(totalUmsatz)} Umsatz</span>`;
+    html += `<span class="oh-stat">${maSet.size} Mitarbeiter</span>`;
+    html += '</div>';
+
+    html += '<div class="oh-monate">';
+    Object.entries(monatsGruppen).sort((a, b) => b[0].localeCompare(a[0])).forEach(([monat, d]) => {
+        const [j, mo] = monat.split('-');
+        html += `<div class="oh-monat-row">
+            <span class="oh-monat-label">${MONATSNAMEN[parseInt(mo) - 1]} ${j}</span>
+            <span>${d.count} Einsätze</span>
+            <span>${formatZahl(d.stunden)} Std.</span>
+            <span>${formatEuro(d.umsatz)}</span>
+        </div>`;
+    });
+    html += '</div>';
+
+    // Letzte 10 Einsätze
+    html += '<div class="oh-detail"><strong>Letzte Einsätze:</strong></div>';
+    html += '<table class="oh-table"><thead><tr><th>Datum</th><th>MA</th><th>Von</th><th>Bis</th><th>Std.</th><th>Gesamt</th></tr></thead><tbody>';
+    objEinsaetze.slice(0, 15).forEach(e => {
+        html += `<tr><td>${formatDatum(e.datum)}</td><td>${escapeHtml(e.mitarbeiter || '\u2014')}</td><td>${e.zeitVon}</td><td>${e.zeitBis}</td><td>${formatZahl(e.stunden)}</td><td>${formatEuro(e.gesamt)}</td></tr>`;
+    });
+    html += '</tbody></table>';
+
+    el.innerHTML = html;
+}
+
+// =============================================
+// KW KOPIEREN (Dienstplan)
+// =============================================
+function kopiereKW() {
+    const zielKW = prompt(`Aktuelle KW ${dienstplanKW}/${dienstplanJahr} kopieren nach:\nBitte Ziel-KW eingeben (z.B. ${dienstplanKW + 1}):`);
+    if (!zielKW) return;
+
+    const zielKWNr = parseInt(zielKW);
+    if (isNaN(zielKWNr) || zielKWNr < 1 || zielKWNr > 53) {
+        alert('Ungültige Kalenderwoche.');
+        return;
+    }
+
+    // Finde Einsätze der aktuellen KW
+    const kwStart = getMontag(dienstplanJahr, dienstplanKW);
+    const kwEinsaetze = [];
+
+    for (let d = 0; d < 7; d++) {
+        const tag = new Date(kwStart);
+        tag.setUTCDate(tag.getUTCDate() + d);
+        const tagStr = tag.toISOString().split('T')[0];
+        einsaetze.filter(e => e.datum === tagStr).forEach(e => {
+            kwEinsaetze.push({ ...e, wochentag: d });
+        });
+    }
+
+    if (kwEinsaetze.length === 0) {
+        alert('Keine Einsätze in der aktuellen KW zum Kopieren.');
+        return;
+    }
+
+    // Ziel-KW Montag berechnen
+    const zielStart = getMontag(dienstplanJahr, zielKWNr);
+
+    let kopiert = 0;
+    kwEinsaetze.forEach(e => {
+        const zielTag = new Date(zielStart);
+        zielTag.setUTCDate(zielTag.getUTCDate() + e.wochentag);
+        const zielDatum = zielTag.toISOString().split('T')[0];
+
+        // Prüfe ob schon ein identischer Einsatz existiert
+        const existiert = einsaetze.some(ex =>
+            ex.datum === zielDatum && ex.objekt === e.objekt && ex.zeitVon === e.zeitVon && ex.zeitBis === e.zeitBis && ex.mitarbeiter === e.mitarbeiter
+        );
+
+        if (!existiert) {
+            const berechnung = berechneEinsatz(zielDatum, e.zeitVon, e.zeitBis, e.stundensatz);
+            einsaetze.push({
+                id: Date.now() + kopiert,
+                objekt: e.objekt,
+                datum: zielDatum,
+                zeitVon: e.zeitVon,
+                zeitBis: e.zeitBis,
+                stundensatz: e.stundensatz,
+                mitarbeiter: e.mitarbeiter,
+                bemerkung: e.bemerkung || '',
+                status: 'geplant',
+                ...berechnung
+            });
+            kopiert++;
+        }
+    });
+
+    speichern();
+    renderTabelle();
+    updateAlleFilter();
+    renderDienstplan();
+
+    alert(`${kopiert} Einsätze nach KW ${zielKWNr} kopiert.`);
+}
+
+// =============================================
+// SPEICHERVERBRAUCH & INTEGRITÄT
+// =============================================
+function updateSpeicherStats() {
+    const el = document.getElementById('speicherStats');
+    if (!el) return;
+
+    let totalBytes = 0;
+    const details = [];
+    const keys = ['einsaetze', 'objekte', 'vorlagen', 'mitarbeiter', 'verfuegbarkeit', 'vorfaelle', 'wachbuch', 'dokumente', 'wochenvorlagen', 'tagesnotizen', 'uebergaben'];
+
+    keys.forEach(key => {
+        const val = localStorage.getItem('bbprotect_' + key);
+        const bytes = val ? new Blob([val]).size : 0;
+        totalBytes += bytes;
+        details.push({ key, bytes });
+    });
+
+    const maxBytes = 5 * 1024 * 1024; // 5MB localStorage limit
+    const pct = (totalBytes / maxBytes) * 100;
+
+    let html = `<div class="sp-bar-wrap"><div class="sp-bar" style="width:${Math.min(pct, 100)}%"></div></div>`;
+    html += `<div class="sp-info">${formatBytes(totalBytes)} / ${formatBytes(maxBytes)} (${pct.toFixed(1)}%)</div>`;
+    html += '<div class="sp-details">';
+    details.sort((a, b) => b.bytes - a.bytes).forEach(d => {
+        html += `<div class="sp-row"><span>${d.key}</span><span>${formatBytes(d.bytes)}</span></div>`;
+    });
+    html += '</div>';
+    el.innerHTML = html;
+}
+
+function formatBytes(bytes) {
+    if (bytes === 0) return '0 B';
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
+}
+
+function pruefeDatenIntegritaet() {
+    const el = document.getElementById('integritaetErgebnis');
+    if (!el) return;
+
+    const probleme = [];
+
+    // Prüfe Einsätze
+    einsaetze.forEach((e, i) => {
+        if (!e.id) probleme.push(`Einsatz #${i}: fehlende ID`);
+        if (!e.datum) probleme.push(`Einsatz #${i}: fehlendes Datum`);
+        if (!e.objekt) probleme.push(`Einsatz #${i}: fehlendes Objekt`);
+        if (!e.zeitVon || !e.zeitBis) probleme.push(`Einsatz #${i}: fehlende Zeiten`);
+        if (isNaN(e.stunden) || e.stunden <= 0) probleme.push(`Einsatz ${e.id}: ungültige Stunden (${e.stunden})`);
+        if (isNaN(e.gesamt)) probleme.push(`Einsatz ${e.id}: ungültiger Gesamtbetrag`);
+    });
+
+    // Prüfe MA-Referenzen
+    const maNames = new Set(mitarbeiterListe_.map(m => m.name));
+    einsaetze.forEach(e => {
+        if (e.mitarbeiter && !maNames.has(e.mitarbeiter)) {
+            probleme.push(`Einsatz ${formatDatum(e.datum)}: MA "${e.mitarbeiter}" nicht in MA-Liste`);
+        }
+    });
+
+    // Prüfe Objekt-Referenzen
+    const objNames = new Set(objekte.map(o => o.name));
+    einsaetze.forEach(e => {
+        if (e.objekt && objNames.size > 0 && !objNames.has(e.objekt)) {
+            probleme.push(`Einsatz ${formatDatum(e.datum)}: Objekt "${e.objekt}" nicht in Objektliste`);
+        }
+    });
+
+    // Prüfe Duplikate
+    const dupCheck = new Set();
+    einsaetze.forEach(e => {
+        const key = `${e.datum}_${e.objekt}_${e.zeitVon}_${e.zeitBis}_${e.mitarbeiter}`;
+        if (dupCheck.has(key)) {
+            probleme.push(`Mögliches Duplikat: ${formatDatum(e.datum)} ${e.objekt} ${e.zeitVon}-${e.zeitBis} ${e.mitarbeiter || ''}`);
+        }
+        dupCheck.add(key);
+    });
+
+    if (probleme.length === 0) {
+        el.innerHTML = '<div class="integ-ok">Alle Daten sind konsistent. Keine Probleme gefunden.</div>';
+    } else {
+        let html = `<div class="integ-warn">${probleme.length} Problem${probleme.length > 1 ? 'e' : ''} gefunden:</div>`;
+        html += '<div class="integ-liste">';
+        probleme.slice(0, 20).forEach(p => {
+            html += `<div class="integ-item">${escapeHtml(p)}</div>`;
+        });
+        if (probleme.length > 20) html += `<div class="integ-mehr">...und ${probleme.length - 20} weitere</div>`;
+        html += '</div>';
+        el.innerHTML = html;
+    }
 }
 
 // =============================================
