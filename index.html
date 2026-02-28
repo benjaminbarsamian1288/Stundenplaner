@@ -105,13 +105,14 @@
                     <div class="form-row">
                         <div class="form-group">
                             <label for="zeitVon">Zeit von</label>
-                            <input type="time" id="zeitVon" required>
+                            <input type="time" id="zeitVon" required onchange="renderPausenInfo()">
                         </div>
                         <div class="form-group">
                             <label for="zeitBis">Zeit bis</label>
-                            <input type="time" id="zeitBis" required>
+                            <input type="time" id="zeitBis" required onchange="renderPausenInfo()">
                         </div>
                     </div>
+                    <div id="pausenInfoContent" style="margin-bottom:0.5rem"></div>
 
                     <div class="form-row">
                         <div class="form-group">
@@ -175,6 +176,13 @@
                                 </div>
                             </div>
                         </div>
+                    </div>
+
+                    <div class="form-group" style="margin-bottom:0.5rem">
+                        <details>
+                            <summary style="cursor:pointer;font-size:0.8rem;color:#4a5568">Notiz zum Einsatz (optional)</summary>
+                            <textarea id="einsatzNotiz" rows="2" placeholder="Besondere Hinweise, Anmerkungen zum Einsatz..." style="width:100%;padding:0.5rem;border:1px solid #cbd5e0;border-radius:6px;font-family:inherit;font-size:0.8rem;resize:vertical;margin-top:0.3rem"></textarea>
+                        </details>
                     </div>
 
                     <div class="form-buttons">
@@ -715,6 +723,19 @@
                         <div id="erwStatistikContent"></div>
                     </div>
                 </div>
+
+                <div class="dashboard-details" style="margin-top:1rem">
+                    <div class="detail-card full-width">
+                        <h3>Tages-Personal&uuml;bersicht</h3>
+                        <div class="form-row" style="margin-bottom:0.5rem">
+                            <div class="form-group">
+                                <label for="tpDatum">Datum</label>
+                                <input type="date" id="tpDatum" onchange="renderTagesPersonal()">
+                            </div>
+                        </div>
+                        <div id="tagesPersonalContent"></div>
+                    </div>
+                </div>
             </section>
         </div>
 
@@ -993,6 +1014,13 @@
                     <h2>Vertrags-Countdown</h2>
                 </div>
                 <div id="vertragsCountdownContent"></div>
+            </section>
+
+            <section class="form-section">
+                <div class="list-header">
+                    <h2>Vertragslaufzeit-Balken</h2>
+                </div>
+                <div id="vertragslaufzeitContent"></div>
             </section>
 
             <section class="form-section">
@@ -1520,6 +1548,30 @@
                     </div>
                 </div>
                 <div id="maVerfKalContent"></div>
+            </section>
+
+            <section class="form-section">
+                <div class="list-header">
+                    <h2>MA-Zertifikats-Tracker</h2>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="ztMA">Mitarbeiter</label>
+                        <input type="text" id="ztMA" list="mitarbeiterFilterListe" placeholder="Name">
+                    </div>
+                    <div class="form-group">
+                        <label for="ztBezeichnung">Zertifikat / Schulung</label>
+                        <input type="text" id="ztBezeichnung" placeholder="z.B. Erste-Hilfe-Kurs, Brandschutz">
+                    </div>
+                    <div class="form-group">
+                        <label for="ztAblauf">G&uuml;ltig bis</label>
+                        <input type="date" id="ztAblauf">
+                    </div>
+                    <div class="form-group" style="display:flex;align-items:flex-end">
+                        <button type="button" class="btn-primary" onclick="zertifikatSpeichern()">+ Zertifikat</button>
+                    </div>
+                </div>
+                <div id="zertifikateContent" style="margin-top:0.5rem"></div>
             </section>
 
             <section class="form-section">

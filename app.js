@@ -86,11 +86,11 @@ document.querySelectorAll('.nav-btn').forEach(btn => {
         this.classList.add('active');
         document.getElementById('tab-' + this.dataset.tab).classList.add('active');
 
-        if (this.dataset.tab === 'dashboard') { updateDashboard(); renderEinsatzChronik(); renderEinsatzAnalytics(); renderWochenReport(); renderEinsatzTimeline(); renderKostenTrend(); renderObjektUmsatzRanking(); renderStundenkontoChart(); renderDashboardKacheln(); renderSchichtplanVorschau(); renderErweiterteStatistik(); }
-        if (this.dataset.tab === 'objekte') { renderObjekte(); renderVertraege(); renderObjektAuslastung(); updateChecklisteObjekte(); updateObjektHistorieSelect(); updateObjektKontakteSelect(); renderObjektKontakte(); updateObjektAnweisungenSelect(); renderObjektAnweisungen(); updateObjektKostenMonat(); renderObjektKostenanalyse(); renderVertragsCountdown(); updateRevierplanSelect(); renderRevierplan(); updateBesObjektSelect(); renderBesichtigungen(); updateInfokarteSelect(); updateWetterObjektSelects(); renderWetterNotizen(); updateObjektChecklisteSelect(); renderObjektCheckliste(); }
+        if (this.dataset.tab === 'dashboard') { updateDashboard(); renderEinsatzChronik(); renderEinsatzAnalytics(); renderWochenReport(); renderEinsatzTimeline(); renderKostenTrend(); renderObjektUmsatzRanking(); renderStundenkontoChart(); renderDashboardKacheln(); renderSchichtplanVorschau(); renderErweiterteStatistik(); renderTagesPersonal(); }
+        if (this.dataset.tab === 'objekte') { renderObjekte(); renderVertraege(); renderObjektAuslastung(); updateChecklisteObjekte(); updateObjektHistorieSelect(); updateObjektKontakteSelect(); renderObjektKontakte(); updateObjektAnweisungenSelect(); renderObjektAnweisungen(); updateObjektKostenMonat(); renderObjektKostenanalyse(); renderVertragsCountdown(); updateRevierplanSelect(); renderRevierplan(); updateBesObjektSelect(); renderBesichtigungen(); updateInfokarteSelect(); updateWetterObjektSelects(); renderWetterNotizen(); updateObjektChecklisteSelect(); renderObjektCheckliste(); renderVertragslaufzeitBalken(); }
         if (this.dataset.tab === 'kalender') { renderKalender(); renderDienstplan(); renderJahresuebersicht(); }
         if (this.dataset.tab === 'abrechnung') { updateAbrechnung(); updateLohnvorschauSelects(); renderDuplikatCheck(); renderBewertungsUebersicht(); updateMonatsabschlussSelect(); renderMonatsabschluss(); updateCSVExportFilter(); }
-        if (this.dataset.tab === 'mitarbeiter') { renderMitarbeiter(); renderDokumente(); renderUeberstunden(); renderKontaktliste(); renderUrlaubskonto(); renderArbeitszeitkonto(); renderQualMatrix(); updateSchichtHistorieSelect(); renderNotfallkontakte(); updateMAKalSelect(); renderVerfuegbarkeitWoche(); renderDoppelschichtWarnungen(); renderMALeistung(); renderKrankenstatistik(); renderGeburtstageJubilaeen(); renderMASkills(); renderTauschBoard(); renderMAVerfuegbarkeitsKalender(); renderNachrichtenBoard(); }
+        if (this.dataset.tab === 'mitarbeiter') { renderMitarbeiter(); renderDokumente(); renderUeberstunden(); renderKontaktliste(); renderUrlaubskonto(); renderArbeitszeitkonto(); renderQualMatrix(); updateSchichtHistorieSelect(); renderNotfallkontakte(); updateMAKalSelect(); renderVerfuegbarkeitWoche(); renderDoppelschichtWarnungen(); renderMALeistung(); renderKrankenstatistik(); renderGeburtstageJubilaeen(); renderMASkills(); renderTauschBoard(); renderMAVerfuegbarkeitsKalender(); renderNachrichtenBoard(); renderZertifikateTracker(); }
         if (this.dataset.tab === 'vorfaelle') { renderVorfaelle(); renderVorfallsStatistik(); }
         if (this.dataset.tab === 'wachbuch') { renderWachbuch(); renderUebergaben(); renderWachbuchStats(); updateSchichtUebergabeSelects(); renderSchichtUebergaben(); }
         if (this.dataset.tab === 'einstellungen') { updateDatenStats(); updateSpeicherStats(); ladeEinstellungen(); renderAuditLog(); renderSondernotizen(); renderFeiertagsKalender(); }
@@ -256,6 +256,7 @@ function erfasseFormular() {
     const mitarbeiter = document.getElementById('mitarbeiter').value.trim();
     const bemerkung = document.getElementById('bemerkung').value.trim();
     const status = document.getElementById('einsatzStatus').value;
+    const notiz = document.getElementById('einsatzNotiz') ? document.getElementById('einsatzNotiz').value.trim() : '';
 
     if (!objekt || !datum || !zeitVon || !zeitBis || isNaN(stundensatz)) return null;
 
@@ -263,7 +264,7 @@ function erfasseFormular() {
 
     return {
         id: Date.now(),
-        objekt, datum, zeitVon, zeitBis, stundensatz, mitarbeiter, bemerkung, status,
+        objekt, datum, zeitVon, zeitBis, stundensatz, mitarbeiter, bemerkung, status, notiz,
         ...berechnung
     };
 }
@@ -286,6 +287,7 @@ function bearbeiteEinsatz(id) {
     document.getElementById('stundensatz').value = e.stundensatz;
     document.getElementById('mitarbeiter').value = e.mitarbeiter || '';
     document.getElementById('bemerkung').value = e.bemerkung || '';
+    document.getElementById('einsatzNotiz').value = e.notiz || '';
     document.getElementById('einsatzStatus').value = e.status || 'geplant';
 
     formTitle.textContent = 'Einsatz bearbeiten';
@@ -1572,7 +1574,7 @@ function loescheMitarbeiter(index) {
 // =============================================
 function erstelleBackup() {
     const backup = {
-        version: 18,
+        version: 19,
         datum: new Date().toISOString(),
         einsaetze,
         objekte,
@@ -1601,7 +1603,8 @@ function erstelleBackup() {
         objektWetterNotizen,
         einsatzPrioritaeten,
         maNachrichten,
-        objektChecklisten
+        objektChecklisten,
+        maZertifikate
     };
 
     const json = JSON.stringify(backup, null, 2);
@@ -1654,6 +1657,7 @@ function stelleWiederHer(event) {
             einsatzPrioritaeten = data.einsatzPrioritaeten || {};
             maNachrichten = data.maNachrichten || [];
             objektChecklisten = data.objektChecklisten || {};
+            maZertifikate = data.maZertifikate || [];
 
             speichern();
             localStorage.setItem('bbprotect_objekte', JSON.stringify(objekte));
@@ -1683,6 +1687,7 @@ function stelleWiederHer(event) {
             localStorage.setItem('bbprotect_prioritaeten', JSON.stringify(einsatzPrioritaeten));
             localStorage.setItem('bbprotect_nachrichten', JSON.stringify(maNachrichten));
             localStorage.setItem('bbprotect_objektchecklisten', JSON.stringify(objektChecklisten));
+            localStorage.setItem('bbprotect_zertifikate', JSON.stringify(maZertifikate));
 
             renderTabelle();
             updateAlleFilter();
@@ -1733,6 +1738,7 @@ function loescheAlleDaten() {
     einsatzPrioritaeten = {};
     maNachrichten = [];
     objektChecklisten = {};
+    maZertifikate = [];
 
     localStorage.removeItem('bbprotect_einsaetze');
     localStorage.removeItem('bbprotect_objekte');
@@ -1762,6 +1768,7 @@ function loescheAlleDaten() {
     localStorage.removeItem('bbprotect_prioritaeten');
     localStorage.removeItem('bbprotect_nachrichten');
     localStorage.removeItem('bbprotect_objektchecklisten');
+    localStorage.removeItem('bbprotect_zertifikate');
 
     renderTabelle();
     updateAlleFilter();
@@ -8778,6 +8785,209 @@ function renderErweiterteStatistik() {
 }
 
 // =============================================
+// MA-ZERTIFIKATS-TRACKER
+// =============================================
+let maZertifikate = JSON.parse(localStorage.getItem('bbprotect_zertifikate') || '[]');
+
+function zertifikatSpeichern() {
+    const ma = document.getElementById('ztMA') ? document.getElementById('ztMA').value.trim() : '';
+    const bezeichnung = document.getElementById('ztBezeichnung') ? document.getElementById('ztBezeichnung').value.trim() : '';
+    const ablauf = document.getElementById('ztAblauf') ? document.getElementById('ztAblauf').value : '';
+
+    if (!ma || !bezeichnung || !ablauf) { alert('Bitte alle Felder ausfüllen.'); return; }
+
+    maZertifikate.push({ id: Date.now(), ma, bezeichnung, ablauf, erstellt: new Date().toISOString() });
+    localStorage.setItem('bbprotect_zertifikate', JSON.stringify(maZertifikate));
+    logAudit('erstellt', 'Zertifikat', `${ma}: ${bezeichnung} (bis ${formatDatum(ablauf)})`);
+
+    if (document.getElementById('ztBezeichnung')) document.getElementById('ztBezeichnung').value = '';
+    if (document.getElementById('ztAblauf')) document.getElementById('ztAblauf').value = '';
+    renderZertifikateTracker();
+}
+
+function zertifikatLoeschen(id) {
+    maZertifikate = maZertifikate.filter(z => z.id !== id);
+    localStorage.setItem('bbprotect_zertifikate', JSON.stringify(maZertifikate));
+    renderZertifikateTracker();
+}
+
+function renderZertifikateTracker() {
+    const el = document.getElementById('zertifikateContent');
+    if (!el) return;
+
+    if (maZertifikate.length === 0) {
+        el.innerHTML = '<p style="color:#a0aec0">Keine Zertifikate erfasst.</p>';
+        return;
+    }
+
+    const heute = new Date().toISOString().split('T')[0];
+    const sorted = maZertifikate.slice().sort((a, b) => a.ablauf.localeCompare(b.ablauf));
+
+    let html = '<div class="zt-list">';
+    sorted.forEach(z => {
+        const restTage = Math.ceil((new Date(z.ablauf) - new Date(heute)) / 86400000);
+        let cls = 'zt-ok';
+        if (restTage < 0) cls = 'zt-abgelaufen';
+        else if (restTage <= 30) cls = 'zt-kritisch';
+        else if (restTage <= 90) cls = 'zt-warnung';
+
+        html += `<div class="zt-item ${cls}">
+            <div class="zt-info">
+                <strong>${escapeHtml(z.ma)}</strong>
+                <span>${escapeHtml(z.bezeichnung)}</span>
+            </div>
+            <div class="zt-ablauf">
+                ${formatDatum(z.ablauf)}
+                <span class="zt-rest">${restTage < 0 ? 'abgelaufen (' + Math.abs(restTage) + ' Tage)' : restTage + ' Tage'}</span>
+            </div>
+            <button class="btn-delete btn-small" onclick="zertifikatLoeschen(${z.id})" style="padding:0 0.3rem">&times;</button>
+        </div>`;
+    });
+    html += '</div>';
+    el.innerHTML = html;
+}
+
+// =============================================
+// OBJEKT-VERTRAGSLAUFZEIT-BALKEN
+// =============================================
+function renderVertragslaufzeitBalken() {
+    const el = document.getElementById('vertragslaufzeitContent');
+    if (!el) return;
+
+    const heute = new Date();
+    const heuteStr = heute.toISOString().split('T')[0];
+    const objekteMitVertrag = objekte.filter(o => o.vertragStart && o.vertragEnde);
+
+    if (objekteMitVertrag.length === 0) {
+        el.innerHTML = '<p style="color:#a0aec0">Keine Objekte mit Vertragsdaten vorhanden.</p>';
+        return;
+    }
+
+    let html = '<div class="vl-list">';
+    objekteMitVertrag.sort((a, b) => a.vertragEnde.localeCompare(b.vertragEnde)).forEach(o => {
+        const start = new Date(o.vertragStart);
+        const ende = new Date(o.vertragEnde);
+        const gesamtTage = Math.max(1, (ende - start) / 86400000);
+        const vergangen = Math.max(0, (heute - start) / 86400000);
+        const pct = Math.min(100, (vergangen / gesamtTage) * 100);
+        const restTage = Math.ceil((ende - heute) / 86400000);
+
+        let cls = 'vl-ok';
+        if (restTage < 0) cls = 'vl-abgelaufen';
+        else if (restTage <= 30) cls = 'vl-kritisch';
+        else if (restTage <= 90) cls = 'vl-warnung';
+
+        html += `<div class="vl-item">
+            <div class="vl-name">${escapeHtml(o.name)}</div>
+            <div class="vl-bar-bg">
+                <div class="vl-bar-fill ${cls}" style="width:${pct}%"></div>
+            </div>
+            <div class="vl-info">
+                <span>${formatDatum(o.vertragStart)} – ${formatDatum(o.vertragEnde)}</span>
+                <span class="vl-rest ${cls}">${restTage < 0 ? 'Abgelaufen' : restTage + ' Tage'}</span>
+            </div>
+        </div>`;
+    });
+    html += '</div>';
+    el.innerHTML = html;
+}
+
+// =============================================
+// TAGES-PERSONALÜBERSICHT
+// =============================================
+function renderTagesPersonal() {
+    const el = document.getElementById('tagesPersonalContent');
+    if (!el) return;
+
+    const datum = document.getElementById('tpDatum') ? document.getElementById('tpDatum').value : new Date().toISOString().split('T')[0];
+    if (!datum) return;
+
+    const tagesEinsaetze = einsaetze.filter(e => e.datum === datum && e.status !== 'storniert');
+    const arbeitende = new Set(tagesEinsaetze.filter(e => e.mitarbeiter).map(e => e.mitarbeiter));
+
+    const abwesend = [];
+    const frei = [];
+
+    mitarbeiterListe_.forEach(m => {
+        const abw = verfuegbarkeit.find(v => v.mitarbeiter === m.name && v.von <= datum && v.bis >= datum);
+        if (abw) {
+            abwesend.push({ name: m.name, grund: abw.grund || 'Abwesend' });
+        } else if (!arbeitende.has(m.name)) {
+            frei.push(m.name);
+        }
+    });
+
+    const unbesetzt = tagesEinsaetze.filter(e => !e.mitarbeiter).length;
+
+    let html = `<div class="tp-summary">
+        <span class="tp-stat tp-arbeitet"><strong>${arbeitende.size}</strong> im Einsatz</span>
+        <span class="tp-stat tp-frei"><strong>${frei.length}</strong> verfügbar</span>
+        <span class="tp-stat tp-abwesend"><strong>${abwesend.length}</strong> abwesend</span>
+        ${unbesetzt > 0 ? '<span class="tp-stat tp-unbesetzt"><strong>' + unbesetzt + '</strong> unbesetzt</span>' : ''}
+    </div>`;
+
+    html += '<div class="tp-grid">';
+
+    // Arbeitende
+    if (arbeitende.size > 0) {
+        html += '<div class="tp-col"><div class="tp-col-header tp-arbeitet-h">Im Einsatz</div>';
+        Array.from(arbeitende).sort().forEach(name => {
+            const einsatz = tagesEinsaetze.find(e => e.mitarbeiter === name);
+            html += `<div class="tp-person">${escapeHtml(name)} <span class="tp-detail">${einsatz ? einsatz.zeitVon + '-' + einsatz.zeitBis : ''}</span></div>`;
+        });
+        html += '</div>';
+    }
+
+    // Verfügbar
+    if (frei.length > 0) {
+        html += '<div class="tp-col"><div class="tp-col-header tp-frei-h">Verfügbar</div>';
+        frei.sort().forEach(name => {
+            html += `<div class="tp-person">${escapeHtml(name)}</div>`;
+        });
+        html += '</div>';
+    }
+
+    // Abwesend
+    if (abwesend.length > 0) {
+        html += '<div class="tp-col"><div class="tp-col-header tp-abw-h">Abwesend</div>';
+        abwesend.sort((a, b) => a.name.localeCompare(b.name)).forEach(a => {
+            html += `<div class="tp-person">${escapeHtml(a.name)} <span class="tp-detail">${escapeHtml(a.grund)}</span></div>`;
+        });
+        html += '</div>';
+    }
+
+    html += '</div>';
+    el.innerHTML = html;
+}
+
+// =============================================
+// PAUSENBERECHNUNG-INFO
+// =============================================
+function renderPausenInfo() {
+    const el = document.getElementById('pausenInfoContent');
+    if (!el) return;
+
+    const zeitVon = document.getElementById('zeitVon') ? document.getElementById('zeitVon').value : '';
+    const zeitBis = document.getElementById('zeitBis') ? document.getElementById('zeitBis').value : '';
+
+    if (!zeitVon || !zeitBis) { el.innerHTML = ''; return; }
+
+    const [vh, vm] = zeitVon.split(':').map(Number);
+    const [bh, bm] = zeitBis.split(':').map(Number);
+    let minuten = (bh * 60 + bm) - (vh * 60 + vm);
+    if (minuten <= 0) minuten += 24 * 60;
+    const stunden = minuten / 60;
+
+    if (stunden <= 6) {
+        el.innerHTML = '<span class="pi-ok">Keine Pflichtpause (Schicht ≤ 6 Std.)</span>';
+    } else if (stunden <= 9) {
+        el.innerHTML = '<span class="pi-pause">Pflichtpause: <strong>30 Min.</strong> (§4 ArbZG, Schicht > 6 Std.)</span>';
+    } else {
+        el.innerHTML = '<span class="pi-pause">Pflichtpause: <strong>45 Min.</strong> (§4 ArbZG, Schicht > 9 Std.)</span>';
+    }
+}
+
+// =============================================
 // INITIALISIERUNG
 // =============================================
 document.getElementById('datum').valueAsDate = new Date();
@@ -8811,6 +9021,7 @@ document.getElementById('mavkMonat').value = new Date().toISOString().substring(
 document.getElementById('owDatum').valueAsDate = new Date();
 document.getElementById('skChartMonat').value = new Date().toISOString().substring(0, 7);
 document.getElementById('fkJahr').value = new Date().getFullYear();
+document.getElementById('tpDatum').valueAsDate = new Date();
 const jetztInit = new Date();
 document.getElementById('wbZeit').value = `${String(jetztInit.getHours()).padStart(2, '0')}:${String(jetztInit.getMinutes()).padStart(2, '0')}`;
 document.getElementById('ugZeit').value = `${String(jetztInit.getHours()).padStart(2, '0')}:${String(jetztInit.getMinutes()).padStart(2, '0')}`;
