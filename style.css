@@ -1719,6 +1719,74 @@ body.dark-mode .mv-umsatz {
     color: #c9d1d9;
 }
 
+body.dark-mode .benach-fehler {
+    background: #200d0d;
+    color: #f85149;
+}
+
+body.dark-mode .benach-warnung {
+    background: #1c1a0d;
+    color: #d29922;
+}
+
+body.dark-mode .benach-info {
+    background: #0d2137;
+    color: #388bfd;
+}
+
+body.dark-mode .auslastung-card {
+    background: #0d1117;
+}
+
+body.dark-mode .auslastung-umsatz {
+    color: #c9d1d9;
+}
+
+body.dark-mode .auslastung-bar-bg {
+    background: #21262d;
+}
+
+body.dark-mode .auslastung-bar {
+    background: linear-gradient(90deg, #1f6feb, #388bfd);
+}
+
+body.dark-mode .kalk-ergebnis {
+    background: #0d1117;
+}
+
+body.dark-mode .kalk-item {
+    background: #161b22;
+}
+
+body.dark-mode .kalk-item.kalk-total {
+    background: #1f6feb;
+}
+
+body.dark-mode .qual-ablauf.abgelaufen {
+    background: #200d0d;
+    color: #f85149;
+}
+
+body.dark-mode .qual-ablauf.bald {
+    background: #1c1a0d;
+    color: #d29922;
+}
+
+body.dark-mode .status-bestaetigt {
+    background: #0d200d;
+    color: #3fb950;
+}
+
+body.dark-mode .status-abgeschlossen {
+    background: #0d2137;
+    color: #388bfd;
+}
+
+body.dark-mode .status-storniert {
+    background: #200d0d;
+    color: #f85149;
+}
+
 /* Vorfallsbericht */
 .vorfall-card {
     background: #fff;
@@ -2047,6 +2115,176 @@ body.dark-mode .mv-umsatz {
     font-size: 0.6rem;
     font-weight: 700;
     margin-top: 0.1rem;
+}
+
+/* Status Badges */
+.status-badge {
+    display: inline-block;
+    padding: 0.1rem 0.4rem;
+    border-radius: 3px;
+    font-size: 0.65rem;
+    font-weight: 700;
+}
+
+.status-bestaetigt {
+    background: #f0fff4;
+    color: #276749;
+}
+
+.status-abgeschlossen {
+    background: #ebf8ff;
+    color: #2b6cb0;
+}
+
+.status-storniert {
+    background: #fff5f5;
+    color: #c53030;
+    text-decoration: line-through;
+}
+
+/* Qualifikation Ablauf */
+.qual-ablauf {
+    display: inline-block;
+    padding: 0.1rem 0.4rem;
+    border-radius: 3px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    margin-top: 0.2rem;
+}
+
+.qual-ablauf.abgelaufen {
+    background: #fff5f5;
+    color: #c53030;
+}
+
+.qual-ablauf.bald {
+    background: #fffff0;
+    color: #d69e2e;
+}
+
+/* Benachrichtigungen */
+.benachrichtigungen {
+    padding: 0.3rem 2rem;
+}
+
+.benach-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.3rem 0.6rem;
+    border-radius: 4px;
+    margin-bottom: 0.2rem;
+    font-size: 0.8rem;
+}
+
+.benach-fehler {
+    background: #fff5f5;
+    color: #c53030;
+}
+
+.benach-warnung {
+    background: #fffff0;
+    color: #d69e2e;
+}
+
+.benach-info {
+    background: #ebf8ff;
+    color: #2b6cb0;
+}
+
+.benach-icon {
+    font-weight: 700;
+    min-width: 20px;
+    text-align: center;
+}
+
+/* Objekt-Auslastung */
+.auslastung-card {
+    background: #f7fafc;
+    border-radius: 8px;
+    padding: 0.75rem;
+    margin-bottom: 0.5rem;
+}
+
+.auslastung-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 0.3rem;
+}
+
+.auslastung-umsatz {
+    font-weight: 700;
+    color: #1a1a2e;
+}
+
+.auslastung-bar-bg {
+    background: #e2e8f0;
+    border-radius: 4px;
+    height: 8px;
+    margin-bottom: 0.3rem;
+}
+
+.auslastung-bar {
+    background: linear-gradient(90deg, #1a1a2e, #2d3748);
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.3s;
+}
+
+.auslastung-details {
+    display: flex;
+    gap: 1rem;
+    font-size: 0.75rem;
+    color: #718096;
+    flex-wrap: wrap;
+}
+
+/* Kostenrechner */
+.kalk-ergebnis {
+    background: #f7fafc;
+    border-radius: 8px;
+    padding: 1rem;
+}
+
+.kalk-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+}
+
+.kalk-item {
+    background: #fff;
+    border-radius: 6px;
+    padding: 0.5rem;
+    text-align: center;
+}
+
+.kalk-item.kalk-total {
+    background: #1a1a2e;
+    color: #fff;
+}
+
+.kalk-item.kalk-total .kalk-label {
+    color: #a0aec0;
+}
+
+.kalk-label {
+    display: block;
+    font-size: 0.7rem;
+    color: #718096;
+    font-weight: 600;
+}
+
+.kalk-value {
+    font-size: 1rem;
+    font-weight: 700;
+}
+
+.kalk-sub {
+    font-size: 0.8rem;
+    color: #718096;
+    text-align: center;
 }
 
 /* Suchfeld */

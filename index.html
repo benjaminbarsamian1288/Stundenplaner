@@ -26,6 +26,7 @@
     </header>
 
     <div class="header-stats" id="headerStats"></div>
+    <div class="benachrichtigungen" id="benachrichtigungen" style="display:none"></div>
 
     <main>
         <!-- TAB: Erfassung -->
@@ -116,6 +117,15 @@
                         <div class="form-group">
                             <label for="bemerkung">Bemerkung</label>
                             <input type="text" id="bemerkung" placeholder="Optionale Bemerkung">
+                        </div>
+                        <div class="form-group">
+                            <label for="einsatzStatus">Status</label>
+                            <select id="einsatzStatus">
+                                <option value="geplant">Geplant</option>
+                                <option value="bestaetigt">Best&auml;tigt</option>
+                                <option value="abgeschlossen">Abgeschlossen</option>
+                                <option value="storniert">Storniert</option>
+                            </select>
                         </div>
                     </div>
 
@@ -404,6 +414,53 @@
                 </div>
                 <p class="empty-message" id="objekteEmpty">Noch keine Objekte gespeichert.</p>
             </section>
+
+            <section class="form-section">
+                <h2>Objekt-Auslastung</h2>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="auslastungMonat">Zeitraum</label>
+                        <select id="auslastungMonat" onchange="renderObjektAuslastung()">
+                            <option value="">Alle Monate</option>
+                        </select>
+                    </div>
+                </div>
+                <div id="objektAuslastung"></div>
+            </section>
+
+            <section class="form-section">
+                <h2>Kostenrechner / Angebotskalkulation</h2>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="kalkStunden">Stunden pro Schicht</label>
+                        <input type="number" id="kalkStunden" step="0.5" min="1" value="8" placeholder="8">
+                    </div>
+                    <div class="form-group">
+                        <label for="kalkSatz">Stundensatz (&euro;)</label>
+                        <input type="number" id="kalkSatz" step="0.01" min="0" value="15" placeholder="15.00">
+                    </div>
+                    <div class="form-group">
+                        <label for="kalkTage">Tage pro Woche</label>
+                        <input type="number" id="kalkTage" step="1" min="1" max="7" value="5" placeholder="5">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="kalkWochen">Anzahl Wochen</label>
+                        <input type="number" id="kalkWochen" step="1" min="1" value="4" placeholder="4">
+                    </div>
+                    <div class="form-group">
+                        <label for="kalkMA">Anzahl MA pro Schicht</label>
+                        <input type="number" id="kalkMA" step="1" min="1" value="1" placeholder="1">
+                    </div>
+                    <div class="form-group">
+                        <label for="kalkNacht">davon Nachtschichten (%)</label>
+                        <input type="number" id="kalkNacht" step="5" min="0" max="100" value="0" placeholder="0">
+                    </div>
+                </div>
+                <button class="btn-primary btn-small" onclick="berechneKalkulation()">Berechnen</button>
+                <div id="kalkErgebnis" style="margin-top:1rem"></div>
+            </section>
         </div>
         <!-- TAB: Mitarbeiter -->
         <div class="tab-content" id="tab-mitarbeiter">
@@ -447,6 +504,10 @@
                         </div>
                     </div>
                     <div class="form-row">
+                        <div class="form-group">
+                            <label for="maQualAblauf">Qualifikation g&uuml;ltig bis</label>
+                            <input type="date" id="maQualAblauf">
+                        </div>
                         <div class="form-group">
                             <label for="maBemerkung">Bemerkung</label>
                             <input type="text" id="maBemerkung" placeholder="z.B. nur Tagschicht, Ersthelfer">

@@ -45,6 +45,13 @@ const ZUSCHLAG_FEIERTAG = 100;
 const MONATSNAMEN = ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni',
     'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'];
 
+const STATUS_LABELS = {
+    geplant: 'Geplant',
+    bestaetigt: 'Bestätigt',
+    abgeschlossen: 'Abgeschlossen',
+    storniert: 'Storniert'
+};
+
 // =============================================
 // TAB-NAVIGATION
 // =============================================
@@ -56,7 +63,7 @@ document.querySelectorAll('.nav-btn').forEach(btn => {
         document.getElementById('tab-' + this.dataset.tab).classList.add('active');
 
         if (this.dataset.tab === 'dashboard') updateDashboard();
-        if (this.dataset.tab === 'objekte') renderObjekte();
+        if (this.dataset.tab === 'objekte') { renderObjekte(); renderObjektAuslastung(); }
         if (this.dataset.tab === 'kalender') { renderKalender(); renderDienstplan(); }
         if (this.dataset.tab === 'abrechnung') updateAbrechnung();
         if (this.dataset.tab === 'mitarbeiter') renderMitarbeiter();
@@ -221,6 +228,7 @@ function erfasseFormular() {
     const stundensatz = parseFloat(document.getElementById('stundensatz').value);
     const mitarbeiter = document.getElementById('mitarbeiter').value.trim();
     const bemerkung = document.getElementById('bemerkung').value.trim();
+    const status = document.getElementById('einsatzStatus').value;
 
     if (!objekt || !datum || !zeitVon || !zeitBis || isNaN(stundensatz)) return null;
 
@@ -228,7 +236,7 @@ function erfasseFormular() {
 
     return {
         id: Date.now(),
-        objekt, datum, zeitVon, zeitBis, stundensatz, mitarbeiter, bemerkung,
+        objekt, datum, zeitVon, zeitBis, stundensatz, mitarbeiter, bemerkung, status,
         ...berechnung
     };
 }
@@ -251,6 +259,7 @@ function bearbeiteEinsatz(id) {
     document.getElementById('stundensatz').value = e.stundensatz;
     document.getElementById('mitarbeiter').value = e.mitarbeiter || '';
     document.getElementById('bemerkung').value = e.bemerkung || '';
+    document.getElementById('einsatzStatus').value = e.status || 'geplant';
 
     formTitle.textContent = 'Einsatz bearbeiten';
     submitBtn.textContent = 'Änderungen speichern';
@@ -469,7 +478,7 @@ function renderTabelle() {
         if (e.zuschlagDetails.length === 0) zuschlagBadges = '<span style="color:#a0aec0">&mdash;</span>';
 
         tr.innerHTML = `
-            <td>${formatDatum(e.datum)}</td>
+            <td>${formatDatum(e.datum)}${e.status && e.status !== 'geplant' ? '<br><span class="status-badge status-' + e.status + '">' + escapeHtml(STATUS_LABELS[e.status] || e.status) + '</span>' : ''}</td>
             <td>${escapeHtml(e.objekt)}</td>
             <td>${escapeHtml(e.mitarbeiter || '\u2014')}</td>
             <td>${e.zeitVon}</td>
@@ -1364,13 +1373,14 @@ document.getElementById('mitarbeiterForm').addEventListener('submit', function (
     const email = document.getElementById('maEmail').value.trim();
     const qualifikation = document.getElementById('maQualifikation').value;
     const stundensatz = parseFloat(document.getElementById('maStundensatz').value) || 0;
+    const qualAblauf = document.getElementById('maQualAblauf').value;
     const bemerkung = document.getElementById('maBemerkung').value.trim();
 
     if (!vorname || !nachname) return;
 
     const vollname = `${vorname} ${nachname}`;
     const idx = mitarbeiterListe_.findIndex(m => m.name === vollname);
-    const ma = { name: vollname, vorname, nachname, telefon, email, qualifikation, stundensatz, bemerkung };
+    const ma = { name: vollname, vorname, nachname, telefon, email, qualifikation, stundensatz, qualAblauf, bemerkung };
 
     if (idx !== -1) mitarbeiterListe_[idx] = ma; else mitarbeiterListe_.push(ma);
 
@@ -1401,12 +1411,29 @@ function renderMitarbeiter() {
         const maEinsaetze = einsaetze.filter(e => e.mitarbeiter === m.name);
         const totalStd = maEinsaetze.reduce((s, e) => s + e.stunden, 0);
 
+        // Qualifikation-Ablauf prüfen
+        let qualStatus = '';
+        if (m.qualAblauf) {
+            const heute = new Date().toISOString().split('T')[0];
+            const in30Tagen = new Date();
+            in30Tagen.setDate(in30Tagen.getDate() + 30);
+            const in30 = in30Tagen.toISOString().split('T')[0];
+
+            if (m.qualAblauf < heute) {
+                qualStatus = '<span class="qual-ablauf abgelaufen">ABGELAUFEN ' + formatDatum(m.qualAblauf) + '</span>';
+            } else if (m.qualAblauf <= in30) {
+                qualStatus = '<span class="qual-ablauf bald">Läuft ab ' + formatDatum(m.qualAblauf) + '</span>';
+            } else {
+                qualStatus = '<small style="color:#718096">bis ' + formatDatum(m.qualAblauf) + '</small>';
+            }
+        }
+
         const tr = document.createElement('tr');
         tr.innerHTML = `
             <td><strong>${escapeHtml(m.name)}</strong><br><small>${maEinsaetze.length} Einsätze / ${formatZahl(totalStd)} Std.</small></td>
             <td>${escapeHtml(m.telefon || '\u2014')}</td>
             <td>${escapeHtml(m.email || '\u2014')}</td>
-            <td><span class="qual-badge">${escapeHtml(QUAL_LABELS[m.qualifikation] || m.qualifikation)}</span></td>
+            <td><span class="qual-badge">${escapeHtml(QUAL_LABELS[m.qualifikation] || m.qualifikation)}</span>${qualStatus ? '<br>' + qualStatus : ''}</td>
             <td>${m.stundensatz ? formatEuro(m.stundensatz) + '/Std.' : '\u2014'}</td>
             <td>${escapeHtml(m.bemerkung || '\u2014')}</td>
             <td><button class="btn-delete" onclick="loescheMitarbeiter(${i})">X</button></td>
@@ -2126,6 +2153,174 @@ document.getElementById('tagesModal').addEventListener('click', function (e) {
 });
 
 // =============================================
+// OBJEKT-AUSLASTUNG
+// =============================================
+function renderObjektAuslastung() {
+    const el = document.getElementById('objektAuslastung');
+    if (!el) return;
+
+    const filterM = document.getElementById('auslastungMonat').value;
+
+    // Auslastungsfilter aktualisieren
+    const monate = new Set();
+    einsaetze.forEach(e => monate.add(e.datum.substring(0, 7)));
+    fillMonatsSelect(document.getElementById('auslastungMonat'), monate);
+
+    let gefiltert = einsaetze;
+    if (filterM) gefiltert = gefiltert.filter(e => e.datum.substring(0, 7) === filterM);
+
+    if (gefiltert.length === 0) {
+        el.innerHTML = '<p style="color:#a0aec0">Keine Einsatzdaten vorhanden.</p>';
+        return;
+    }
+
+    // Gruppiere nach Objekt
+    const objektMap = {};
+    gefiltert.forEach(e => {
+        if (!objektMap[e.objekt]) objektMap[e.objekt] = { stunden: 0, umsatz: 0, einsaetze: 0, tage: new Set(), ma: new Set(), nacht: 0, zuschlaege: 0 };
+        objektMap[e.objekt].stunden += e.stunden;
+        objektMap[e.objekt].umsatz += e.gesamt;
+        objektMap[e.objekt].einsaetze++;
+        objektMap[e.objekt].tage.add(e.datum);
+        if (e.mitarbeiter) objektMap[e.objekt].ma.add(e.mitarbeiter);
+        objektMap[e.objekt].nacht += e.nachtStunden;
+        objektMap[e.objekt].zuschlaege += e.zuschlagBetrag;
+    });
+
+    const maxStd = Math.max(...Object.values(objektMap).map(o => o.stunden), 1);
+
+    let html = '';
+    Object.entries(objektMap).sort((a, b) => b[1].stunden - a[1].stunden).forEach(([name, data]) => {
+        const pct = (data.stunden / maxStd) * 100;
+        const nachtPct = data.stunden > 0 ? ((data.nachtStunden / data.stunden) * 100).toFixed(0) : 0;
+        const avgStdTag = data.tage.size > 0 ? (data.stunden / data.tage.size) : 0;
+
+        html += `<div class="auslastung-card">
+            <div class="auslastung-header">
+                <strong>${escapeHtml(name)}</strong>
+                <span class="auslastung-umsatz">${formatEuro(data.umsatz)}</span>
+            </div>
+            <div class="auslastung-bar-bg"><div class="auslastung-bar" style="width:${pct}%"></div></div>
+            <div class="auslastung-details">
+                <span>${formatZahl(data.stunden)} Std.</span>
+                <span>${data.einsaetze} Einsätze</span>
+                <span>${data.tage.size} Tage</span>
+                <span>${data.ma.size} MA</span>
+                <span>${formatZahl(avgStdTag)} Std./Tag</span>
+                <span>${formatEuro(data.zuschlaege)} Zuschläge</span>
+            </div>
+        </div>`;
+    });
+
+    el.innerHTML = html;
+}
+
+// =============================================
+// KOSTENRECHNER / KALKULATION
+// =============================================
+function berechneKalkulation() {
+    const stunden = parseFloat(document.getElementById('kalkStunden').value) || 8;
+    const satz = parseFloat(document.getElementById('kalkSatz').value) || 15;
+    const tage = parseInt(document.getElementById('kalkTage').value) || 5;
+    const wochen = parseInt(document.getElementById('kalkWochen').value) || 4;
+    const ma = parseInt(document.getElementById('kalkMA').value) || 1;
+    const nachtPct = parseFloat(document.getElementById('kalkNacht').value) || 0;
+
+    const totalSchichten = tage * wochen * ma;
+    const totalStunden = totalSchichten * stunden;
+    const nachtStunden = totalStunden * (nachtPct / 100);
+    const tagStunden = totalStunden - nachtStunden;
+
+    const grundlohn = totalStunden * satz;
+    const nachtZuschlag = nachtStunden * satz * (ZUSCHLAG_NACHT / 100);
+    const gesamt = grundlohn + nachtZuschlag;
+
+    const proWoche = gesamt / wochen;
+    const proMonat = gesamt; // Wenn 4 Wochen
+    const proTag = gesamt / (tage * wochen);
+
+    const el = document.getElementById('kalkErgebnis');
+    el.innerHTML = `<div class="kalk-ergebnis">
+        <div class="kalk-grid">
+            <div class="kalk-item"><span class="kalk-label">Schichten gesamt</span><span class="kalk-value">${totalSchichten}</span></div>
+            <div class="kalk-item"><span class="kalk-label">Stunden gesamt</span><span class="kalk-value">${formatZahl(totalStunden)}</span></div>
+            <div class="kalk-item"><span class="kalk-label">davon Nacht</span><span class="kalk-value">${formatZahl(nachtStunden)}</span></div>
+            <div class="kalk-item"><span class="kalk-label">Grundlohn</span><span class="kalk-value">${formatEuro(grundlohn)}</span></div>
+            <div class="kalk-item"><span class="kalk-label">Nachtzuschlag (${ZUSCHLAG_NACHT}%)</span><span class="kalk-value">${formatEuro(nachtZuschlag)}</span></div>
+            <div class="kalk-item kalk-total"><span class="kalk-label">GESAMT</span><span class="kalk-value">${formatEuro(gesamt)}</span></div>
+        </div>
+        <div class="kalk-sub">
+            <span>Pro Tag: ${formatEuro(proTag)}</span> |
+            <span>Pro Woche: ${formatEuro(proWoche)}</span> |
+            <span>Pro Monat (4 Wo.): ${formatEuro(proMonat)}</span>
+        </div>
+    </div>`;
+}
+
+// =============================================
+// BENACHRICHTIGUNGEN
+// =============================================
+function pruefeBenachrichtigungen() {
+    const el = document.getElementById('benachrichtigungen');
+    if (!el) return;
+
+    const meldungen = [];
+    const heute = new Date().toISOString().split('T')[0];
+    const in30Tagen = new Date();
+    in30Tagen.setDate(in30Tagen.getDate() + 30);
+    const in30 = in30Tagen.toISOString().split('T')[0];
+
+    // Ablaufende Qualifikationen
+    mitarbeiterListe_.forEach(m => {
+        if (m.qualAblauf) {
+            if (m.qualAblauf < heute) {
+                meldungen.push({
+                    typ: 'fehler',
+                    text: `Qualifikation von ${m.name} (${QUAL_LABELS[m.qualifikation] || m.qualifikation}) ist am ${formatDatum(m.qualAblauf)} abgelaufen!`
+                });
+            } else if (m.qualAblauf <= in30) {
+                meldungen.push({
+                    typ: 'warnung',
+                    text: `Qualifikation von ${m.name} (${QUAL_LABELS[m.qualifikation] || m.qualifikation}) läuft am ${formatDatum(m.qualAblauf)} ab.`
+                });
+            }
+        }
+    });
+
+    // Heutige Einsätze ohne Bestätigung
+    const heuteGeplant = einsaetze.filter(e => e.datum === heute && (!e.status || e.status === 'geplant'));
+    if (heuteGeplant.length > 0) {
+        meldungen.push({
+            typ: 'info',
+            text: `${heuteGeplant.length} Einsatz/Einsätze heute noch nicht bestätigt.`
+        });
+    }
+
+    // Stornierte Einsätze in der Zukunft
+    const storniert = einsaetze.filter(e => e.datum >= heute && e.status === 'storniert');
+    if (storniert.length > 0) {
+        meldungen.push({
+            typ: 'info',
+            text: `${storniert.length} stornierte/r zukünftige/r Einsatz/Einsätze.`
+        });
+    }
+
+    if (meldungen.length === 0) {
+        el.style.display = 'none';
+        return;
+    }
+
+    el.style.display = 'block';
+    el.innerHTML = meldungen.map(m => {
+        const icon = m.typ === 'fehler' ? '!!!' : m.typ === 'warnung' ? '!' : 'i';
+        return `<div class="benach-item benach-${m.typ}">
+            <span class="benach-icon">${icon}</span>
+            <span>${escapeHtml(m.text)}</span>
+        </div>`;
+    }).join('');
+}
+
+// =============================================
 // STUNDENZETTEL (EINZELNER MA)
 // =============================================
 function druckeStundenzettel() {
@@ -2235,4 +2430,5 @@ renderVorlagen();
 renderMitarbeiter();
 renderVerfuegbarkeit();
 updateHeaderStats();
+pruefeBenachrichtigungen();
 document.getElementById('vfDatum').valueAsDate = new Date();
