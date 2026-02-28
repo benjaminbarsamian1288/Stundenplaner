@@ -87,10 +87,10 @@ document.querySelectorAll('.nav-btn').forEach(btn => {
         document.getElementById('tab-' + this.dataset.tab).classList.add('active');
 
         if (this.dataset.tab === 'dashboard') updateDashboard();
-        if (this.dataset.tab === 'objekte') { renderObjekte(); renderVertraege(); renderObjektAuslastung(); updateChecklisteObjekte(); updateObjektHistorieSelect(); updateObjektKontakteSelect(); renderObjektKontakte(); }
+        if (this.dataset.tab === 'objekte') { renderObjekte(); renderVertraege(); renderObjektAuslastung(); updateChecklisteObjekte(); updateObjektHistorieSelect(); updateObjektKontakteSelect(); renderObjektKontakte(); updateObjektAnweisungenSelect(); renderObjektAnweisungen(); }
         if (this.dataset.tab === 'kalender') { renderKalender(); renderDienstplan(); renderJahresuebersicht(); }
-        if (this.dataset.tab === 'abrechnung') updateAbrechnung();
-        if (this.dataset.tab === 'mitarbeiter') { renderMitarbeiter(); renderDokumente(); renderUeberstunden(); renderKontaktliste(); renderUrlaubskonto(); renderArbeitszeitkonto(); renderQualMatrix(); updateSchichtHistorieSelect(); renderNotfallkontakte(); updateMAKalSelect(); renderVerfuegbarkeitWoche(); renderDoppelschichtWarnungen(); }
+        if (this.dataset.tab === 'abrechnung') { updateAbrechnung(); updateLohnvorschauSelects(); renderDuplikatCheck(); }
+        if (this.dataset.tab === 'mitarbeiter') { renderMitarbeiter(); renderDokumente(); renderUeberstunden(); renderKontaktliste(); renderUrlaubskonto(); renderArbeitszeitkonto(); renderQualMatrix(); updateSchichtHistorieSelect(); renderNotfallkontakte(); updateMAKalSelect(); renderVerfuegbarkeitWoche(); renderDoppelschichtWarnungen(); renderMALeistung(); }
         if (this.dataset.tab === 'vorfaelle') { renderVorfaelle(); renderVorfallsStatistik(); }
         if (this.dataset.tab === 'wachbuch') { renderWachbuch(); renderUebergaben(); renderWachbuchStats(); }
         if (this.dataset.tab === 'einstellungen') { updateDatenStats(); updateSpeicherStats(); ladeEinstellungen(); renderAuditLog(); }
@@ -1547,7 +1547,7 @@ function loescheMitarbeiter(index) {
 // =============================================
 function erstelleBackup() {
     const backup = {
-        version: 11,
+        version: 12,
         datum: new Date().toISOString(),
         einsaetze,
         objekte,
@@ -1562,7 +1562,8 @@ function erstelleBackup() {
         uebergaben,
         notfallkontakte,
         auditLog,
-        objektKontakte
+        objektKontakte,
+        objektAnweisungen
     };
 
     const json = JSON.stringify(backup, null, 2);
@@ -1601,6 +1602,7 @@ function stelleWiederHer(event) {
             notfallkontakte = data.notfallkontakte || [];
             auditLog = data.auditLog || [];
             objektKontakte = data.objektKontakte || [];
+            objektAnweisungen = data.objektAnweisungen || {};
 
             speichern();
             localStorage.setItem('bbprotect_objekte', JSON.stringify(objekte));
@@ -1616,6 +1618,7 @@ function stelleWiederHer(event) {
             localStorage.setItem('bbprotect_notfallkontakte', JSON.stringify(notfallkontakte));
             localStorage.setItem('bbprotect_auditlog', JSON.stringify(auditLog));
             localStorage.setItem('bbprotect_objektkontakte', JSON.stringify(objektKontakte));
+            localStorage.setItem('bbprotect_objektanweisungen', JSON.stringify(objektAnweisungen));
 
             renderTabelle();
             updateAlleFilter();
@@ -1652,6 +1655,7 @@ function loescheAlleDaten() {
     notfallkontakte = [];
     auditLog = [];
     objektKontakte = [];
+    objektAnweisungen = {};
 
     localStorage.removeItem('bbprotect_einsaetze');
     localStorage.removeItem('bbprotect_objekte');
@@ -1667,6 +1671,7 @@ function loescheAlleDaten() {
     localStorage.removeItem('bbprotect_notfallkontakte');
     localStorage.removeItem('bbprotect_auditlog');
     localStorage.removeItem('bbprotect_objektkontakte');
+    localStorage.removeItem('bbprotect_objektanweisungen');
 
     renderTabelle();
     updateAlleFilter();
@@ -2522,6 +2527,24 @@ function pruefeBenachrichtigungen() {
         meldungen.push({
             typ: 'info',
             text: `${storniert.length} stornierte/r zukünftige/r Einsatz/Einsätze.`
+        });
+    }
+
+    // Doppelschicht-Warnungen
+    const dsWarn = pruefeDoppelschichten();
+    if (dsWarn.length > 0) {
+        meldungen.push({
+            typ: 'warnung',
+            text: `${dsWarn.length} Ruhezeitverletzung(en) nach §5 ArbZG erkannt (< 11 Std. Ruhezeit).`
+        });
+    }
+
+    // Einsatz-Duplikate
+    const duplikate = findeEinsatzDuplikate();
+    if (duplikate.length > 0) {
+        meldungen.push({
+            typ: 'warnung',
+            text: `${duplikate.length} mögliche Einsatz-Duplikat(e) gefunden.`
         });
     }
 
@@ -6167,6 +6190,277 @@ function renderDoppelschichtWarnungen() {
             <span class="ds-ma">${escapeHtml(w.ma)}</span>
             <span class="ds-info">Nur <strong>${stunden} Std.</strong> Ruhezeit</span>
             <span class="ds-schichten">${escapeHtml(w.schicht1)} → ${escapeHtml(w.schicht2)}</span>
+        </div>`;
+    });
+    html += '</div>';
+    el.innerHTML = html;
+}
+
+// =============================================
+// MA-LEISTUNGSÜBERSICHT
+// =============================================
+function renderMALeistung() {
+    const el = document.getElementById('maLeistungContent');
+    if (!el) return;
+
+    if (mitarbeiterListe_.length === 0) {
+        el.innerHTML = '<p style="color:#a0aec0">Keine Mitarbeiter vorhanden.</p>';
+        return;
+    }
+
+    const heute = new Date().toISOString().split('T')[0];
+    const monat = heute.substring(0, 7);
+
+    let html = '<div class="mal-grid">';
+
+    mitarbeiterListe_.forEach(m => {
+        const maE = einsaetze.filter(e => e.mitarbeiter === m.name);
+        const maMonat = maE.filter(e => e.datum.substring(0, 7) === monat);
+
+        const totalStd = maE.reduce((s, e) => s + e.stunden, 0);
+        const monatStd = maMonat.reduce((s, e) => s + e.stunden, 0);
+        const storniert = maE.filter(e => e.status === 'storniert').length;
+        const stornoRate = maE.length > 0 ? (storniert / maE.length * 100) : 0;
+
+        // Bevorzugte Objekte
+        const objCount = {};
+        maE.forEach(e => { objCount[e.objekt] = (objCount[e.objekt] || 0) + 1; });
+        const topObjekte = Object.entries(objCount).sort((a, b) => b[1] - a[1]).slice(0, 3);
+
+        // Durchschnittliche Schichtlänge
+        const avgStd = maE.length > 0 ? totalStd / maE.length : 0;
+
+        // Zuverlässigkeits-Score
+        const zuverlaessigkeit = maE.length > 0 ? Math.round((1 - storniert / maE.length) * 100) : 100;
+        const zuverCls = zuverlaessigkeit >= 90 ? 'mal-gut' : zuverlaessigkeit >= 70 ? 'mal-mittel' : 'mal-schlecht';
+
+        html += `<div class="mal-card">
+            <div class="mal-header"><strong>${escapeHtml(m.name)}</strong><span class="mal-score ${zuverCls}">${zuverlaessigkeit}%</span></div>
+            <div class="mal-stats">
+                <div class="mal-stat"><span class="mal-label">Einsätze gesamt</span><span class="mal-val">${maE.length}</span></div>
+                <div class="mal-stat"><span class="mal-label">Stunden gesamt</span><span class="mal-val">${formatZahl(totalStd)}</span></div>
+                <div class="mal-stat"><span class="mal-label">Monat (${MONATSNAMEN[new Date().getMonth()].substring(0, 3)})</span><span class="mal-val">${formatZahl(monatStd)} Std.</span></div>
+                <div class="mal-stat"><span class="mal-label">Ø Schichtlänge</span><span class="mal-val">${formatZahl(avgStd)} Std.</span></div>
+                <div class="mal-stat"><span class="mal-label">Stornoquote</span><span class="mal-val ${stornoRate > 10 ? 'mal-schlecht' : ''}">${formatZahl(stornoRate)}%</span></div>
+            </div>
+            ${topObjekte.length > 0 ? '<div class="mal-objekte"><small>Top-Objekte:</small> ' + topObjekte.map(([o, c]) => `<span class="mal-obj-badge">${escapeHtml(o)} (${c})</span>`).join(' ') + '</div>' : ''}
+        </div>`;
+    });
+
+    html += '</div>';
+    el.innerHTML = html;
+}
+
+// =============================================
+// OBJEKT-DIENSTANWEISUNGEN
+// =============================================
+let objektAnweisungen = JSON.parse(localStorage.getItem('bbprotect_objektanweisungen') || '{}');
+
+function speichereObjektAnweisung() {
+    const objekt = document.getElementById('oaObjekt').value;
+    const text = document.getElementById('oaText').value.trim();
+
+    if (!objekt) { alert('Bitte Objekt wählen.'); return; }
+    if (!text) { alert('Bitte Dienstanweisung eingeben.'); return; }
+
+    if (!objektAnweisungen[objekt]) objektAnweisungen[objekt] = [];
+    objektAnweisungen[objekt].push({
+        id: Date.now(),
+        text,
+        datum: new Date().toISOString().split('T')[0],
+        aktiv: true
+    });
+
+    localStorage.setItem('bbprotect_objektanweisungen', JSON.stringify(objektAnweisungen));
+    logAudit('erstellt', 'Dienstanweisung', `${objekt}: ${text.substring(0, 50)}...`);
+    renderObjektAnweisungen();
+    document.getElementById('oaText').value = '';
+}
+
+function renderObjektAnweisungen() {
+    const el = document.getElementById('objektAnweisungenContent');
+    if (!el) return;
+
+    const objekt = document.getElementById('oaObjekt').value;
+    if (!objekt) {
+        el.innerHTML = '<p style="color:#a0aec0">Bitte Objekt wählen.</p>';
+        return;
+    }
+
+    const anweisungen = objektAnweisungen[objekt] || [];
+    if (anweisungen.length === 0) {
+        el.innerHTML = '<p style="color:#a0aec0">Keine Dienstanweisungen für dieses Objekt.</p>';
+        return;
+    }
+
+    let html = '<div class="oa-liste">';
+    anweisungen.forEach(a => {
+        html += `<div class="oa-item ${a.aktiv ? '' : 'oa-inaktiv'}">
+            <div class="oa-text">${escapeHtml(a.text)}</div>
+            <div class="oa-meta">
+                <span class="oa-datum">${formatDatum(a.datum)}</span>
+                <button class="btn-secondary btn-small" onclick="toggleObjektAnweisung('${escapeHtml(objekt)}',${a.id})">${a.aktiv ? 'Deaktivieren' : 'Aktivieren'}</button>
+                <button class="btn-delete btn-small" onclick="loescheObjektAnweisung('${escapeHtml(objekt)}',${a.id})">X</button>
+            </div>
+        </div>`;
+    });
+    html += '</div>';
+    el.innerHTML = html;
+}
+
+function toggleObjektAnweisung(objekt, id) {
+    const anw = (objektAnweisungen[objekt] || []).find(a => a.id === id);
+    if (anw) anw.aktiv = !anw.aktiv;
+    localStorage.setItem('bbprotect_objektanweisungen', JSON.stringify(objektAnweisungen));
+    renderObjektAnweisungen();
+}
+
+function loescheObjektAnweisung(objekt, id) {
+    if (!confirm('Dienstanweisung löschen?')) return;
+    objektAnweisungen[objekt] = (objektAnweisungen[objekt] || []).filter(a => a.id !== id);
+    localStorage.setItem('bbprotect_objektanweisungen', JSON.stringify(objektAnweisungen));
+    renderObjektAnweisungen();
+}
+
+function updateObjektAnweisungenSelect() {
+    const sel = document.getElementById('oaObjekt');
+    if (!sel) return;
+    const val = sel.value;
+    sel.innerHTML = '<option value="">Objekt wählen...</option>';
+    objekte.forEach(o => {
+        sel.innerHTML += `<option value="${escapeHtml(o.name)}" ${o.name === val ? 'selected' : ''}>${escapeHtml(o.name)}</option>`;
+    });
+}
+
+// =============================================
+// LOHNABRECHNUNG-VORSCHAU
+// =============================================
+function renderLohnvorschau() {
+    const el = document.getElementById('lohnvorschauContent');
+    if (!el) return;
+
+    const maSelect = document.getElementById('lvMa');
+    const monatSelect = document.getElementById('lvMonat');
+    if (!maSelect || !monatSelect) return;
+
+    const maN = maSelect.value;
+    const monat = monatSelect.value || new Date().toISOString().substring(0, 7);
+
+    if (!maN) {
+        el.innerHTML = '<p style="color:#a0aec0">Mitarbeiter wählen...</p>';
+        return;
+    }
+
+    const maEinsaetze = einsaetze.filter(e => e.mitarbeiter === maN && e.datum.substring(0, 7) === monat && e.status !== 'storniert');
+
+    if (maEinsaetze.length === 0) {
+        el.innerHTML = '<p style="color:#a0aec0">Keine Einsätze in diesem Monat.</p>';
+        return;
+    }
+
+    const totalStd = maEinsaetze.reduce((s, e) => s + e.stunden, 0);
+    const totalNacht = maEinsaetze.reduce((s, e) => s + e.nachtStunden, 0);
+    const totalGrund = maEinsaetze.reduce((s, e) => s + e.grundlohn, 0);
+    const totalZuschlag = maEinsaetze.reduce((s, e) => s + e.zuschlagBetrag, 0);
+    const totalBrutto = totalGrund + totalZuschlag;
+    const totalPause = maEinsaetze.reduce((s, e) => s + (e.pauseMinuten || 0), 0);
+
+    // Simulierte Abzüge (Richtwerte)
+    const kvBeitrag = totalBrutto * 0.073; // AN-Anteil KV ~7.3%
+    const rvBeitrag = totalBrutto * 0.093; // AN-Anteil RV ~9.3%
+    const avBeitrag = totalBrutto * 0.012; // AN-Anteil AV ~1.2%
+    const pvBeitrag = totalBrutto * 0.018; // AN-Anteil PV ~1.8%
+    const svGesamt = kvBeitrag + rvBeitrag + avBeitrag + pvBeitrag;
+    const lstGeschaetzt = totalBrutto * 0.14; // Grober LStSchätzung
+    const netto = totalBrutto - svGesamt - lstGeschaetzt;
+
+    const [j, m] = monat.split('-');
+    const zeitraum = `${MONATSNAMEN[parseInt(m) - 1]} ${j}`;
+
+    let html = `<div class="lv-card">
+        <div class="lv-header"><strong>${escapeHtml(maN)}</strong><span>${zeitraum}</span></div>
+        <div class="lv-grid">
+            <div class="lv-row"><span>Einsätze</span><span>${maEinsaetze.length}</span></div>
+            <div class="lv-row"><span>Arbeitsstunden</span><span>${formatZahl(totalStd)} Std.</span></div>
+            <div class="lv-row"><span>davon Nachtarbeit</span><span>${formatZahl(totalNacht)} Std.</span></div>
+            <div class="lv-row"><span>Pausenzeit gesamt</span><span>${totalPause} Min.</span></div>
+            <div class="lv-divider"></div>
+            <div class="lv-row"><span>Grundlohn</span><span>${formatEuro(totalGrund)}</span></div>
+            <div class="lv-row"><span>Zuschläge</span><span>${formatEuro(totalZuschlag)}</span></div>
+            <div class="lv-row lv-brutto"><span>Bruttolohn</span><span>${formatEuro(totalBrutto)}</span></div>
+            <div class="lv-divider"></div>
+            <div class="lv-row lv-abzug"><span>Krankenversicherung (~7,3%)</span><span>-${formatEuro(kvBeitrag)}</span></div>
+            <div class="lv-row lv-abzug"><span>Rentenversicherung (~9,3%)</span><span>-${formatEuro(rvBeitrag)}</span></div>
+            <div class="lv-row lv-abzug"><span>Arbeitslosenversicherung (~1,2%)</span><span>-${formatEuro(avBeitrag)}</span></div>
+            <div class="lv-row lv-abzug"><span>Pflegeversicherung (~1,8%)</span><span>-${formatEuro(pvBeitrag)}</span></div>
+            <div class="lv-row lv-abzug"><span>Lohnsteuer (geschätzt ~14%)</span><span>-${formatEuro(lstGeschaetzt)}</span></div>
+            <div class="lv-divider"></div>
+            <div class="lv-row lv-netto"><span>Geschätztes Netto</span><span>${formatEuro(netto)}</span></div>
+        </div>
+        <p class="lv-hinweis">Die Abzüge sind Richtwerte und dienen nur zur Orientierung. Tatsächliche Beträge hängen von Steuerklasse, Kirchensteuer und individuellen Faktoren ab.</p>
+    </div>`;
+
+    el.innerHTML = html;
+}
+
+function updateLohnvorschauSelects() {
+    const maSel = document.getElementById('lvMa');
+    const monatSel = document.getElementById('lvMonat');
+    if (!maSel || !monatSel) return;
+
+    const maVal = maSel.value;
+    maSel.innerHTML = '<option value="">Mitarbeiter wählen...</option>';
+    mitarbeiterListe_.forEach(m => {
+        maSel.innerHTML += `<option value="${escapeHtml(m.name)}" ${m.name === maVal ? 'selected' : ''}>${escapeHtml(m.name)}</option>`;
+    });
+
+    const monatVal = monatSel.value;
+    const monate = new Set();
+    einsaetze.forEach(e => monate.add(e.datum.substring(0, 7)));
+    const sortedMonate = [...monate].sort().reverse();
+    monatSel.innerHTML = '<option value="">Aktueller Monat</option>';
+    sortedMonate.forEach(m => {
+        const [j, mo] = m.split('-');
+        monatSel.innerHTML += `<option value="${m}" ${m === monatVal ? 'selected' : ''}>${MONATSNAMEN[parseInt(mo) - 1]} ${j}</option>`;
+    });
+}
+
+// =============================================
+// EINSATZ-DUPLIKAT-ERKENNUNG
+// =============================================
+function findeEinsatzDuplikate() {
+    const duplikate = [];
+    for (let i = 0; i < einsaetze.length; i++) {
+        for (let j = i + 1; j < einsaetze.length; j++) {
+            const a = einsaetze[i];
+            const b = einsaetze[j];
+            if (a.datum === b.datum && a.objekt === b.objekt &&
+                a.zeitVon === b.zeitVon && a.zeitBis === b.zeitBis &&
+                a.mitarbeiter === b.mitarbeiter && a.mitarbeiter) {
+                duplikate.push({ a, b });
+            }
+        }
+    }
+    return duplikate;
+}
+
+function renderDuplikatCheck() {
+    const el = document.getElementById('duplikatCheckContent');
+    if (!el) return;
+
+    const duplikate = findeEinsatzDuplikate();
+
+    if (duplikate.length === 0) {
+        el.innerHTML = '<p style="color:#48bb78">Keine Duplikate gefunden.</p>';
+        return;
+    }
+
+    let html = `<div class="dup-hinweis">${duplikate.length} mögliche Duplikat(e) gefunden:</div>`;
+    html += '<div class="dup-liste">';
+    duplikate.forEach(d => {
+        html += `<div class="dup-item">
+            <span class="dup-info">${formatDatum(d.a.datum)} | ${escapeHtml(d.a.objekt)} | ${escapeHtml(d.a.mitarbeiter)} | ${d.a.zeitVon}-${d.a.zeitBis}</span>
+            <button class="btn-delete btn-small" onclick="loescheEinsatz(${d.b.id})">Duplikat löschen</button>
         </div>`;
     });
     html += '</div>';

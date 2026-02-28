@@ -6010,3 +6010,281 @@ body.dark-mode .ds-schichten {
         gap: 0.25rem;
     }
 }
+
+/* =============================================
+   MA-LEISTUNGSÜBERSICHT
+   ============================================= */
+.mal-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 0.75rem;
+}
+
+.mal-card {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 0.75rem;
+}
+
+body.dark-mode .mal-card {
+    background: #2d3748;
+    border-color: #4a5568;
+}
+
+.mal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid #edf2f7;
+}
+
+body.dark-mode .mal-header {
+    border-bottom-color: #4a5568;
+}
+
+.mal-score {
+    font-size: 0.8rem;
+    font-weight: 700;
+    padding: 0.15rem 0.5rem;
+    border-radius: 12px;
+}
+
+.mal-gut { background: #c6f6d5; color: #276749; }
+.mal-mittel { background: #fefcbf; color: #975a16; }
+.mal-schlecht { background: #fed7d7; color: #9b2c2c; }
+
+body.dark-mode .mal-gut { background: #276749; color: #c6f6d5; }
+body.dark-mode .mal-mittel { background: #744210; color: #fefcbf; }
+body.dark-mode .mal-schlecht { background: #742a2a; color: #fed7d7; }
+
+.mal-stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.25rem;
+}
+
+.mal-stat {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.75rem;
+    padding: 0.15rem 0;
+}
+
+.mal-label { color: #718096; }
+.mal-val { font-weight: 600; }
+
+body.dark-mode .mal-label { color: #a0aec0; }
+
+.mal-objekte {
+    margin-top: 0.5rem;
+    font-size: 0.7rem;
+}
+
+.mal-obj-badge {
+    display: inline-block;
+    background: #edf2f7;
+    padding: 0.1rem 0.35rem;
+    border-radius: 3px;
+    margin: 0.1rem;
+    font-size: 0.65rem;
+}
+
+body.dark-mode .mal-obj-badge {
+    background: #4a5568;
+    color: #e2e8f0;
+}
+
+/* =============================================
+   OBJEKT-DIENSTANWEISUNGEN
+   ============================================= */
+.oa-liste {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+
+.oa-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 0.75rem;
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-left: 3px solid #3182ce;
+    border-radius: 4px;
+    font-size: 0.8rem;
+}
+
+body.dark-mode .oa-item {
+    background: #2d3748;
+    border-color: #4a5568;
+    border-left-color: #63b3ed;
+}
+
+.oa-item.oa-inaktiv {
+    opacity: 0.5;
+    border-left-color: #a0aec0;
+}
+
+.oa-text {
+    flex: 1;
+    margin-right: 0.75rem;
+}
+
+.oa-meta {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    flex-shrink: 0;
+}
+
+.oa-datum {
+    color: #a0aec0;
+    font-size: 0.7rem;
+}
+
+/* =============================================
+   LOHNABRECHNUNG-VORSCHAU
+   ============================================= */
+.lv-card {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 1rem;
+    max-width: 500px;
+}
+
+body.dark-mode .lv-card {
+    background: #2d3748;
+    border-color: #4a5568;
+}
+
+.lv-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.75rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid #3182ce;
+}
+
+.lv-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+}
+
+.lv-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.8rem;
+    padding: 0.2rem 0;
+}
+
+.lv-divider {
+    border-top: 1px solid #e2e8f0;
+    margin: 0.3rem 0;
+}
+
+body.dark-mode .lv-divider {
+    border-top-color: #4a5568;
+}
+
+.lv-brutto {
+    font-weight: 700;
+    font-size: 0.85rem;
+}
+
+.lv-abzug {
+    color: #e53e3e;
+}
+
+body.dark-mode .lv-abzug {
+    color: #fc8181;
+}
+
+.lv-netto {
+    font-weight: 700;
+    font-size: 0.9rem;
+    color: #276749;
+    padding-top: 0.3rem;
+}
+
+body.dark-mode .lv-netto {
+    color: #9ae6b4;
+}
+
+.lv-hinweis {
+    margin-top: 0.75rem;
+    font-size: 0.7rem;
+    color: #a0aec0;
+    font-style: italic;
+}
+
+/* =============================================
+   DUPLIKAT-CHECK
+   ============================================= */
+.dup-hinweis {
+    background: #fffbeb;
+    border: 1px solid #f6e05e;
+    border-radius: 6px;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.8rem;
+    color: #975a16;
+    margin-bottom: 0.5rem;
+}
+
+body.dark-mode .dup-hinweis {
+    background: #744210;
+    border-color: #975a16;
+    color: #fefcbf;
+}
+
+.dup-liste {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+}
+
+.dup-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.4rem 0.75rem;
+    background: #fff5f5;
+    border-left: 3px solid #ed8936;
+    border-radius: 4px;
+    font-size: 0.8rem;
+}
+
+body.dark-mode .dup-item {
+    background: #742a2a;
+    border-left-color: #ed8936;
+}
+
+.dup-info {
+    color: #4a5568;
+}
+
+body.dark-mode .dup-info {
+    color: #e2e8f0;
+}
+
+@media (max-width: 768px) {
+    .mal-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .oa-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.3rem;
+    }
+
+    .lv-card {
+        max-width: 100%;
+    }
+}

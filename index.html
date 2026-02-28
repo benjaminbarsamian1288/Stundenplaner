@@ -360,6 +360,24 @@
                 </div>
                 <div id="abrechnungContent"></div>
             </section>
+
+            <section class="abrechnung-section">
+                <h2>Lohnabrechnung-Vorschau</h2>
+                <div class="abrechnung-filter">
+                    <select id="lvMa" onchange="renderLohnvorschau()">
+                        <option value="">Mitarbeiter w&auml;hlen...</option>
+                    </select>
+                    <select id="lvMonat" onchange="renderLohnvorschau()">
+                        <option value="">Aktueller Monat</option>
+                    </select>
+                </div>
+                <div id="lohnvorschauContent"></div>
+            </section>
+
+            <section class="abrechnung-section">
+                <h2>Einsatz-Duplikat-Pr&uuml;fung</h2>
+                <div id="duplikatCheckContent"></div>
+            </section>
         </div>
 
         <!-- TAB: Dashboard -->
@@ -722,6 +740,30 @@
                 <button type="button" class="btn-primary" onclick="objektKontaktSpeichern()">Kontakt speichern</button>
                 <div id="objektKontakteContent" style="margin-top:1rem"></div>
             </section>
+
+            <section class="form-section">
+                <div class="list-header">
+                    <h2>Objekt-Dienstanweisungen</h2>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="oaObjekt">Objekt</label>
+                        <select id="oaObjekt" onchange="renderObjektAnweisungen()">
+                            <option value="">Objekt w&auml;hlen...</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group" style="flex:3">
+                        <label for="oaText">Anweisung / Hinweis</label>
+                        <input type="text" id="oaText" placeholder="z.B. T&uuml;r 3 immer abschlie&szlig;en, Rundgang alle 2 Std.">
+                    </div>
+                    <div class="form-group">
+                        <button type="button" class="btn-primary" onclick="speichereObjektAnweisung()" style="margin-top:1.5rem">Hinzuf&uuml;gen</button>
+                    </div>
+                </div>
+                <div id="objektAnweisungenContent" style="margin-top:0.5rem"></div>
+            </section>
         </div>
         <!-- TAB: Mitarbeiter -->
         <div class="tab-content" id="tab-mitarbeiter">
@@ -991,6 +1033,13 @@
                     <h2>Doppelschicht-Warnung (Ruhezeitpr&uuml;fung &sect;5 ArbZG)</h2>
                 </div>
                 <div id="doppelschichtContent"></div>
+            </section>
+
+            <section class="form-section">
+                <div class="list-header">
+                    <h2>MA-Leistungs&uuml;bersicht</h2>
+                </div>
+                <div id="maLeistungContent"></div>
             </section>
 
             <section class="form-section">
