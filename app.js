@@ -69,7 +69,7 @@ document.querySelectorAll('.nav-btn').forEach(btn => {
         document.getElementById('tab-' + this.dataset.tab).classList.add('active');
 
         if (this.dataset.tab === 'dashboard') updateDashboard();
-        if (this.dataset.tab === 'objekte') { renderObjekte(); renderVertraege(); renderObjektAuslastung(); }
+        if (this.dataset.tab === 'objekte') { renderObjekte(); renderVertraege(); renderObjektAuslastung(); updateChecklisteObjekte(); }
         if (this.dataset.tab === 'kalender') { renderKalender(); renderDienstplan(); renderJahresuebersicht(); }
         if (this.dataset.tab === 'abrechnung') updateAbrechnung();
         if (this.dataset.tab === 'mitarbeiter') { renderMitarbeiter(); renderDokumente(); renderUeberstunden(); renderKontaktliste(); renderUrlaubskonto(); }
@@ -485,6 +485,7 @@ function renderTabelle() {
         if (e.zuschlagDetails.length === 0) zuschlagBadges = '<span style="color:#a0aec0">&mdash;</span>';
 
         tr.innerHTML = `
+            <td class="no-print"><input type="checkbox" class="bulk-cb bulk-item-cb" data-id="${e.id}" onchange="bulkUpdateCount()"></td>
             <td>${formatDatum(e.datum)}${e.status && e.status !== 'geplant' ? '<br><span class="status-badge status-' + e.status + '">' + escapeHtml(STATUS_LABELS[e.status] || e.status) + '</span>' : ''}</td>
             <td>${escapeHtml(e.objekt)}</td>
             <td>${escapeHtml(e.mitarbeiter || '\u2014')}</td>
@@ -3503,6 +3504,370 @@ function renderPersonalkostenTrend() {
 }
 
 // =============================================
+// MEHRFACHAUSWAHL & MASSENAKTIONEN
+// =============================================
+function bulkUpdateCount() {
+    const checked = document.querySelectorAll('.bulk-item-cb:checked');
+    const bar = document.getElementById('bulkActions');
+    const count = document.getElementById('bulkCount');
+
+    if (checked.length > 0) {
+        bar.style.display = 'flex';
+        count.textContent = `${checked.length} ausgewählt`;
+    } else {
+        bar.style.display = 'none';
+    }
+}
+
+function bulkAlleWaehlen(checked) {
+    document.querySelectorAll('.bulk-item-cb').forEach(cb => { cb.checked = checked; });
+    bulkUpdateCount();
+}
+
+function bulkAbwaehlen() {
+    document.querySelectorAll('.bulk-item-cb').forEach(cb => { cb.checked = false; });
+    document.getElementById('bulkSelectAll').checked = false;
+    bulkUpdateCount();
+}
+
+function bulkGetIds() {
+    return Array.from(document.querySelectorAll('.bulk-item-cb:checked')).map(cb => parseInt(cb.dataset.id));
+}
+
+function bulkStatusAendern(neuerStatus) {
+    const ids = bulkGetIds();
+    if (ids.length === 0) return;
+
+    if (!confirm(`${ids.length} Einsätze auf "${STATUS_LABELS[neuerStatus]}" setzen?`)) return;
+
+    ids.forEach(id => {
+        const e = einsaetze.find(x => x.id === id);
+        if (e) e.status = neuerStatus;
+    });
+
+    speichern();
+    renderTabelle();
+    bulkAbwaehlen();
+}
+
+function bulkLoeschen() {
+    const ids = bulkGetIds();
+    if (ids.length === 0) return;
+
+    if (!confirm(`${ids.length} Einsätze wirklich löschen?`)) return;
+    if (ids.length > 5 && !confirm(`Wirklich ${ids.length} Einsätze unwiderruflich löschen?`)) return;
+
+    einsaetze = einsaetze.filter(e => !ids.includes(e.id));
+    speichern();
+    renderTabelle();
+    updateAlleFilter();
+    updateDataLists();
+    bulkAbwaehlen();
+}
+
+// =============================================
+// MA-VERFÜGBARKEITSANZEIGE
+// =============================================
+function updateVerfAnzeige() {
+    const datumField = document.getElementById('datum');
+    const anzeige = document.getElementById('verfAnzeige');
+    const liste = document.getElementById('verfMaList');
+    if (!anzeige || !liste || !datumField.value) {
+        if (anzeige) anzeige.style.display = 'none';
+        return;
+    }
+
+    const datum = datumField.value;
+
+    if (mitarbeiterListe_.length === 0) {
+        anzeige.style.display = 'none';
+        return;
+    }
+
+    anzeige.style.display = 'block';
+    let html = '';
+
+    mitarbeiterListe_.forEach(m => {
+        const abwesend = verfuegbarkeit.find(v =>
+            v.mitarbeiter === m.name && v.von <= datum && v.bis >= datum
+        );
+        const hatSchicht = einsaetze.some(e => e.mitarbeiter === m.name && e.datum === datum);
+
+        if (abwesend) {
+            const typLabels = { urlaub: 'U', krank: 'K', frei: 'F', fortbildung: 'FB' };
+            html += `<span class="verf-ma-chip nicht-verfuegbar" title="${m.name}: ${abwesend.typ}">${escapeHtml(m.name)} (${typLabels[abwesend.typ] || '?'})</span>`;
+        } else if (hatSchicht) {
+            html += `<span class="verf-ma-chip nicht-verfuegbar" title="${m.name}: bereits eingeteilt">${escapeHtml(m.name)} (belegt)</span>`;
+        } else {
+            html += `<span class="verf-ma-chip verfuegbar" title="${m.name}: verfügbar">${escapeHtml(m.name)}</span>`;
+        }
+    });
+
+    liste.innerHTML = html;
+}
+
+// Datum-Feld Listener für Verfügbarkeitsanzeige
+document.getElementById('datum').addEventListener('change', updateVerfAnzeige);
+
+// =============================================
+// EINSATZ-NOTIZEN-VERLAUF
+// =============================================
+function einsatzNotizHinzufuegen(id) {
+    const input = document.getElementById('notizInput_' + id);
+    if (!input) return;
+
+    const text = input.value.trim();
+    if (!text) return;
+
+    const einsatz = einsaetze.find(e => e.id === id);
+    if (!einsatz) return;
+
+    if (!einsatz.notizen) einsatz.notizen = [];
+
+    einsatz.notizen.push({
+        zeit: new Date().toISOString(),
+        text
+    });
+
+    speichern();
+    input.value = '';
+    renderTabelle();
+}
+
+function renderNotizVerlauf(einsatz) {
+    if (!einsatz.notizen || einsatz.notizen.length === 0) return '';
+
+    let html = '<div class="notiz-verlauf">';
+    einsatz.notizen.forEach(n => {
+        const d = new Date(n.zeit);
+        const zeitStr = `${formatDatum(d.toISOString().split('T')[0])} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+        html += `<div class="notiz-item"><span class="notiz-meta">${zeitStr}</span> <span class="notiz-text">${escapeHtml(n.text)}</span></div>`;
+    });
+    html += '</div>';
+    return html;
+}
+
+// =============================================
+// OBJEKT-CHECKLISTEN
+// =============================================
+function updateChecklisteObjekte() {
+    const select = document.getElementById('clObjekt');
+    if (!select) return;
+
+    const current = select.value;
+    select.innerHTML = '<option value="">Objekt wählen...</option>';
+    objekte.forEach(o => {
+        const opt = document.createElement('option');
+        opt.value = o.name;
+        opt.textContent = o.name;
+        select.appendChild(opt);
+    });
+    select.value = current;
+}
+
+function checklistePunktHinzufuegen() {
+    const objName = document.getElementById('clObjekt').value;
+    const input = document.getElementById('clNeuerPunkt');
+    const text = input.value.trim();
+
+    if (!objName || !text) {
+        alert('Bitte Objekt wählen und Prüfpunkt eingeben.');
+        return;
+    }
+
+    const obj = objekte.find(o => o.name === objName);
+    if (!obj) return;
+
+    if (!obj.checkliste) obj.checkliste = [];
+    obj.checkliste.push({ id: Date.now(), text, erledigt: false });
+
+    localStorage.setItem('bbprotect_objekte', JSON.stringify(objekte));
+    input.value = '';
+    renderCheckliste();
+}
+
+function checklisteToggle(objName, punktId) {
+    const obj = objekte.find(o => o.name === objName);
+    if (!obj || !obj.checkliste) return;
+
+    const punkt = obj.checkliste.find(p => p.id === punktId);
+    if (punkt) punkt.erledigt = !punkt.erledigt;
+
+    localStorage.setItem('bbprotect_objekte', JSON.stringify(objekte));
+    renderCheckliste();
+}
+
+function checklisteLoeschen(objName, punktId) {
+    const obj = objekte.find(o => o.name === objName);
+    if (!obj || !obj.checkliste) return;
+
+    obj.checkliste = obj.checkliste.filter(p => p.id !== punktId);
+    localStorage.setItem('bbprotect_objekte', JSON.stringify(objekte));
+    renderCheckliste();
+}
+
+function checklisteAlleZuruecksetzen(objName) {
+    const obj = objekte.find(o => o.name === objName);
+    if (!obj || !obj.checkliste) return;
+
+    obj.checkliste.forEach(p => { p.erledigt = false; });
+    localStorage.setItem('bbprotect_objekte', JSON.stringify(objekte));
+    renderCheckliste();
+}
+
+function renderCheckliste() {
+    const el = document.getElementById('checklisteContent');
+    const objName = document.getElementById('clObjekt').value;
+    if (!el) return;
+
+    if (!objName) {
+        el.innerHTML = '<p style="color:#a0aec0;font-size:0.85rem">Bitte ein Objekt auswählen.</p>';
+        return;
+    }
+
+    const obj = objekte.find(o => o.name === objName);
+    if (!obj || !obj.checkliste || obj.checkliste.length === 0) {
+        el.innerHTML = '<p style="color:#a0aec0;font-size:0.85rem">Keine Prüfpunkte für dieses Objekt. Fügen Sie oben welche hinzu.</p>';
+        return;
+    }
+
+    const erledigtCount = obj.checkliste.filter(p => p.erledigt).length;
+    const total = obj.checkliste.length;
+
+    let html = `<div class="checkliste-section">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.3rem">
+            <span style="font-size:0.8rem;color:#718096">${erledigtCount}/${total} erledigt</span>
+            <button class="btn-secondary btn-small" onclick="checklisteAlleZuruecksetzen('${escapeHtml(objName).replace(/'/g, "\\'")}')">Zurücksetzen</button>
+        </div>`;
+
+    obj.checkliste.forEach(p => {
+        const safeObj = escapeHtml(objName).replace(/'/g, "\\'");
+        html += `<div class="cl-item">
+            <input type="checkbox" ${p.erledigt ? 'checked' : ''} onchange="checklisteToggle('${safeObj}',${p.id})">
+            <span class="cl-label ${p.erledigt ? 'erledigt' : ''}">${escapeHtml(p.text)}</span>
+            <button class="btn-delete btn-small" onclick="checklisteLoeschen('${safeObj}',${p.id})" style="padding:0.1rem 0.3rem;font-size:0.65rem">X</button>
+        </div>`;
+    });
+
+    html += '</div>';
+    el.innerHTML = html;
+}
+
+// =============================================
+// MONATS-GESAMTBERICHT
+// =============================================
+function druckeGesamtbericht() {
+    const filterM = document.getElementById('filterMonat').value;
+    if (!filterM) {
+        alert('Bitte einen Monat auswählen für den Gesamtbericht.');
+        return;
+    }
+
+    const [j, m] = filterM.split('-');
+    const monatLabel = `${MONATSNAMEN[parseInt(m) - 1]} ${j}`;
+    const monatsE = einsaetze.filter(e => e.datum.substring(0, 7) === filterM);
+
+    if (monatsE.length === 0) {
+        alert('Keine Einsätze in diesem Monat.');
+        return;
+    }
+
+    // Gesamtstatistiken
+    const totalStd = monatsE.reduce((s, e) => s + e.stunden, 0);
+    const totalGesamt = monatsE.reduce((s, e) => s + e.gesamt, 0);
+    const totalGrund = monatsE.reduce((s, e) => s + e.grundlohn, 0);
+    const totalZuschlag = monatsE.reduce((s, e) => s + e.zuschlagBetrag, 0);
+    const totalNacht = monatsE.reduce((s, e) => s + e.nachtStunden, 0);
+    const arbeitstage = new Set(monatsE.map(e => e.datum)).size;
+    const maSet = new Set(monatsE.filter(e => e.mitarbeiter).map(e => e.mitarbeiter));
+    const objSet = new Set(monatsE.map(e => e.objekt));
+
+    let html = `<div class="bericht-header">
+        <h1>B.B. Protect</h1>
+        <h2>Monatsbericht ${monatLabel}</h2>
+        <p>Erstellt am ${formatDatum(new Date().toISOString().split('T')[0])}</p>
+    </div>`;
+
+    // Zusammenfassung
+    html += `<div class="bericht-section">
+        <h3>Zusammenfassung</h3>
+        <table><tbody>
+            <tr><td><strong>Einsätze</strong></td><td>${monatsE.length}</td><td><strong>Arbeitstage</strong></td><td>${arbeitstage}</td></tr>
+            <tr><td><strong>Stunden gesamt</strong></td><td>${formatZahl(totalStd)}</td><td><strong>davon Nacht</strong></td><td>${formatZahl(totalNacht)}</td></tr>
+            <tr><td><strong>Grundlohn</strong></td><td>${formatEuro(totalGrund)}</td><td><strong>Zuschläge</strong></td><td>${formatEuro(totalZuschlag)}</td></tr>
+            <tr><td><strong>Gesamtumsatz</strong></td><td>${formatEuro(totalGesamt)}</td><td><strong>Mitarbeiter</strong></td><td>${maSet.size}</td></tr>
+        </tbody></table>
+    </div>`;
+
+    // Aufschlüsselung nach Objekt
+    html += '<div class="bericht-section"><h3>Aufschlüsselung nach Objekt</h3>';
+    html += '<table><thead><tr><th>Objekt</th><th>Einsätze</th><th>Stunden</th><th>Grundlohn</th><th>Zuschläge</th><th>Gesamt</th></tr></thead><tbody>';
+
+    const objMap = {};
+    monatsE.forEach(e => {
+        if (!objMap[e.objekt]) objMap[e.objekt] = { cnt: 0, std: 0, grund: 0, zuschlag: 0, gesamt: 0 };
+        objMap[e.objekt].cnt++;
+        objMap[e.objekt].std += e.stunden;
+        objMap[e.objekt].grund += e.grundlohn;
+        objMap[e.objekt].zuschlag += e.zuschlagBetrag;
+        objMap[e.objekt].gesamt += e.gesamt;
+    });
+
+    Object.entries(objMap).sort((a, b) => b[1].gesamt - a[1].gesamt).forEach(([name, d]) => {
+        html += `<tr><td>${escapeHtml(name)}</td><td>${d.cnt}</td><td>${formatZahl(d.std)}</td><td>${formatEuro(d.grund)}</td><td>${formatEuro(d.zuschlag)}</td><td><strong>${formatEuro(d.gesamt)}</strong></td></tr>`;
+    });
+    html += '</tbody></table></div>';
+
+    // Aufschlüsselung nach Mitarbeiter
+    html += '<div class="bericht-section"><h3>Aufschlüsselung nach Mitarbeiter</h3>';
+    html += '<table><thead><tr><th>Mitarbeiter</th><th>Einsätze</th><th>Stunden</th><th>Nacht-Std.</th><th>Grundlohn</th><th>Zuschläge</th><th>Gesamt</th></tr></thead><tbody>';
+
+    const maMap = {};
+    monatsE.forEach(e => {
+        const name = e.mitarbeiter || 'Nicht zugewiesen';
+        if (!maMap[name]) maMap[name] = { cnt: 0, std: 0, nacht: 0, grund: 0, zuschlag: 0, gesamt: 0 };
+        maMap[name].cnt++;
+        maMap[name].std += e.stunden;
+        maMap[name].nacht += e.nachtStunden;
+        maMap[name].grund += e.grundlohn;
+        maMap[name].zuschlag += e.zuschlagBetrag;
+        maMap[name].gesamt += e.gesamt;
+    });
+
+    Object.entries(maMap).sort((a, b) => b[1].gesamt - a[1].gesamt).forEach(([name, d]) => {
+        html += `<tr><td>${escapeHtml(name)}</td><td>${d.cnt}</td><td>${formatZahl(d.std)}</td><td>${formatZahl(d.nacht)}</td><td>${formatEuro(d.grund)}</td><td>${formatEuro(d.zuschlag)}</td><td><strong>${formatEuro(d.gesamt)}</strong></td></tr>`;
+    });
+    html += '</tbody></table></div>';
+
+    // Einsatzliste
+    monatsE.sort((a, b) => a.datum.localeCompare(b.datum) || a.zeitVon.localeCompare(b.zeitVon));
+
+    html += '<div class="bericht-section"><h3>Einsatzliste</h3>';
+    html += '<table><thead><tr><th>Nr.</th><th>Datum</th><th>Objekt</th><th>Mitarbeiter</th><th>Von</th><th>Bis</th><th>Std.</th><th>Gesamt</th></tr></thead><tbody>';
+
+    monatsE.forEach((e, i) => {
+        html += `<tr><td>${i + 1}</td><td>${formatDatum(e.datum)}</td><td>${escapeHtml(e.objekt)}</td><td>${escapeHtml(e.mitarbeiter || '\u2014')}</td><td>${e.zeitVon}</td><td>${e.zeitBis}</td><td>${formatZahl(e.stunden)}</td><td>${formatEuro(e.gesamt)}</td></tr>`;
+    });
+
+    html += `</tbody><tfoot><tr class="total-row"><td colspan="6"><strong>GESAMT</strong></td><td><strong>${formatZahl(totalStd)}</strong></td><td><strong>${formatEuro(totalGesamt)}</strong></td></tr></tfoot></table></div>`;
+
+    // Vorfälle des Monats
+    const monatsV = vorfaelle.filter(v => v.datum.substring(0, 7) === filterM);
+    if (monatsV.length > 0) {
+        html += '<div class="bericht-section"><h3>Vorfälle im Monat (' + monatsV.length + ')</h3>';
+        html += '<table><thead><tr><th>Datum</th><th>Objekt</th><th>Typ</th><th>Schwere</th><th>Beschreibung</th></tr></thead><tbody>';
+        monatsV.sort((a, b) => a.datum.localeCompare(b.datum)).forEach(v => {
+            html += `<tr><td>${formatDatum(v.datum)}</td><td>${escapeHtml(v.objekt)}</td><td>${escapeHtml(VORFALL_TYPEN[v.typ] || v.typ)}</td><td>${escapeHtml(SCHWERE_LABELS[v.schwere] || v.schwere)}</td><td>${escapeHtml(v.beschreibung)}</td></tr>`;
+        });
+        html += '</tbody></table></div>';
+    }
+
+    html += printFooter();
+    document.getElementById('printArea').innerHTML = html;
+    window.print();
+}
+
+// =============================================
 // INITIALISIERUNG
 // =============================================
 document.getElementById('datum').valueAsDate = new Date();
@@ -3519,6 +3884,7 @@ updateHeaderStats();
 pruefeBenachrichtigungen();
 renderDokumente();
 renderUrlaubskonto();
+updateChecklisteObjekte();
 document.getElementById('vfDatum').valueAsDate = new Date();
 document.getElementById('wbDatum').valueAsDate = new Date();
 const jetztInit = new Date();

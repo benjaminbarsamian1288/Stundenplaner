@@ -1839,6 +1839,174 @@ tbody tr:hover {
 }
 
 /* =============================================
+   MEHRFACHAUSWAHL (BULK SELECTION)
+   ============================================= */
+.bulk-actions {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    background: #f0fff4;
+    padding: 0.5rem 0.8rem;
+    border-radius: 6px;
+    margin-bottom: 0.5rem;
+}
+
+.bulk-count {
+    font-weight: 700;
+    font-size: 0.85rem;
+}
+
+.bulk-cb {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+}
+
+/* =============================================
+   MA-VERFUEGBARKEITSANZEIGE
+   ============================================= */
+.verf-anzeige {
+    background: #f7fafc;
+    border-radius: 6px;
+    padding: 0.5rem;
+    margin-top: 0.3rem;
+    font-size: 0.8rem;
+}
+
+.verf-anzeige-title {
+    font-weight: 600;
+    font-size: 0.75rem;
+    color: #718096;
+    margin-bottom: 0.3rem;
+}
+
+.verf-ma-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem;
+}
+
+.verf-ma-chip {
+    display: inline-block;
+    padding: 0.15rem 0.5rem;
+    border-radius: 12px;
+    font-size: 0.7rem;
+    font-weight: 600;
+}
+
+.verf-ma-chip.verfuegbar {
+    background: #f0fff4;
+    color: #276749;
+    border: 1px solid #c6f6d5;
+}
+
+.verf-ma-chip.nicht-verfuegbar {
+    background: #fff5f5;
+    color: #c53030;
+    border: 1px solid #fed7d7;
+    text-decoration: line-through;
+}
+
+/* =============================================
+   EINSATZ-NOTIZEN-VERLAUF
+   ============================================= */
+.notiz-verlauf {
+    margin-top: 0.4rem;
+}
+
+.notiz-item {
+    padding: 0.3rem 0.5rem;
+    border-left: 2px solid #e2e8f0;
+    margin-bottom: 0.3rem;
+    font-size: 0.8rem;
+}
+
+.notiz-meta {
+    font-size: 0.65rem;
+    color: #a0aec0;
+}
+
+.notiz-text {
+    color: #4a5568;
+}
+
+.notiz-input-row {
+    display: flex;
+    gap: 0.3rem;
+    margin-top: 0.3rem;
+}
+
+.notiz-input {
+    flex: 1;
+    padding: 0.3rem 0.5rem;
+    border: 1px solid #cbd5e0;
+    border-radius: 4px;
+    font-size: 0.8rem;
+}
+
+/* =============================================
+   OBJEKT-CHECKLISTEN
+   ============================================= */
+.checkliste-section {
+    margin-top: 0.5rem;
+}
+
+.cl-item {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.25rem 0;
+    font-size: 0.85rem;
+    border-bottom: 1px solid #f0f2f5;
+}
+
+.cl-item input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+}
+
+.cl-input-row {
+    display: flex;
+    gap: 0.3rem;
+    margin-top: 0.3rem;
+}
+
+.cl-input {
+    flex: 1;
+    padding: 0.3rem 0.5rem;
+    border: 1px solid #cbd5e0;
+    border-radius: 4px;
+    font-size: 0.8rem;
+}
+
+.cl-label {
+    flex: 1;
+}
+
+.cl-label.erledigt {
+    text-decoration: line-through;
+    color: #a0aec0;
+}
+
+/* =============================================
+   MONATS-GESAMTBERICHT
+   ============================================= */
+.bericht-header {
+    text-align: center;
+    margin-bottom: 1.5rem;
+}
+
+.bericht-section {
+    margin-bottom: 1.5rem;
+}
+
+.bericht-section h3 {
+    border-bottom: 2px solid #1a1a2e;
+    padding-bottom: 0.3rem;
+    margin-bottom: 0.75rem;
+}
+
+/* =============================================
    DARK MODE
    ============================================= */
 body.dark-mode {
@@ -3310,6 +3478,60 @@ body.dark-mode .dp-plus:hover {
     color: #3fb950;
 }
 
+/* Dark mode: Mehrfachauswahl */
+body.dark-mode .bulk-actions {
+    background: #0d200d;
+    border-color: #3fb950;
+}
+
+/* Dark mode: MA-Verfuegbarkeitsanzeige */
+body.dark-mode .verf-anzeige {
+    background: #0d1117;
+    border-color: #30363d;
+}
+
+body.dark-mode .verf-ma-chip.verfuegbar {
+    background: #0d200d;
+    color: #3fb950;
+    border-color: #238636;
+}
+
+body.dark-mode .verf-ma-chip.nicht-verfuegbar {
+    background: #200d0d;
+    color: #f85149;
+    border-color: #da3633;
+}
+
+/* Dark mode: Einsatz-Notizen-Verlauf */
+body.dark-mode .notiz-item {
+    border-left-color: #30363d;
+}
+
+body.dark-mode .notiz-text {
+    color: #c9d1d9;
+}
+
+body.dark-mode .notiz-input {
+    background: #0d1117;
+    color: #c9d1d9;
+    border-color: #30363d;
+}
+
+/* Dark mode: Objekt-Checklisten */
+body.dark-mode .cl-item {
+    border-bottom-color: #21262d;
+}
+
+body.dark-mode .cl-label.erledigt {
+    color: #484f58;
+}
+
+body.dark-mode .cl-input {
+    background: #0d1117;
+    color: #c9d1d9;
+    border-color: #30363d;
+}
+
 body.dark-mode .urlaub-row {
     border-bottom-color: #21262d;
 }
@@ -3575,5 +3797,13 @@ footer {
 
     .tl-label {
         font-size: 0.5rem;
+    }
+
+    .verf-ma-list {
+        gap: 0.2rem;
+    }
+
+    .bulk-actions {
+        flex-wrap: wrap;
     }
 }

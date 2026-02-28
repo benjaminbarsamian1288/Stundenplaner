@@ -114,6 +114,11 @@
                         </div>
                     </div>
 
+                    <div class="verf-anzeige" id="verfAnzeige" style="display:none">
+                        <div class="verf-anzeige-title">Verf&uuml;gbarkeit am gew&auml;hlten Datum:</div>
+                        <div class="verf-ma-list" id="verfMaList"></div>
+                    </div>
+
                     <div class="form-row">
                         <div class="form-group">
                             <label for="bemerkung">Bemerkung</label>
@@ -201,13 +206,23 @@
                         </select>
                         <button class="btn-secondary" onclick="exportCSV()">CSV Export</button>
                         <button class="btn-secondary" onclick="druckeMonatsbericht()">Drucken</button>
+                        <button class="btn-secondary" onclick="druckeGesamtbericht()">Gesamtbericht</button>
                         <button class="btn-secondary" onclick="pruefeArbZG()">ArbZG pr&uuml;fen</button>
                     </div>
+                </div>
+                <div class="bulk-actions" id="bulkActions" style="display:none">
+                    <span class="bulk-count" id="bulkCount">0 ausgew&auml;hlt</span>
+                    <button class="btn-secondary btn-small" onclick="bulkStatusAendern('bestaetigt')">Best&auml;tigen</button>
+                    <button class="btn-secondary btn-small" onclick="bulkStatusAendern('abgeschlossen')">Abschlie&szlig;en</button>
+                    <button class="btn-secondary btn-small" onclick="bulkStatusAendern('storniert')">Stornieren</button>
+                    <button class="btn-delete btn-small" onclick="bulkLoeschen()">L&ouml;schen</button>
+                    <button class="btn-secondary btn-small" onclick="bulkAbwaehlen()">Auswahl aufheben</button>
                 </div>
                 <div class="table-wrapper">
                     <table id="einsatzTabelle">
                         <thead>
                             <tr>
+                                <th class="no-print"><input type="checkbox" class="bulk-cb" id="bulkSelectAll" onchange="bulkAlleWaehlen(this.checked)"></th>
                                 <th class="sortierbar" onclick="sortiereNach('datum')">Datum</th>
                                 <th class="sortierbar" onclick="sortiereNach('objekt')">Objekt</th>
                                 <th class="sortierbar" onclick="sortiereNach('mitarbeiter')">Mitarbeiter</th>
@@ -223,6 +238,7 @@
                         <tbody id="einsatzBody"></tbody>
                         <tfoot>
                             <tr class="total-row">
+                                <td class="no-print"></td>
                                 <td colspan="5"><strong>Gesamt</strong></td>
                                 <td id="totalStunden">0,00</td>
                                 <td></td>
@@ -536,6 +552,27 @@
                 </div>
                 <button class="btn-primary btn-small" onclick="berechneKalkulation()">Berechnen</button>
                 <div id="kalkErgebnis" style="margin-top:1rem"></div>
+            </section>
+
+            <section class="form-section">
+                <div class="list-header">
+                    <h2>Objekt-Checklisten</h2>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="clObjekt">Objekt</label>
+                        <select id="clObjekt" onchange="renderCheckliste()">
+                            <option value="">Objekt w&auml;hlen...</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <div class="cl-input-row">
+                            <input type="text" id="clNeuerPunkt" class="cl-input" placeholder="Neuen Pr&uuml;fpunkt hinzuf&uuml;gen...">
+                            <button class="btn-primary btn-small" onclick="checklistePunktHinzufuegen()">+</button>
+                        </div>
+                    </div>
+                </div>
+                <div id="checklisteContent"></div>
             </section>
         </div>
         <!-- TAB: Mitarbeiter -->
