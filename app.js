@@ -86,14 +86,14 @@ document.querySelectorAll('.nav-btn').forEach(btn => {
         this.classList.add('active');
         document.getElementById('tab-' + this.dataset.tab).classList.add('active');
 
-        if (this.dataset.tab === 'dashboard') { updateDashboard(); renderEinsatzChronik(); renderEinsatzAnalytics(); renderWochenReport(); renderEinsatzTimeline(); renderKostenTrend(); renderObjektUmsatzRanking(); }
-        if (this.dataset.tab === 'objekte') { renderObjekte(); renderVertraege(); renderObjektAuslastung(); updateChecklisteObjekte(); updateObjektHistorieSelect(); updateObjektKontakteSelect(); renderObjektKontakte(); updateObjektAnweisungenSelect(); renderObjektAnweisungen(); updateObjektKostenMonat(); renderObjektKostenanalyse(); renderVertragsCountdown(); updateRevierplanSelect(); renderRevierplan(); updateBesObjektSelect(); renderBesichtigungen(); updateInfokarteSelect(); }
+        if (this.dataset.tab === 'dashboard') { updateDashboard(); renderEinsatzChronik(); renderEinsatzAnalytics(); renderWochenReport(); renderEinsatzTimeline(); renderKostenTrend(); renderObjektUmsatzRanking(); renderStundenkontoChart(); renderDashboardKacheln(); }
+        if (this.dataset.tab === 'objekte') { renderObjekte(); renderVertraege(); renderObjektAuslastung(); updateChecklisteObjekte(); updateObjektHistorieSelect(); updateObjektKontakteSelect(); renderObjektKontakte(); updateObjektAnweisungenSelect(); renderObjektAnweisungen(); updateObjektKostenMonat(); renderObjektKostenanalyse(); renderVertragsCountdown(); updateRevierplanSelect(); renderRevierplan(); updateBesObjektSelect(); renderBesichtigungen(); updateInfokarteSelect(); updateWetterObjektSelects(); renderWetterNotizen(); }
         if (this.dataset.tab === 'kalender') { renderKalender(); renderDienstplan(); renderJahresuebersicht(); }
         if (this.dataset.tab === 'abrechnung') { updateAbrechnung(); updateLohnvorschauSelects(); renderDuplikatCheck(); renderBewertungsUebersicht(); updateMonatsabschlussSelect(); renderMonatsabschluss(); updateCSVExportFilter(); }
         if (this.dataset.tab === 'mitarbeiter') { renderMitarbeiter(); renderDokumente(); renderUeberstunden(); renderKontaktliste(); renderUrlaubskonto(); renderArbeitszeitkonto(); renderQualMatrix(); updateSchichtHistorieSelect(); renderNotfallkontakte(); updateMAKalSelect(); renderVerfuegbarkeitWoche(); renderDoppelschichtWarnungen(); renderMALeistung(); renderKrankenstatistik(); renderGeburtstageJubilaeen(); renderMASkills(); renderTauschBoard(); renderMAVerfuegbarkeitsKalender(); }
         if (this.dataset.tab === 'vorfaelle') { renderVorfaelle(); renderVorfallsStatistik(); }
         if (this.dataset.tab === 'wachbuch') { renderWachbuch(); renderUebergaben(); renderWachbuchStats(); updateSchichtUebergabeSelects(); renderSchichtUebergaben(); }
-        if (this.dataset.tab === 'einstellungen') { updateDatenStats(); updateSpeicherStats(); ladeEinstellungen(); renderAuditLog(); renderSondernotizen(); }
+        if (this.dataset.tab === 'einstellungen') { updateDatenStats(); updateSpeicherStats(); ladeEinstellungen(); renderAuditLog(); renderSondernotizen(); renderFeiertagsKalender(); }
     });
 });
 
@@ -1567,7 +1567,7 @@ function loescheMitarbeiter(index) {
 // =============================================
 function erstelleBackup() {
     const backup = {
-        version: 16,
+        version: 17,
         datum: new Date().toISOString(),
         einsaetze,
         objekte,
@@ -1592,7 +1592,8 @@ function erstelleBackup() {
         besichtigungen,
         tauschAnfragen,
         einsatzKommentare,
-        schichtUebergaben
+        schichtUebergaben,
+        objektWetterNotizen
     };
 
     const json = JSON.stringify(backup, null, 2);
@@ -1641,6 +1642,7 @@ function stelleWiederHer(event) {
             tauschAnfragen = data.tauschAnfragen || [];
             einsatzKommentare = data.einsatzKommentare || {};
             schichtUebergaben = data.schichtUebergaben || [];
+            objektWetterNotizen = data.objektWetterNotizen || {};
 
             speichern();
             localStorage.setItem('bbprotect_objekte', JSON.stringify(objekte));
@@ -1666,6 +1668,7 @@ function stelleWiederHer(event) {
             localStorage.setItem('bbprotect_tauschanfragen', JSON.stringify(tauschAnfragen));
             localStorage.setItem('bbprotect_einsatzkommentare', JSON.stringify(einsatzKommentare));
             localStorage.setItem('bbprotect_schichtuebergaben', JSON.stringify(schichtUebergaben));
+            localStorage.setItem('bbprotect_objektwetter', JSON.stringify(objektWetterNotizen));
 
             renderTabelle();
             updateAlleFilter();
@@ -1712,6 +1715,7 @@ function loescheAlleDaten() {
     tauschAnfragen = [];
     einsatzKommentare = {};
     schichtUebergaben = [];
+    objektWetterNotizen = {};
 
     localStorage.removeItem('bbprotect_einsaetze');
     localStorage.removeItem('bbprotect_objekte');
@@ -1737,6 +1741,7 @@ function loescheAlleDaten() {
     localStorage.removeItem('bbprotect_tauschanfragen');
     localStorage.removeItem('bbprotect_einsatzkommentare');
     localStorage.removeItem('bbprotect_schichtuebergaben');
+    localStorage.removeItem('bbprotect_objektwetter');
 
     renderTabelle();
     updateAlleFilter();
@@ -8213,6 +8218,256 @@ function updateCSVExportFilter() {
 }
 
 // =============================================
+// EINSATZ-WIEDERKEHREND
+// =============================================
+function erstelleWiederkehrend() {
+    const objekt = document.getElementById('wkObjekt') ? document.getElementById('wkObjekt').value : '';
+    const ma = document.getElementById('wkMA') ? document.getElementById('wkMA').value : '';
+    const zeitVon = document.getElementById('wkZeitVon') ? document.getElementById('wkZeitVon').value : '';
+    const zeitBis = document.getElementById('wkZeitBis') ? document.getElementById('wkZeitBis').value : '';
+    const satz = parseFloat(document.getElementById('wkSatz') ? document.getElementById('wkSatz').value : 0) || 0;
+    const startDatum = document.getElementById('wkStart') ? document.getElementById('wkStart').value : '';
+    const endDatum = document.getElementById('wkEnde') ? document.getElementById('wkEnde').value : '';
+    const rhythmus = document.getElementById('wkRhythmus') ? document.getElementById('wkRhythmus').value : 'woche';
+    const wochentage = [];
+
+    document.querySelectorAll('.wk-wt:checked').forEach(cb => wochentage.push(parseInt(cb.value)));
+
+    if (!objekt || !zeitVon || !zeitBis || !startDatum || !endDatum) {
+        alert('Bitte alle Pflichtfelder ausfüllen (Objekt, Zeiten, Start, Ende).');
+        return;
+    }
+
+    if (endDatum < startDatum) { alert('Enddatum muss nach Startdatum liegen.'); return; }
+
+    const start = new Date(startDatum);
+    const ende = new Date(endDatum);
+    let erstellt = 0;
+    const maxEinsaetze = 365;
+
+    const current = new Date(start);
+    while (current <= ende && erstellt < maxEinsaetze) {
+        const datum = current.toISOString().split('T')[0];
+        const wt = current.getDay();
+
+        let einfuegen = false;
+        if (rhythmus === 'taeglich') einfuegen = true;
+        else if (rhythmus === 'woche' && wochentage.includes(wt)) einfuegen = true;
+        else if (rhythmus === 'monat' && current.getDate() === start.getDate()) einfuegen = true;
+
+        if (einfuegen) {
+            // Prüfe ob identischer Einsatz existiert
+            const duplikat = einsaetze.some(e => e.datum === datum && e.objekt === objekt && e.zeitVon === zeitVon && e.zeitBis === zeitBis && e.mitarbeiter === ma);
+            if (!duplikat) {
+                const einsatz = berechneEinsatz(datum, zeitVon, zeitBis, satz);
+                einsatz.id = Date.now() + erstellt;
+                einsatz.objekt = objekt;
+                einsatz.mitarbeiter = ma;
+                einsatz.status = 'aktiv';
+                einsaetze.push(einsatz);
+                erstellt++;
+            }
+        }
+        current.setDate(current.getDate() + 1);
+    }
+
+    if (erstellt > 0) {
+        speichern();
+        renderTabelle();
+        updateAlleFilter();
+        updateHeaderStats();
+        logAudit('erstellt', 'Wiederkehrend', `${erstellt} Einsätze für ${objekt} (${rhythmus})`);
+        alert(`${erstellt} wiederkehrende Einsätze erstellt.`);
+    } else {
+        alert('Keine neuen Einsätze erstellt (evtl. alle bereits vorhanden).');
+    }
+}
+
+// =============================================
+// MA-STUNDENKONTO-DIAGRAMM (Soll vs Ist)
+// =============================================
+function renderStundenkontoChart() {
+    const el = document.getElementById('stundenkontoChartContent');
+    if (!el) return;
+
+    const monat = document.getElementById('skChartMonat') ? document.getElementById('skChartMonat').value : '';
+    if (!monat) { el.innerHTML = '<p style="color:#a0aec0">Bitte Monat wählen.</p>'; return; }
+
+    const maList = mitarbeiterListe_.filter(m => m.sollStunden > 0).sort((a, b) => a.name.localeCompare(b.name));
+    if (maList.length === 0) { el.innerHTML = '<p style="color:#a0aec0">Keine MA mit Soll-Stunden definiert.</p>'; return; }
+
+    const maxSoll = Math.max(...maList.map(m => m.sollStunden), 1);
+
+    let html = '<div class="skc-chart">';
+    maList.forEach(m => {
+        const istStd = einsaetze.filter(e => e.mitarbeiter === m.name && e.datum.substring(0, 7) === monat && e.status !== 'storniert')
+            .reduce((s, e) => s + e.stunden, 0);
+        const sollPct = (m.sollStunden / maxSoll) * 100;
+        const istPct = (istStd / maxSoll) * 100;
+        const diff = istStd - m.sollStunden;
+        const diffCls = diff >= 0 ? 'skc-plus' : 'skc-minus';
+
+        html += `<div class="skc-row">
+            <div class="skc-name" title="${escapeHtml(m.name)}">${escapeHtml(m.name.split(' ').map(n => n.substring(0, 6)).join(' '))}</div>
+            <div class="skc-bars">
+                <div class="skc-bar skc-soll" style="width:${sollPct}%"></div>
+                <div class="skc-bar skc-ist" style="width:${Math.min(istPct, 100)}%"></div>
+            </div>
+            <div class="skc-vals">
+                <span>${formatZahl(istStd)}/${formatZahl(m.sollStunden)}</span>
+                <span class="${diffCls}">${diff >= 0 ? '+' : ''}${formatZahl(diff)}</span>
+            </div>
+        </div>`;
+    });
+
+    html += '<div class="skc-legend"><span class="skc-leg-soll">■ Soll</span><span class="skc-leg-ist">■ Ist</span></div>';
+    html += '</div>';
+    el.innerHTML = html;
+}
+
+// =============================================
+// OBJEKT-WETTER-NOTIZEN
+// =============================================
+let objektWetterNotizen = JSON.parse(localStorage.getItem('bbprotect_objektwetter') || '{}');
+
+function wetterNotizSpeichern() {
+    const objekt = document.getElementById('owObjekt') ? document.getElementById('owObjekt').value : '';
+    const datum = document.getElementById('owDatum') ? document.getElementById('owDatum').value : '';
+    const wetter = document.getElementById('owWetter') ? document.getElementById('owWetter').value : '';
+    const notiz = document.getElementById('owNotiz') ? document.getElementById('owNotiz').value.trim() : '';
+
+    if (!objekt || !datum) { alert('Bitte Objekt und Datum ausfüllen.'); return; }
+
+    const key = `${objekt}|${datum}`;
+    objektWetterNotizen[key] = { wetter, notiz, erstellt: new Date().toISOString() };
+    localStorage.setItem('bbprotect_objektwetter', JSON.stringify(objektWetterNotizen));
+    logAudit('erstellt', 'Wetter-Notiz', `${objekt} am ${formatDatum(datum)}: ${wetter}`);
+    renderWetterNotizen();
+}
+
+function renderWetterNotizen() {
+    const el = document.getElementById('wetterNotizenContent');
+    if (!el) return;
+
+    const objekt = document.getElementById('owFilterObjekt') ? document.getElementById('owFilterObjekt').value : '';
+    const entries = Object.entries(objektWetterNotizen)
+        .filter(([key]) => !objekt || key.startsWith(objekt + '|'))
+        .sort((a, b) => b[0].split('|')[1].localeCompare(a[0].split('|')[1]))
+        .slice(0, 20);
+
+    if (entries.length === 0) { el.innerHTML = '<p style="color:#a0aec0">Keine Wetter-Notizen vorhanden.</p>'; return; }
+
+    const wetterIcons = { sonnig: '☀️', bewoelkt: '⛅', regen: '🌧️', schnee: '❄️', sturm: '🌪️', nebel: '🌫️' };
+
+    let html = '';
+    entries.forEach(([key, val]) => {
+        const [obj, dat] = key.split('|');
+        html += `<div class="ow-item">
+            <span class="ow-icon">${wetterIcons[val.wetter] || '🌡️'}</span>
+            <span class="ow-obj">${escapeHtml(obj)}</span>
+            <span class="ow-dat">${formatDatum(dat)}</span>
+            ${val.notiz ? '<span class="ow-notiz">' + escapeHtml(val.notiz) + '</span>' : ''}
+        </div>`;
+    });
+    el.innerHTML = html;
+}
+
+function updateWetterObjektSelects() {
+    ['owObjekt', 'owFilterObjekt'].forEach(selId => {
+        const sel = document.getElementById(selId);
+        if (!sel) return;
+        const current = sel.value;
+        sel.innerHTML = selId === 'owFilterObjekt' ? '<option value="">Alle Objekte</option>' : '<option value="">Objekt wählen...</option>';
+        objekte.forEach(o => { sel.innerHTML += `<option value="${escapeHtml(o.name)}">${escapeHtml(o.name)}</option>`; });
+        if (current) sel.value = current;
+    });
+}
+
+// =============================================
+// FEIERTAGS-KALENDERANSICHT
+// =============================================
+function renderFeiertagsKalender() {
+    const el = document.getElementById('feiertagsKalContent');
+    if (!el) return;
+
+    const jahr = parseInt(document.getElementById('fkJahr') ? document.getElementById('fkJahr').value : new Date().getFullYear());
+    const feiertage = getFeiertage(jahr);
+
+    let html = '<div class="fk-grid">';
+    for (let m = 0; m < 12; m++) {
+        html += `<div class="fk-monat"><div class="fk-monat-name">${MONATSNAMEN[m]}</div>`;
+        const tage = new Date(jahr, m + 1, 0).getDate();
+        html += '<div class="fk-tage">';
+        // Wochentag-Header
+        ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'].forEach(w => {
+            html += `<span class="fk-wt">${w}</span>`;
+        });
+        // Leere Felder bis zum ersten Tag
+        const ersterTag = new Date(jahr, m, 1).getDay();
+        const offset = ersterTag === 0 ? 6 : ersterTag - 1;
+        for (let i = 0; i < offset; i++) html += '<span class="fk-leer"></span>';
+
+        for (let d = 1; d <= tage; d++) {
+            const datum = `${jahr}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+            const istFeiertag = feiertage[datum];
+            const wt = new Date(jahr, m, d).getDay();
+            const isWe = wt === 0 || wt === 6;
+            let cls = 'fk-tag';
+            if (istFeiertag) cls += ' fk-feiertag';
+            else if (isWe) cls += ' fk-we';
+
+            html += `<span class="${cls}" title="${istFeiertag || ''}">${d}</span>`;
+        }
+        html += '</div></div>';
+    }
+    html += '</div>';
+
+    // Legende
+    const ftList = Object.entries(feiertage).sort((a, b) => a[0].localeCompare(b[0]));
+    html += '<div class="fk-legende">';
+    ftList.forEach(([datum, name]) => {
+        html += `<div class="fk-ft-item"><span class="fk-ft-datum">${formatDatum(datum)}</span><span class="fk-ft-name">${escapeHtml(name)}</span></div>`;
+    });
+    html += '</div>';
+
+    el.innerHTML = html;
+}
+
+// =============================================
+// DASHBOARD-SCHNELLZUGRIFF-KACHELN
+// =============================================
+function renderDashboardKacheln() {
+    const el = document.getElementById('dashboardKacheln');
+    if (!el) return;
+
+    const heute = new Date().toISOString().split('T')[0];
+    const heuteE = einsaetze.filter(e => e.datum === heute && e.status !== 'storniert');
+    const offeneT = tauschAnfragen.filter(t => t.status === 'offen').length;
+    const abwHeute = verfuegbarkeit.filter(v => v.von <= heute && v.bis >= heute).length;
+    const unbesetzt = heuteE.filter(e => !e.mitarbeiter).length;
+
+    el.innerHTML = `
+        <div class="dk-grid">
+            <div class="dk-kachel dk-blau" onclick="schnellHeuteAnzeigen()">
+                <div class="dk-zahl">${heuteE.length}</div>
+                <div class="dk-label">Einsätze heute</div>
+            </div>
+            <div class="dk-kachel ${unbesetzt > 0 ? 'dk-rot' : 'dk-gruen'}" onclick="quickFilter('heute')">
+                <div class="dk-zahl">${unbesetzt}</div>
+                <div class="dk-label">Unbesetzte Schichten</div>
+            </div>
+            <div class="dk-kachel dk-orange" onclick="document.querySelector('[data-tab=mitarbeiter]').click()">
+                <div class="dk-zahl">${abwHeute}</div>
+                <div class="dk-label">Abwesend heute</div>
+            </div>
+            <div class="dk-kachel ${offeneT > 0 ? 'dk-lila' : 'dk-grau'}" onclick="document.querySelector('[data-tab=mitarbeiter]').click()">
+                <div class="dk-zahl">${offeneT}</div>
+                <div class="dk-label">Offene Tausch-Anfragen</div>
+            </div>
+        </div>`;
+}
+
+// =============================================
 // INITIALISIERUNG
 // =============================================
 document.getElementById('datum').valueAsDate = new Date();
@@ -8243,6 +8498,9 @@ document.getElementById('besDatum').valueAsDate = new Date();
 document.getElementById('tlDatum').valueAsDate = new Date();
 document.getElementById('suDatum').valueAsDate = new Date();
 document.getElementById('mavkMonat').value = new Date().toISOString().substring(0, 7);
+document.getElementById('owDatum').valueAsDate = new Date();
+document.getElementById('skChartMonat').value = new Date().toISOString().substring(0, 7);
+document.getElementById('fkJahr').value = new Date().getFullYear();
 const jetztInit = new Date();
 document.getElementById('wbZeit').value = `${String(jetztInit.getHours()).padStart(2, '0')}:${String(jetztInit.getMinutes()).padStart(2, '0')}`;
 document.getElementById('ugZeit').value = `${String(jetztInit.getHours()).padStart(2, '0')}:${String(jetztInit.getMinutes()).padStart(2, '0')}`;

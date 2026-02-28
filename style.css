@@ -7872,3 +7872,324 @@ body.dark-mode .su-notiz {
         align-items: flex-start;
     }
 }
+
+/* =============================================
+   MA-STUNDENKONTO-DIAGRAMM
+   ============================================= */
+.skc-chart {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+
+.skc-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.skc-name {
+    min-width: 90px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: #4a5568;
+    text-align: right;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+body.dark-mode .skc-name {
+    color: #cbd5e0;
+}
+
+.skc-bars {
+    flex: 1;
+    position: relative;
+    height: 20px;
+    background: #edf2f7;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+body.dark-mode .skc-bars {
+    background: #4a5568;
+}
+
+.skc-bar {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    border-radius: 4px;
+}
+
+.skc-soll {
+    background: rgba(160, 174, 192, 0.4);
+    z-index: 1;
+}
+
+.skc-ist {
+    background: linear-gradient(to right, #4299e1, #63b3ed);
+    z-index: 2;
+}
+
+.skc-vals {
+    min-width: 100px;
+    display: flex;
+    gap: 0.5rem;
+    font-size: 0.7rem;
+    white-space: nowrap;
+}
+
+.skc-plus { color: #48bb78; font-weight: 600; }
+.skc-minus { color: #e53e3e; font-weight: 600; }
+
+.skc-legend {
+    display: flex;
+    gap: 1rem;
+    font-size: 0.7rem;
+    color: #718096;
+    margin-top: 0.5rem;
+    padding-top: 0.3rem;
+    border-top: 1px solid #e2e8f0;
+}
+
+body.dark-mode .skc-legend {
+    color: #a0aec0;
+    border-top-color: #4a5568;
+}
+
+.skc-leg-soll { color: #a0aec0; }
+.skc-leg-ist { color: #4299e1; }
+
+/* =============================================
+   OBJEKT-WETTER-NOTIZEN
+   ============================================= */
+.ow-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.35rem 0.5rem;
+    font-size: 0.8rem;
+    border-bottom: 1px solid #edf2f7;
+}
+
+body.dark-mode .ow-item {
+    border-bottom-color: #4a5568;
+}
+
+.ow-icon {
+    font-size: 1.1rem;
+}
+
+.ow-obj {
+    font-weight: 600;
+    color: #2d3748;
+    min-width: 120px;
+}
+
+body.dark-mode .ow-obj {
+    color: #e2e8f0;
+}
+
+.ow-dat {
+    color: #718096;
+    font-size: 0.75rem;
+    min-width: 80px;
+}
+
+body.dark-mode .ow-dat {
+    color: #a0aec0;
+}
+
+.ow-notiz {
+    color: #4a5568;
+    flex: 1;
+}
+
+body.dark-mode .ow-notiz {
+    color: #cbd5e0;
+}
+
+/* =============================================
+   FEIERTAGS-KALENDER
+   ============================================= */
+.fk-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.75rem;
+}
+
+.fk-monat {
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    padding: 0.4rem;
+    background: #f7fafc;
+}
+
+body.dark-mode .fk-monat {
+    background: #2d3748;
+    border-color: #4a5568;
+}
+
+.fk-monat-name {
+    font-weight: 700;
+    font-size: 0.75rem;
+    text-align: center;
+    margin-bottom: 0.3rem;
+    color: #2d3748;
+}
+
+body.dark-mode .fk-monat-name {
+    color: #e2e8f0;
+}
+
+.fk-tage {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 1px;
+}
+
+.fk-wt {
+    font-size: 0.55rem;
+    text-align: center;
+    color: #a0aec0;
+    font-weight: 600;
+}
+
+.fk-leer {
+    min-height: 18px;
+}
+
+.fk-tag {
+    font-size: 0.6rem;
+    text-align: center;
+    padding: 2px 0;
+    border-radius: 3px;
+    cursor: default;
+    color: #4a5568;
+}
+
+body.dark-mode .fk-tag {
+    color: #cbd5e0;
+}
+
+.fk-feiertag {
+    background: #fed7d7 !important;
+    color: #c53030 !important;
+    font-weight: 700;
+}
+
+body.dark-mode .fk-feiertag {
+    background: #742a2a !important;
+    color: #feb2b2 !important;
+}
+
+.fk-we {
+    background: #edf2f7;
+    color: #a0aec0;
+}
+
+body.dark-mode .fk-we {
+    background: #4a5568;
+    color: #718096;
+}
+
+.fk-legende {
+    margin-top: 0.75rem;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.3rem;
+    font-size: 0.7rem;
+}
+
+.fk-ft-item {
+    display: flex;
+    gap: 0.3rem;
+}
+
+.fk-ft-datum {
+    color: #c53030;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.fk-ft-name {
+    color: #4a5568;
+}
+
+body.dark-mode .fk-ft-name {
+    color: #cbd5e0;
+}
+
+/* =============================================
+   DASHBOARD-SCHNELLZUGRIFF-KACHELN
+   ============================================= */
+.dk-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+.dk-kachel {
+    padding: 0.75rem;
+    border-radius: 8px;
+    text-align: center;
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s;
+    color: #fff;
+}
+
+.dk-kachel:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.dk-zahl {
+    font-size: 1.8rem;
+    font-weight: 800;
+    line-height: 1;
+    margin-bottom: 0.3rem;
+}
+
+.dk-label {
+    font-size: 0.7rem;
+    opacity: 0.9;
+}
+
+.dk-blau { background: linear-gradient(135deg, #4299e1, #3182ce); }
+.dk-gruen { background: linear-gradient(135deg, #48bb78, #38a169); }
+.dk-rot { background: linear-gradient(135deg, #fc8181, #e53e3e); }
+.dk-orange { background: linear-gradient(135deg, #f6ad55, #dd6b20); }
+.dk-lila { background: linear-gradient(135deg, #b794f4, #805ad5); }
+.dk-grau { background: linear-gradient(135deg, #a0aec0, #718096); }
+
+@media (max-width: 768px) {
+    .skc-name {
+        min-width: 60px;
+        font-size: 0.6rem;
+    }
+
+    .skc-vals {
+        min-width: 70px;
+        font-size: 0.6rem;
+    }
+
+    .fk-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .fk-legende {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .dk-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .ow-item {
+        flex-wrap: wrap;
+    }
+}

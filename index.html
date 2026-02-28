@@ -241,6 +241,67 @@
                 <div id="schnellvorlagenContent" style="margin-top:0.5rem"></div>
             </section>
 
+            <section class="form-section">
+                <details>
+                    <summary style="cursor:pointer;font-weight:600;font-size:0.9rem;color:#4a5568">Wiederkehrende Eins&auml;tze erstellen</summary>
+                    <div class="form-row" style="margin-top:0.5rem">
+                        <div class="form-group">
+                            <label for="wkObjekt">Objekt</label>
+                            <input type="text" id="wkObjekt" list="objektListe" placeholder="Objekt" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="wkMA">Mitarbeiter</label>
+                            <input type="text" id="wkMA" list="mitarbeiterFilterListe" placeholder="optional">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="wkZeitVon">Von</label>
+                            <input type="time" id="wkZeitVon" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="wkZeitBis">Bis</label>
+                            <input type="time" id="wkZeitBis" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="wkSatz">Satz (&euro;)</label>
+                            <input type="number" id="wkSatz" step="0.01" min="0" placeholder="15.00">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="wkStart">Start</label>
+                            <input type="date" id="wkStart" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="wkEnde">Ende</label>
+                            <input type="date" id="wkEnde" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="wkRhythmus">Rhythmus</label>
+                            <select id="wkRhythmus">
+                                <option value="woche">W&ouml;chentlich</option>
+                                <option value="taeglich">T&auml;glich</option>
+                                <option value="monat">Monatlich</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Wochentage (bei w&ouml;chentlich)</label>
+                        <div style="display:flex;gap:0.5rem;flex-wrap:wrap;font-size:0.8rem">
+                            <label><input type="checkbox" class="wk-wt" value="1" checked> Mo</label>
+                            <label><input type="checkbox" class="wk-wt" value="2" checked> Di</label>
+                            <label><input type="checkbox" class="wk-wt" value="3" checked> Mi</label>
+                            <label><input type="checkbox" class="wk-wt" value="4" checked> Do</label>
+                            <label><input type="checkbox" class="wk-wt" value="5" checked> Fr</label>
+                            <label><input type="checkbox" class="wk-wt" value="6"> Sa</label>
+                            <label><input type="checkbox" class="wk-wt" value="0"> So</label>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-primary" onclick="erstelleWiederkehrend()" style="margin-top:0.5rem">Wiederkehrende Eins&auml;tze erstellen</button>
+                </details>
+            </section>
+
             <section class="list-section">
                 <div class="list-header">
                     <h2>Einsatz&uuml;bersicht</h2>
@@ -456,6 +517,8 @@
         <!-- TAB: Dashboard -->
         <div class="tab-content" id="tab-dashboard">
             <section class="dashboard-section">
+                <div id="dashboardKacheln"></div>
+
                 <h2>Monats&uuml;bersicht</h2>
                 <div class="dashboard-filter">
                     <select id="dashboardMonat"></select>
@@ -623,6 +686,19 @@
                     <div class="detail-card full-width">
                         <h3>Objekt-Umsatz-Ranking</h3>
                         <div id="objektRankingContent"></div>
+                    </div>
+                </div>
+
+                <div class="dashboard-details" style="margin-top:1rem">
+                    <div class="detail-card full-width">
+                        <h3>MA-Stundenkonto (Soll vs. Ist)</h3>
+                        <div class="form-row" style="margin-bottom:0.5rem">
+                            <div class="form-group">
+                                <label for="skChartMonat">Monat</label>
+                                <input type="month" id="skChartMonat" onchange="renderStundenkontoChart()">
+                            </div>
+                        </div>
+                        <div id="stundenkontoChartContent"></div>
                     </div>
                 </div>
             </section>
@@ -955,6 +1031,51 @@
                 </div>
                 <button type="button" class="btn-primary" onclick="besichtigungSpeichern()" style="margin-top:0.5rem">Besichtigung protokollieren</button>
                 <div id="besichtigungenContent" style="margin-top:0.5rem"></div>
+            </section>
+
+            <section class="form-section">
+                <div class="list-header">
+                    <h2>Objekt-Wetter-Notizen</h2>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="owObjekt">Objekt</label>
+                        <select id="owObjekt">
+                            <option value="">Objekt w&auml;hlen...</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="owDatum">Datum</label>
+                        <input type="date" id="owDatum">
+                    </div>
+                    <div class="form-group">
+                        <label for="owWetter">Wetter</label>
+                        <select id="owWetter">
+                            <option value="sonnig">Sonnig</option>
+                            <option value="bewoelkt">Bew&ouml;lkt</option>
+                            <option value="regen">Regen</option>
+                            <option value="schnee">Schnee</option>
+                            <option value="sturm">Sturm</option>
+                            <option value="nebel">Nebel</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="owNotiz">Notiz (optional)</label>
+                    <input type="text" id="owNotiz" placeholder="z.B. Glatteis am Eingang, starker Wind am Dach">
+                </div>
+                <button type="button" class="btn-primary" onclick="wetterNotizSpeichern()" style="margin-top:0.5rem">Wetter-Notiz speichern</button>
+                <div style="margin-top:0.75rem">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="owFilterObjekt">Filter</label>
+                            <select id="owFilterObjekt" onchange="renderWetterNotizen()">
+                                <option value="">Alle Objekte</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div id="wetterNotizenContent"></div>
+                </div>
             </section>
 
             <section class="form-section">
@@ -1687,6 +1808,15 @@
                     </div>
                 </div>
                 <div id="sonderNotizenContent" style="margin-top:0.5rem"></div>
+
+                <h2 style="margin-top:1.5rem">Feiertags-Kalender</h2>
+                <div class="form-row" style="margin-bottom:0.5rem">
+                    <div class="form-group">
+                        <label for="fkJahr">Jahr</label>
+                        <input type="number" id="fkJahr" min="2020" max="2040" onchange="renderFeiertagsKalender()">
+                    </div>
+                </div>
+                <div id="feiertagsKalContent"></div>
 
                 <h2 style="margin-top:1.5rem">Datensicherung &amp; Import</h2>
                 <p class="daten-info">Alle Daten werden lokal im Browser gespeichert (localStorage). Erstelle regelm&auml;&szlig;ig ein Backup, damit nichts verloren geht.</p>
