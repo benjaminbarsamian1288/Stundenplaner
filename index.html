@@ -20,6 +20,7 @@
             <button class="nav-btn" data-tab="objekte">Objekte</button>
             <button class="nav-btn" data-tab="mitarbeiter">Mitarbeiter</button>
             <button class="nav-btn" data-tab="einstellungen">Daten</button>
+            <button class="dark-mode-toggle" id="darkModeBtn" onclick="toggleDarkMode()">Dunkel</button>
         </nav>
     </header>
 
@@ -146,6 +147,26 @@
                         <button type="button" class="btn-secondary" id="cancelEditBtn" style="display:none;" onclick="cancelEdit()">Abbrechen</button>
                     </div>
                 </form>
+
+                <div class="wiederholung-section">
+                    <details>
+                        <summary>Wochenwiederholung</summary>
+                        <p class="wdh-info">F&uuml;lle oben das Formular aus und w&auml;hle die Tage, an denen der Einsatz wiederholt werden soll:</p>
+                        <div class="wdh-tage">
+                            <label class="wdh-label"><input type="checkbox" class="wdh-tag" value="1"> Mo</label>
+                            <label class="wdh-label"><input type="checkbox" class="wdh-tag" value="2"> Di</label>
+                            <label class="wdh-label"><input type="checkbox" class="wdh-tag" value="3"> Mi</label>
+                            <label class="wdh-label"><input type="checkbox" class="wdh-tag" value="4"> Do</label>
+                            <label class="wdh-label"><input type="checkbox" class="wdh-tag" value="5"> Fr</label>
+                            <label class="wdh-label"><input type="checkbox" class="wdh-tag" value="6"> Sa</label>
+                            <label class="wdh-label"><input type="checkbox" class="wdh-tag" value="0"> So</label>
+                        </div>
+                        <div class="wdh-optionen">
+                            <label>Anzahl Wochen: <input type="number" id="wdhWochen" value="1" min="1" max="12"></label>
+                            <button class="btn-primary btn-small" onclick="wiederholungWoche()">Eins&auml;tze erstellen</button>
+                        </div>
+                    </details>
+                </div>
             </section>
 
             <section class="preview-section" id="previewSection" style="display:none;">

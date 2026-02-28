@@ -1135,6 +1135,333 @@ tbody tr:hover {
     }
 }
 
+/* Dark Mode Toggle */
+.dark-mode-toggle {
+    background: #2d3748;
+    color: #fff;
+    border: none;
+    padding: 0.4rem 0.8rem;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    font-weight: 600;
+    transition: background 0.2s;
+}
+
+.dark-mode-toggle:hover {
+    background: #4a5568;
+}
+
+/* Wochenwiederholung */
+.wiederholung-section {
+    margin-top: 1rem;
+}
+
+.wiederholung-section details {
+    background: #f7fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 0.75rem;
+}
+
+.wiederholung-section summary {
+    cursor: pointer;
+    font-weight: 600;
+    color: #1a1a2e;
+}
+
+.wdh-info {
+    font-size: 0.85rem;
+    color: #718096;
+    margin: 0.5rem 0;
+}
+
+.wdh-tage {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    margin-bottom: 0.75rem;
+}
+
+.wdh-label {
+    background: #fff;
+    border: 1px solid #cbd5e0;
+    border-radius: 6px;
+    padding: 0.4rem 0.8rem;
+    cursor: pointer;
+    font-size: 0.85rem;
+    font-weight: 600;
+    transition: background 0.15s;
+}
+
+.wdh-label:has(:checked) {
+    background: #1a1a2e;
+    color: #fff;
+    border-color: #1a1a2e;
+}
+
+.wdh-label input {
+    display: none;
+}
+
+.wdh-optionen {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+}
+
+.wdh-optionen label {
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.wdh-optionen input[type="number"] {
+    width: 60px;
+    padding: 0.3rem;
+    border: 1px solid #cbd5e0;
+    border-radius: 4px;
+    text-align: center;
+}
+
+/* =============================================
+   DARK MODE
+   ============================================= */
+body.dark-mode {
+    background: #0d1117;
+    color: #c9d1d9;
+}
+
+body.dark-mode header {
+    background: linear-gradient(135deg, #0d1117 0%, #161b22 100%);
+    border-bottom: 1px solid #30363d;
+}
+
+body.dark-mode .nav-btn {
+    color: #8b949e;
+    border-color: #30363d;
+}
+
+body.dark-mode .nav-btn.active {
+    background: #c9d1d9;
+    color: #0d1117;
+}
+
+body.dark-mode .form-section,
+body.dark-mode .vorlagen-section,
+body.dark-mode .kalender-section,
+body.dark-mode .abrechnung-card,
+body.dark-mode .detail-card,
+body.dark-mode .stat-card,
+body.dark-mode .daten-card,
+body.dark-mode .daten-stats,
+body.dark-mode .arbzg-section {
+    background: #161b22;
+    border-color: #30363d;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+body.dark-mode .stat-card.accent {
+    background: linear-gradient(135deg, #1f6feb 0%, #388bfd 100%);
+}
+
+body.dark-mode input,
+body.dark-mode select,
+body.dark-mode textarea {
+    background: #0d1117;
+    color: #c9d1d9;
+    border-color: #30363d;
+}
+
+body.dark-mode input::placeholder {
+    color: #484f58;
+}
+
+body.dark-mode label {
+    color: #8b949e;
+}
+
+body.dark-mode thead th {
+    background: #21262d;
+}
+
+body.dark-mode tbody td {
+    border-bottom-color: #21262d;
+}
+
+body.dark-mode tbody tr:hover {
+    background: #161b22;
+}
+
+body.dark-mode .total-row td {
+    background: #21262d;
+}
+
+body.dark-mode .detail-card h3 {
+    border-bottom-color: #30363d;
+}
+
+body.dark-mode .stat-row {
+    border-bottom-color: #21262d;
+}
+
+body.dark-mode .stat-row-value {
+    color: #c9d1d9;
+}
+
+body.dark-mode .stat-bar-fill {
+    background: linear-gradient(90deg, #1f6feb, #388bfd);
+}
+
+body.dark-mode .stat-label,
+body.dark-mode .abrechnung-zeitraum,
+body.dark-mode .daten-info,
+body.dark-mode .kalender-summe,
+body.dark-mode .vorlage-objekt,
+body.dark-mode .empty-message {
+    color: #484f58;
+}
+
+body.dark-mode .abrechnung-header-info {
+    border-bottom-color: #388bfd;
+}
+
+body.dark-mode .abr-stat {
+    background: #0d1117;
+}
+
+body.dark-mode .abr-stat.total {
+    background: #1f6feb;
+}
+
+body.dark-mode .abrechnung-table th {
+    background: #21262d;
+    color: #c9d1d9;
+}
+
+body.dark-mode .abrechnung-table td {
+    border-bottom-color: #21262d;
+}
+
+body.dark-mode .kalender-cell {
+    background: #161b22;
+    border-color: #21262d;
+}
+
+body.dark-mode .kalender-cell:hover {
+    background: #1c2128;
+}
+
+body.dark-mode .kalender-cell.empty {
+    background: #0d1117;
+    border-color: #21262d;
+}
+
+body.dark-mode .kalender-cell.heute {
+    border-color: #388bfd;
+    background: #1c2128;
+}
+
+body.dark-mode .kalender-cell.wochenende {
+    background: #1a1625;
+}
+
+body.dark-mode .kalender-cell.feiertag-tag {
+    background: #200d0d;
+}
+
+body.dark-mode .kalender-tag-nr {
+    color: #c9d1d9;
+}
+
+body.dark-mode .kalender-einsatz.tag {
+    background: #0d2137;
+    border-left-color: #388bfd;
+    color: #c9d1d9;
+}
+
+body.dark-mode .vorlage-card,
+body.dark-mode .vorlage-form,
+body.dark-mode .wiederholung-section details {
+    background: #0d1117;
+    border-color: #30363d;
+}
+
+body.dark-mode .vorlage-info strong {
+    color: #c9d1d9;
+}
+
+body.dark-mode .btn-secondary {
+    background: #21262d;
+    color: #c9d1d9;
+    border-color: #30363d;
+}
+
+body.dark-mode .btn-primary {
+    background: #1f6feb;
+}
+
+body.dark-mode .btn-primary:hover {
+    background: #388bfd;
+}
+
+body.dark-mode .daten-stat {
+    background: #0d1117;
+}
+
+body.dark-mode .daten-stat strong {
+    color: #c9d1d9;
+}
+
+body.dark-mode .daten-card.gefahr {
+    border-color: #f85149;
+}
+
+body.dark-mode .qual-badge {
+    background: #0d2137;
+    color: #388bfd;
+}
+
+body.dark-mode .dark-mode-toggle {
+    background: #c9d1d9;
+    color: #0d1117;
+}
+
+body.dark-mode .preview-section {
+    background: #161b22;
+    border-color: #30363d;
+}
+
+body.dark-mode .detail-item {
+    border-bottom-color: #21262d;
+}
+
+body.dark-mode .wiederholung-section summary {
+    color: #c9d1d9;
+}
+
+body.dark-mode .wdh-label {
+    background: #21262d;
+    border-color: #30363d;
+    color: #c9d1d9;
+}
+
+body.dark-mode .wdh-label:has(:checked) {
+    background: #1f6feb;
+    border-color: #1f6feb;
+}
+
+body.dark-mode footer {
+    color: #484f58;
+}
+
+body.dark-mode .list-section {
+    color: #c9d1d9;
+}
+
+body.dark-mode h2, body.dark-mode h3 {
+    color: #c9d1d9;
+}
+
 footer {
     text-align: center;
     padding: 2rem 1rem;

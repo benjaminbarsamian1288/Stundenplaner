@@ -145,7 +145,11 @@ form.addEventListener('submit', function (e) {
     const einsatz = erfasseFormular();
     if (!einsatz) return;
 
+    // Konflikterkennung
     const editId = parseInt(editIdField.value);
+    const konflikt = pruefeKonflikt(einsatz, editId || null);
+    if (konflikt && !confirm(konflikt + '\n\nTrotzdem speichern?')) return;
+
     if (editId) {
         const idx = einsaetze.findIndex(e => e.id === editId);
         if (idx !== -1) {
@@ -183,6 +187,18 @@ document.getElementById('objekt').addEventListener('change', function () {
     if (obj && obj.stundensatz) {
         document.getElementById('stundensatz').value = obj.stundensatz;
         updatePreview();
+    }
+});
+
+// Mitarbeiter-Auswahl: persönlichen Stundensatz übernehmen (falls kein Objektsatz)
+document.getElementById('mitarbeiter').addEventListener('change', function () {
+    const ma = mitarbeiterListe_.find(m => m.name === this.value);
+    if (ma && ma.stundensatz) {
+        const aktuellerSatz = document.getElementById('stundensatz').value;
+        if (!aktuellerSatz || aktuellerSatz === '0') {
+            document.getElementById('stundensatz').value = ma.stundensatz;
+            updatePreview();
+        }
     }
 });
 
@@ -287,10 +303,15 @@ function berechneEinsatz(datum, zeitVon, zeitBis, stundensatz) {
         zuschlagDetails.push({ typ: 'Feiertag', name: feiertag, stunden, prozent: feiertagProzent, betrag: feiertagZuschlag });
     }
 
+    // Pausenberechnung nach §4 ArbZG
+    let pauseMinuten = 0;
+    if (stunden > 9) pauseMinuten = 45;
+    else if (stunden > 6) pauseMinuten = 30;
+
     const grundlohn = stunden * stundensatz;
     const gesamt = grundlohn + zuschlagBetrag;
 
-    return { stunden, nachtStunden, tagStunden, grundlohn, zuschlagBetrag, zuschlagDetails, gesamt, feiertag, istSonntag: wochentag === 0 };
+    return { stunden, nachtStunden, tagStunden, pauseMinuten, grundlohn, zuschlagBetrag, zuschlagDetails, gesamt, feiertag, istSonntag: wochentag === 0 };
 }
 
 function berechneStunden(von, bis) {
@@ -346,6 +367,9 @@ function updatePreview() {
     html += detailItem('Tag', `${formatDatum(datum)} (${wochentag})`);
     html += detailItem('Arbeitszeit', `${formatZahl(berechnung.stunden)} Std.`);
     html += detailItem('davon Nacht', `${formatZahl(berechnung.nachtStunden)} Std.`);
+    if (berechnung.pauseMinuten > 0) {
+        html += detailItem('Pause (§4 ArbZG)', `${berechnung.pauseMinuten} Min.`);
+    }
     html += detailItem('Grundlohn', formatEuro(berechnung.grundlohn));
 
     berechnung.zuschlagDetails.forEach(z => {
@@ -1363,6 +1387,122 @@ function updateDatenStats() {
 }
 
 // =============================================
+// KONFLIKTERKENNUNG
+// =============================================
+function pruefeKonflikt(neuerEinsatz, editId) {
+    if (!neuerEinsatz.mitarbeiter) return null;
+
+    const [nvh, nvm] = neuerEinsatz.zeitVon.split(':').map(Number);
+    const [nbh, nbm] = neuerEinsatz.zeitBis.split(':').map(Number);
+    let nStart = nvh * 60 + nvm;
+    let nEnd = nbh * 60 + nbm;
+    if (nEnd <= nStart) nEnd += 24 * 60;
+
+    for (const e of einsaetze) {
+        if (editId && e.id === editId) continue;
+        if (e.mitarbeiter !== neuerEinsatz.mitarbeiter) continue;
+        if (e.datum !== neuerEinsatz.datum) continue;
+
+        const [evh, evm] = e.zeitVon.split(':').map(Number);
+        const [ebh, ebm] = e.zeitBis.split(':').map(Number);
+        let eStart = evh * 60 + evm;
+        let eEnd = ebh * 60 + ebm;
+        if (eEnd <= eStart) eEnd += 24 * 60;
+
+        if (nStart < eEnd && nEnd > eStart) {
+            return `KONFLIKT: ${neuerEinsatz.mitarbeiter} hat am ${formatDatum(neuerEinsatz.datum)} bereits einen Einsatz (${e.zeitVon}-${e.zeitBis} bei ${e.objekt}).`;
+        }
+    }
+    return null;
+}
+
+// =============================================
+// WOCHENWIEDERHOLUNG
+// =============================================
+function wiederholungWoche() {
+    const objekt = document.getElementById('objekt').value.trim();
+    const zeitVon = document.getElementById('zeitVon').value;
+    const zeitBis = document.getElementById('zeitBis').value;
+    const stundensatz = parseFloat(document.getElementById('stundensatz').value);
+    const mitarbeiter = document.getElementById('mitarbeiter').value.trim();
+    const bemerkung = document.getElementById('bemerkung').value.trim();
+    const startDatum = document.getElementById('datum').value;
+
+    if (!objekt || !startDatum || !zeitVon || !zeitBis || isNaN(stundensatz)) {
+        alert('Bitte zuerst alle Pflichtfelder ausfüllen.');
+        return;
+    }
+
+    const tageCbs = document.querySelectorAll('.wdh-tag:checked');
+    if (tageCbs.length === 0) {
+        alert('Bitte mindestens einen Wochentag auswählen.');
+        return;
+    }
+
+    const wochen = parseInt(document.getElementById('wdhWochen').value) || 1;
+    const tage = Array.from(tageCbs).map(cb => parseInt(cb.value));
+
+    let count = 0;
+    const start = new Date(startDatum);
+
+    for (let w = 0; w < wochen; w++) {
+        for (const tag of tage) {
+            const d = new Date(start);
+            // Finde den nächsten passenden Wochentag
+            const aktuellerTag = d.getDay();
+            let diff = tag - aktuellerTag;
+            if (diff < 0) diff += 7;
+            d.setDate(d.getDate() + diff + (w * 7));
+
+            const datumStr = d.toISOString().split('T')[0];
+            const berechnung = berechneEinsatz(datumStr, zeitVon, zeitBis, stundensatz);
+
+            const einsatz = {
+                id: Date.now() + count,
+                objekt, datum: datumStr, zeitVon, zeitBis, stundensatz, mitarbeiter, bemerkung,
+                ...berechnung
+            };
+
+            // Nur hinzufügen wenn kein Konflikt
+            const konflikt = pruefeKonflikt(einsatz, null);
+            if (!konflikt) {
+                einsaetze.push(einsatz);
+                count++;
+            }
+        }
+    }
+
+    if (count > 0) {
+        speichern();
+        renderTabelle();
+        updateAlleFilter();
+        updateDataLists();
+        alert(`${count} Einsätze für ${wochen} Woche(n) erstellt.`);
+    } else {
+        alert('Keine Einsätze erstellt (alle Termine haben Konflikte).');
+    }
+}
+
+// =============================================
+// DARK MODE
+// =============================================
+let darkMode = localStorage.getItem('bbprotect_darkmode') === 'true';
+
+function toggleDarkMode() {
+    darkMode = !darkMode;
+    document.body.classList.toggle('dark-mode', darkMode);
+    localStorage.setItem('bbprotect_darkmode', darkMode);
+    const btn = document.getElementById('darkModeBtn');
+    if (btn) btn.textContent = darkMode ? 'Hell' : 'Dunkel';
+}
+
+function initDarkMode() {
+    if (darkMode) document.body.classList.add('dark-mode');
+    const btn = document.getElementById('darkModeBtn');
+    if (btn) btn.textContent = darkMode ? 'Hell' : 'Dunkel';
+}
+
+// =============================================
 // HILFSFUNKTION: TAB WECHSELN
 // =============================================
 function wechsleZuTab(tabName) {
@@ -1378,6 +1518,7 @@ function wechsleZuTab(tabName) {
 // INITIALISIERUNG
 // =============================================
 document.getElementById('datum').valueAsDate = new Date();
+initDarkMode();
 renderTabelle();
 updateAlleFilter();
 updateMitarbeiterFilter();
