@@ -86,11 +86,11 @@ document.querySelectorAll('.nav-btn').forEach(btn => {
         this.classList.add('active');
         document.getElementById('tab-' + this.dataset.tab).classList.add('active');
 
-        if (this.dataset.tab === 'dashboard') { updateDashboard(); renderEinsatzChronik(); renderEinsatzAnalytics(); renderWochenReport(); renderEinsatzTimeline(); renderKostenTrend(); renderObjektUmsatzRanking(); renderStundenkontoChart(); renderDashboardKacheln(); }
-        if (this.dataset.tab === 'objekte') { renderObjekte(); renderVertraege(); renderObjektAuslastung(); updateChecklisteObjekte(); updateObjektHistorieSelect(); updateObjektKontakteSelect(); renderObjektKontakte(); updateObjektAnweisungenSelect(); renderObjektAnweisungen(); updateObjektKostenMonat(); renderObjektKostenanalyse(); renderVertragsCountdown(); updateRevierplanSelect(); renderRevierplan(); updateBesObjektSelect(); renderBesichtigungen(); updateInfokarteSelect(); updateWetterObjektSelects(); renderWetterNotizen(); }
+        if (this.dataset.tab === 'dashboard') { updateDashboard(); renderEinsatzChronik(); renderEinsatzAnalytics(); renderWochenReport(); renderEinsatzTimeline(); renderKostenTrend(); renderObjektUmsatzRanking(); renderStundenkontoChart(); renderDashboardKacheln(); renderSchichtplanVorschau(); renderErweiterteStatistik(); }
+        if (this.dataset.tab === 'objekte') { renderObjekte(); renderVertraege(); renderObjektAuslastung(); updateChecklisteObjekte(); updateObjektHistorieSelect(); updateObjektKontakteSelect(); renderObjektKontakte(); updateObjektAnweisungenSelect(); renderObjektAnweisungen(); updateObjektKostenMonat(); renderObjektKostenanalyse(); renderVertragsCountdown(); updateRevierplanSelect(); renderRevierplan(); updateBesObjektSelect(); renderBesichtigungen(); updateInfokarteSelect(); updateWetterObjektSelects(); renderWetterNotizen(); updateObjektChecklisteSelect(); renderObjektCheckliste(); }
         if (this.dataset.tab === 'kalender') { renderKalender(); renderDienstplan(); renderJahresuebersicht(); }
         if (this.dataset.tab === 'abrechnung') { updateAbrechnung(); updateLohnvorschauSelects(); renderDuplikatCheck(); renderBewertungsUebersicht(); updateMonatsabschlussSelect(); renderMonatsabschluss(); updateCSVExportFilter(); }
-        if (this.dataset.tab === 'mitarbeiter') { renderMitarbeiter(); renderDokumente(); renderUeberstunden(); renderKontaktliste(); renderUrlaubskonto(); renderArbeitszeitkonto(); renderQualMatrix(); updateSchichtHistorieSelect(); renderNotfallkontakte(); updateMAKalSelect(); renderVerfuegbarkeitWoche(); renderDoppelschichtWarnungen(); renderMALeistung(); renderKrankenstatistik(); renderGeburtstageJubilaeen(); renderMASkills(); renderTauschBoard(); renderMAVerfuegbarkeitsKalender(); }
+        if (this.dataset.tab === 'mitarbeiter') { renderMitarbeiter(); renderDokumente(); renderUeberstunden(); renderKontaktliste(); renderUrlaubskonto(); renderArbeitszeitkonto(); renderQualMatrix(); updateSchichtHistorieSelect(); renderNotfallkontakte(); updateMAKalSelect(); renderVerfuegbarkeitWoche(); renderDoppelschichtWarnungen(); renderMALeistung(); renderKrankenstatistik(); renderGeburtstageJubilaeen(); renderMASkills(); renderTauschBoard(); renderMAVerfuegbarkeitsKalender(); renderNachrichtenBoard(); }
         if (this.dataset.tab === 'vorfaelle') { renderVorfaelle(); renderVorfallsStatistik(); }
         if (this.dataset.tab === 'wachbuch') { renderWachbuch(); renderUebergaben(); renderWachbuchStats(); updateSchichtUebergabeSelects(); renderSchichtUebergaben(); }
         if (this.dataset.tab === 'einstellungen') { updateDatenStats(); updateSpeicherStats(); ladeEinstellungen(); renderAuditLog(); renderSondernotizen(); renderFeiertagsKalender(); }
@@ -516,7 +516,7 @@ function renderTabelle() {
         tr.innerHTML = `
             <td class="no-print"><input type="checkbox" class="bulk-cb bulk-item-cb" data-id="${e.id}" onchange="bulkUpdateCount()"></td>
             <td><span class="ampel" style="background:${getEinsatzAmpel(e).farbe}" title="${getEinsatzAmpel(e).label}"></span>${formatDatum(e.datum)}${e.status && e.status !== 'geplant' ? '<br><span class="status-badge status-' + e.status + '">' + escapeHtml(STATUS_LABELS[e.status] || e.status) + '</span>' : ''}${renderEinsatzTags(e)}</td>
-            <td><span class="obj-farbe" style="background:${getObjektFarbe(e.objekt)}"></span>${escapeHtml(e.objekt)}</td>
+            <td>${getPrioritaetBadge(e.id)}<span class="obj-farbe" style="background:${getObjektFarbe(e.objekt)}"></span>${escapeHtml(e.objekt)}</td>
             <td>${escapeHtml(e.mitarbeiter || '\u2014')}</td>
             <td>${e.zeitVon}</td>
             <td>${e.zeitBis}</td>
@@ -530,6 +530,11 @@ function renderTabelle() {
                 ${e.mitarbeiter ? '<button class="btn-secondary btn-small" onclick="tauscheSchicht(' + e.id + ')">Tausch</button><button class="btn-secondary btn-small" onclick="tauschAnfrageErstellen(' + e.id + ')" title="Tausch-Board Anfrage">TB</button>' : ''}
                 <button class="btn-delete" onclick="loescheEinsatz(${e.id})">X</button>
                 <button class="btn-secondary btn-small" onclick="toggleKommentare(${e.id})" title="Kommentare">${(einsatzKommentare[e.id] || []).length > 0 ? '💬' + (einsatzKommentare[e.id].length) : '💬'}</button>
+                <select class="prio-select" onchange="setzePrioritaet(${e.id},this.value)" title="Priorität">
+                    <option value="normal" ${(einsatzPrioritaeten[e.id] || 'normal') === 'normal' ? 'selected' : ''}>Normal</option>
+                    <option value="hoch" ${einsatzPrioritaeten[e.id] === 'hoch' ? 'selected' : ''}>Hoch</option>
+                    <option value="kritisch" ${einsatzPrioritaeten[e.id] === 'kritisch' ? 'selected' : ''}>Kritisch</option>
+                </select>
             </td>
         `;
         einsatzBody.appendChild(tr);
@@ -1567,7 +1572,7 @@ function loescheMitarbeiter(index) {
 // =============================================
 function erstelleBackup() {
     const backup = {
-        version: 17,
+        version: 18,
         datum: new Date().toISOString(),
         einsaetze,
         objekte,
@@ -1593,7 +1598,10 @@ function erstelleBackup() {
         tauschAnfragen,
         einsatzKommentare,
         schichtUebergaben,
-        objektWetterNotizen
+        objektWetterNotizen,
+        einsatzPrioritaeten,
+        maNachrichten,
+        objektChecklisten
     };
 
     const json = JSON.stringify(backup, null, 2);
@@ -1643,6 +1651,9 @@ function stelleWiederHer(event) {
             einsatzKommentare = data.einsatzKommentare || {};
             schichtUebergaben = data.schichtUebergaben || [];
             objektWetterNotizen = data.objektWetterNotizen || {};
+            einsatzPrioritaeten = data.einsatzPrioritaeten || {};
+            maNachrichten = data.maNachrichten || [];
+            objektChecklisten = data.objektChecklisten || {};
 
             speichern();
             localStorage.setItem('bbprotect_objekte', JSON.stringify(objekte));
@@ -1669,6 +1680,9 @@ function stelleWiederHer(event) {
             localStorage.setItem('bbprotect_einsatzkommentare', JSON.stringify(einsatzKommentare));
             localStorage.setItem('bbprotect_schichtuebergaben', JSON.stringify(schichtUebergaben));
             localStorage.setItem('bbprotect_objektwetter', JSON.stringify(objektWetterNotizen));
+            localStorage.setItem('bbprotect_prioritaeten', JSON.stringify(einsatzPrioritaeten));
+            localStorage.setItem('bbprotect_nachrichten', JSON.stringify(maNachrichten));
+            localStorage.setItem('bbprotect_objektchecklisten', JSON.stringify(objektChecklisten));
 
             renderTabelle();
             updateAlleFilter();
@@ -1716,6 +1730,9 @@ function loescheAlleDaten() {
     einsatzKommentare = {};
     schichtUebergaben = [];
     objektWetterNotizen = {};
+    einsatzPrioritaeten = {};
+    maNachrichten = [];
+    objektChecklisten = {};
 
     localStorage.removeItem('bbprotect_einsaetze');
     localStorage.removeItem('bbprotect_objekte');
@@ -1742,6 +1759,9 @@ function loescheAlleDaten() {
     localStorage.removeItem('bbprotect_einsatzkommentare');
     localStorage.removeItem('bbprotect_schichtuebergaben');
     localStorage.removeItem('bbprotect_objektwetter');
+    localStorage.removeItem('bbprotect_prioritaeten');
+    localStorage.removeItem('bbprotect_nachrichten');
+    localStorage.removeItem('bbprotect_objektchecklisten');
 
     renderTabelle();
     updateAlleFilter();
@@ -8465,6 +8485,296 @@ function renderDashboardKacheln() {
                 <div class="dk-label">Offene Tausch-Anfragen</div>
             </div>
         </div>`;
+}
+
+// =============================================
+// EINSATZ-PRIORITÄTEN
+// =============================================
+let einsatzPrioritaeten = JSON.parse(localStorage.getItem('bbprotect_prioritaeten') || '{}');
+
+function setzePrioritaet(einsatzId, prio) {
+    einsatzPrioritaeten[einsatzId] = prio;
+    localStorage.setItem('bbprotect_prioritaeten', JSON.stringify(einsatzPrioritaeten));
+    renderTabelle();
+}
+
+function getPrioritaetBadge(einsatzId) {
+    const prio = einsatzPrioritaeten[einsatzId] || 'normal';
+    if (prio === 'hoch') return '<span class="prio-badge prio-hoch" title="Hohe Priorität">!</span>';
+    if (prio === 'kritisch') return '<span class="prio-badge prio-kritisch" title="Kritisch">!!</span>';
+    return '';
+}
+
+// =============================================
+// MA-NACHRICHTEN-BOARD
+// =============================================
+let maNachrichten = JSON.parse(localStorage.getItem('bbprotect_nachrichten') || '[]');
+
+function nachrichtSpeichern() {
+    const betreff = document.getElementById('nbBetreff') ? document.getElementById('nbBetreff').value.trim() : '';
+    const text = document.getElementById('nbText') ? document.getElementById('nbText').value.trim() : '';
+    const wichtig = document.getElementById('nbWichtig') ? document.getElementById('nbWichtig').checked : false;
+
+    if (!betreff || !text) { alert('Bitte Betreff und Text ausfüllen.'); return; }
+
+    maNachrichten.push({
+        id: Date.now(),
+        betreff,
+        text,
+        wichtig,
+        datum: new Date().toISOString(),
+        gelesen: false
+    });
+
+    localStorage.setItem('bbprotect_nachrichten', JSON.stringify(maNachrichten));
+    logAudit('erstellt', 'Nachricht', betreff);
+
+    if (document.getElementById('nbBetreff')) document.getElementById('nbBetreff').value = '';
+    if (document.getElementById('nbText')) document.getElementById('nbText').value = '';
+    if (document.getElementById('nbWichtig')) document.getElementById('nbWichtig').checked = false;
+    renderNachrichtenBoard();
+}
+
+function nachrichtLoeschen(id) {
+    maNachrichten = maNachrichten.filter(n => n.id !== id);
+    localStorage.setItem('bbprotect_nachrichten', JSON.stringify(maNachrichten));
+    renderNachrichtenBoard();
+}
+
+function renderNachrichtenBoard() {
+    const el = document.getElementById('nachrichtenBoardContent');
+    if (!el) return;
+
+    if (maNachrichten.length === 0) {
+        el.innerHTML = '<p style="color:#a0aec0">Keine Nachrichten vorhanden.</p>';
+        return;
+    }
+
+    const sorted = maNachrichten.slice().sort((a, b) => {
+        if (a.wichtig !== b.wichtig) return b.wichtig ? 1 : -1;
+        return b.datum.localeCompare(a.datum);
+    });
+
+    let html = '';
+    sorted.forEach(n => {
+        const datum = new Date(n.datum);
+        html += `<div class="nb-item ${n.wichtig ? 'nb-wichtig' : ''}">
+            <div class="nb-header">
+                ${n.wichtig ? '<span class="nb-badge">WICHTIG</span>' : ''}
+                <strong>${escapeHtml(n.betreff)}</strong>
+                <span class="nb-datum">${datum.toLocaleDateString('de-DE')} ${datum.toLocaleTimeString('de-DE', {hour:'2-digit',minute:'2-digit'})}</span>
+                <button class="btn-delete btn-small" onclick="nachrichtLoeschen(${n.id})" style="padding:0 0.3rem">&times;</button>
+            </div>
+            <div class="nb-text">${escapeHtml(n.text)}</div>
+        </div>`;
+    });
+    el.innerHTML = html;
+}
+
+// =============================================
+// OBJEKT-CHECKLISTEN
+// =============================================
+let objektChecklisten = JSON.parse(localStorage.getItem('bbprotect_objektchecklisten') || '{}');
+
+function checklistePunktHinzufuegen() {
+    const objekt = document.getElementById('oclObjekt') ? document.getElementById('oclObjekt').value : '';
+    const text = document.getElementById('oclText') ? document.getElementById('oclText').value.trim() : '';
+
+    if (!objekt || !text) { alert('Bitte Objekt und Prüfpunkt ausfüllen.'); return; }
+
+    if (!objektChecklisten[objekt]) objektChecklisten[objekt] = [];
+    objektChecklisten[objekt].push({ text, erledigt: false, id: Date.now() });
+    localStorage.setItem('bbprotect_objektchecklisten', JSON.stringify(objektChecklisten));
+
+    if (document.getElementById('oclText')) document.getElementById('oclText').value = '';
+    renderObjektCheckliste();
+}
+
+function checklisteToggle(objekt, id) {
+    const liste = objektChecklisten[objekt];
+    if (!liste) return;
+    const item = liste.find(i => i.id === id);
+    if (item) item.erledigt = !item.erledigt;
+    localStorage.setItem('bbprotect_objektchecklisten', JSON.stringify(objektChecklisten));
+    renderObjektCheckliste();
+}
+
+function checklistePunktLoeschen(objekt, id) {
+    if (!objektChecklisten[objekt]) return;
+    objektChecklisten[objekt] = objektChecklisten[objekt].filter(i => i.id !== id);
+    if (objektChecklisten[objekt].length === 0) delete objektChecklisten[objekt];
+    localStorage.setItem('bbprotect_objektchecklisten', JSON.stringify(objektChecklisten));
+    renderObjektCheckliste();
+}
+
+function renderObjektCheckliste() {
+    const el = document.getElementById('objektChecklisteContent');
+    if (!el) return;
+
+    const objekt = document.getElementById('oclObjekt') ? document.getElementById('oclObjekt').value : '';
+    if (!objekt) { el.innerHTML = '<p style="color:#a0aec0">Bitte Objekt wählen.</p>'; return; }
+
+    const liste = objektChecklisten[objekt] || [];
+    if (liste.length === 0) {
+        el.innerHTML = '<p style="color:#a0aec0">Keine Prüfpunkte. Füge welche über das Feld oben hinzu.</p>';
+        return;
+    }
+
+    const erledigt = liste.filter(i => i.erledigt).length;
+    let html = `<div class="ocl-progress"><span>${erledigt}/${liste.length} erledigt</span><div class="ocl-bar-bg"><div class="ocl-bar-fill" style="width:${(erledigt/liste.length)*100}%"></div></div></div>`;
+    html += '<div class="ocl-list">';
+    liste.forEach(item => {
+        html += `<div class="ocl-item ${item.erledigt ? 'ocl-done' : ''}" onclick="checklisteToggle('${escapeHtml(objekt)}',${item.id})">
+            <span class="ocl-check">${item.erledigt ? '☑' : '☐'}</span>
+            <span class="ocl-text">${escapeHtml(item.text)}</span>
+            <button class="btn-delete btn-small" onclick="event.stopPropagation();checklistePunktLoeschen('${escapeHtml(objekt)}',${item.id})" style="padding:0 0.3rem;font-size:0.6rem">&times;</button>
+        </div>`;
+    });
+    html += '</div>';
+    el.innerHTML = html;
+}
+
+function updateObjektChecklisteSelect() {
+    const sel = document.getElementById('oclObjekt');
+    if (!sel) return;
+    const current = sel.value;
+    sel.innerHTML = '<option value="">Objekt wählen...</option>';
+    objekte.forEach(o => { sel.innerHTML += `<option value="${escapeHtml(o.name)}">${escapeHtml(o.name)}</option>`; });
+    if (current) sel.value = current;
+}
+
+// =============================================
+// SCHICHTPLAN-VORSCHAU (7-Tage-Raster)
+// =============================================
+function renderSchichtplanVorschau() {
+    const el = document.getElementById('schichtplanVorschauContent');
+    if (!el) return;
+
+    const heute = new Date();
+    const tage = [];
+    for (let i = 0; i < 7; i++) {
+        const d = new Date(heute);
+        d.setDate(d.getDate() + i);
+        tage.push(d.toISOString().split('T')[0]);
+    }
+
+    const WT = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'];
+
+    let html = '<div class="spv-grid">';
+    tage.forEach(datum => {
+        const d = new Date(datum);
+        const wt = WT[d.getDay()];
+        const isHeute = datum === heute.toISOString().split('T')[0];
+        const tagesE = einsaetze.filter(e => e.datum === datum && e.status !== 'storniert').sort((a, b) => a.zeitVon.localeCompare(b.zeitVon));
+        const feiertag = typeof getFeiertage === 'function' ? getFeiertage(d.getFullYear())[datum] : null;
+
+        html += `<div class="spv-tag ${isHeute ? 'spv-heute' : ''}">
+            <div class="spv-tag-header">
+                <strong>${wt}</strong> ${d.getDate()}.${d.getMonth() + 1}.
+                ${feiertag ? '<span class="spv-ft">' + escapeHtml(feiertag) + '</span>' : ''}
+            </div>`;
+
+        if (tagesE.length === 0) {
+            html += '<div class="spv-leer">Keine Einsätze</div>';
+        } else {
+            tagesE.forEach(e => {
+                const prio = einsatzPrioritaeten[e.id] || 'normal';
+                html += `<div class="spv-einsatz ${prio !== 'normal' ? 'spv-prio-' + prio : ''}">
+                    <span class="spv-zeit">${e.zeitVon}-${e.zeitBis}</span>
+                    <span class="spv-obj">${escapeHtml(e.objekt.substring(0, 15))}</span>
+                    ${e.mitarbeiter ? '<span class="spv-ma">' + escapeHtml(e.mitarbeiter.split(' ').map(n => n[0]).join('')) + '</span>' : '<span class="spv-unbesetzt">?</span>'}
+                </div>`;
+            });
+        }
+        html += '</div>';
+    });
+    html += '</div>';
+
+    // Zusammenfassung
+    const gesamtE = tage.reduce((s, d) => s + einsaetze.filter(e => e.datum === d && e.status !== 'storniert').length, 0);
+    const unbesetzt = tage.reduce((s, d) => s + einsaetze.filter(e => e.datum === d && e.status !== 'storniert' && !e.mitarbeiter).length, 0);
+    html += `<div class="spv-summary">${gesamtE} Einsätze in 7 Tagen | ${unbesetzt} unbesetzt</div>`;
+
+    el.innerHTML = html;
+}
+
+// =============================================
+// ERWEITERTE STATISTIK-DASHBOARD
+// =============================================
+function renderErweiterteStatistik() {
+    const el = document.getElementById('erwStatistikContent');
+    if (!el) return;
+
+    const aktiv = einsaetze.filter(e => e.status !== 'storniert');
+    if (aktiv.length === 0) { el.innerHTML = '<p style="color:#a0aec0">Keine Einsatzdaten vorhanden.</p>'; return; }
+
+    // Top-MA nach Stunden
+    const maStunden = {};
+    aktiv.forEach(e => {
+        if (e.mitarbeiter) {
+            if (!maStunden[e.mitarbeiter]) maStunden[e.mitarbeiter] = { stunden: 0, einsaetze: 0 };
+            maStunden[e.mitarbeiter].stunden += e.stunden;
+            maStunden[e.mitarbeiter].einsaetze++;
+        }
+    });
+    const topMA = Object.entries(maStunden).sort((a, b) => b[1].stunden - a[1].stunden).slice(0, 5);
+
+    // Ø Schichtdauer
+    const avgSchicht = aktiv.reduce((s, e) => s + e.stunden, 0) / aktiv.length;
+
+    // Auslastungsquote (aktive MA mit Einsatz diese Woche / Gesamt-MA)
+    const heute = new Date().toISOString().split('T')[0];
+    const vor7 = new Date(Date.now() - 7 * 86400000).toISOString().split('T')[0];
+    const aktiveMa = new Set(aktiv.filter(e => e.datum >= vor7 && e.datum <= heute && e.mitarbeiter).map(e => e.mitarbeiter));
+    const auslastung = mitarbeiterListe_.length > 0 ? (aktiveMa.size / mitarbeiterListe_.length * 100) : 0;
+
+    // Stornierungsrate
+    const storniertCount = einsaetze.filter(e => e.status === 'storniert').length;
+    const stornierungsRate = einsaetze.length > 0 ? (storniertCount / einsaetze.length * 100) : 0;
+
+    // Nacht-/Wochenend-Anteil
+    const nachtEinsaetze = aktiv.filter(e => {
+        const h = parseInt(e.zeitVon.split(':')[0]);
+        return h < 6 || h >= 22;
+    }).length;
+    const nachtAnteil = aktiv.length > 0 ? (nachtEinsaetze / aktiv.length * 100) : 0;
+
+    let html = '<div class="es-grid">';
+
+    // KPI-Karten
+    html += `<div class="es-card">
+        <div class="es-card-label">Ø Schichtdauer</div>
+        <div class="es-card-value">${formatZahl(avgSchicht)} Std.</div>
+    </div>`;
+    html += `<div class="es-card">
+        <div class="es-card-label">MA-Auslastung (7 Tage)</div>
+        <div class="es-card-value">${formatZahl(auslastung)}%</div>
+    </div>`;
+    html += `<div class="es-card">
+        <div class="es-card-label">Stornierungsrate</div>
+        <div class="es-card-value">${formatZahl(stornierungsRate)}%</div>
+    </div>`;
+    html += `<div class="es-card">
+        <div class="es-card-label">Nacht-/Frühschicht-Anteil</div>
+        <div class="es-card-value">${formatZahl(nachtAnteil)}%</div>
+    </div>`;
+
+    html += '</div>';
+
+    // Top-MA Rangliste
+    if (topMA.length > 0) {
+        html += '<div class="es-top"><strong>Top-5 Mitarbeiter (Stunden):</strong>';
+        topMA.forEach(([name, data], i) => {
+            html += `<div class="es-top-item">
+                <span class="es-top-rank">${i + 1}.</span>
+                <span class="es-top-name">${escapeHtml(name)}</span>
+                <span class="es-top-val">${formatZahl(data.stunden)} Std. (${data.einsaetze} Einsätze)</span>
+            </div>`;
+        });
+        html += '</div>';
+    }
+
+    el.innerHTML = html;
 }
 
 // =============================================

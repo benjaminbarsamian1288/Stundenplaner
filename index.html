@@ -701,6 +701,20 @@
                         <div id="stundenkontoChartContent"></div>
                     </div>
                 </div>
+
+                <div class="dashboard-details" style="margin-top:1rem">
+                    <div class="detail-card full-width">
+                        <h3>7-Tage-Schichtplan-Vorschau</h3>
+                        <div id="schichtplanVorschauContent"></div>
+                    </div>
+                </div>
+
+                <div class="dashboard-details" style="margin-top:1rem">
+                    <div class="detail-card full-width">
+                        <h3>Erweiterte Statistik</h3>
+                        <div id="erwStatistikContent"></div>
+                    </div>
+                </div>
             </section>
         </div>
 
@@ -1076,6 +1090,28 @@
                     </div>
                     <div id="wetterNotizenContent"></div>
                 </div>
+            </section>
+
+            <section class="form-section">
+                <div class="list-header">
+                    <h2>Objekt-Checklisten</h2>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="oclObjekt">Objekt</label>
+                        <select id="oclObjekt" onchange="renderObjektCheckliste()">
+                            <option value="">Objekt w&auml;hlen...</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="flex:2">
+                        <label for="oclText">Neuer Pr&uuml;fpunkt</label>
+                        <input type="text" id="oclText" placeholder="z.B. Fenster kontrolliert, Alarm scharf geschaltet">
+                    </div>
+                    <div class="form-group" style="display:flex;align-items:flex-end">
+                        <button type="button" class="btn-primary" onclick="checklistePunktHinzufuegen()">+ Punkt</button>
+                    </div>
+                </div>
+                <div id="objektChecklisteContent" style="margin-top:0.5rem"></div>
             </section>
 
             <section class="form-section">
@@ -1484,6 +1520,27 @@
                     </div>
                 </div>
                 <div id="maVerfKalContent"></div>
+            </section>
+
+            <section class="form-section">
+                <div class="list-header">
+                    <h2>MA-Nachrichten-Board</h2>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="nbBetreff">Betreff</label>
+                        <input type="text" id="nbBetreff" placeholder="z.B. Dienstbesprechung am Freitag">
+                    </div>
+                    <div class="form-group" style="flex:2">
+                        <label for="nbText">Nachricht</label>
+                        <input type="text" id="nbText" placeholder="Nachrichtentext...">
+                    </div>
+                </div>
+                <div style="display:flex;gap:0.5rem;align-items:center;margin-top:0.3rem">
+                    <label style="font-size:0.8rem;display:flex;align-items:center;gap:0.3rem"><input type="checkbox" id="nbWichtig"> Wichtig</label>
+                    <button type="button" class="btn-primary" onclick="nachrichtSpeichern()">Nachricht senden</button>
+                </div>
+                <div id="nachrichtenBoardContent" style="margin-top:0.75rem"></div>
             </section>
 
             <section class="form-section">
