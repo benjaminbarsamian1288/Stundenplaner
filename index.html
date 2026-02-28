@@ -31,6 +31,7 @@
         <div class="globale-suche-ergebnis" id="globaleSucheErgebnis" style="display:none"></div>
     </div>
     <div class="header-stats" id="headerStats"></div>
+    <div id="quickStatsLeiste"></div>
     <div class="benachrichtigungen" id="benachrichtigungen" style="display:none"></div>
     <div class="schnellaktionen">
         <button class="sa-btn" onclick="schnellNeuerEinsatz()">+ Einsatz</button>
@@ -450,6 +451,23 @@
                 </div>
                 <div id="tagesModalContent"></div>
             </div>
+        </div>
+
+            <section class="form-section" style="margin-top:1rem">
+                <div class="list-header">
+                    <h2>Dienstplan drucken (Woche)</h2>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="dpStartDatum">Woche ab</label>
+                        <input type="date" id="dpStartDatum">
+                    </div>
+                    <div class="form-group" style="display:flex;align-items:flex-end">
+                        <button type="button" class="btn-primary" onclick="druckeDienstplanWoche()">Wochenplan drucken</button>
+                    </div>
+                </div>
+                <p style="font-size:0.75rem;color:#718096;margin-top:0.25rem">Druckt den Wochenplan ab dem gew&auml;hlten Datum (korrigiert zum Montag).</p>
+            </section>
         </div>
 
         <!-- TAB: Abrechnung -->
@@ -1122,6 +1140,40 @@
 
             <section class="form-section">
                 <div class="list-header">
+                    <h2>Objekt-Zugangshinweise</h2>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="zhObjekt">Objekt</label>
+                        <select id="zhObjekt" onchange="renderZugangshinweise()">
+                            <option value="">Objekt w&auml;hlen...</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="zhSchluessel">Schl&uuml;ssel</label>
+                        <input type="text" id="zhSchluessel" placeholder="z.B. Hauptschl&uuml;ssel Nr. 42">
+                    </div>
+                    <div class="form-group">
+                        <label for="zhCode">Code / PIN</label>
+                        <input type="text" id="zhCode" placeholder="z.B. 1234#">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="zhParkplatz">Parkplatz</label>
+                        <input type="text" id="zhParkplatz" placeholder="z.B. Tiefgarage P2, Stellplatz 15">
+                    </div>
+                    <div class="form-group" style="flex:2">
+                        <label for="zhNotiz">Weitere Hinweise</label>
+                        <input type="text" id="zhNotiz" placeholder="z.B. Seiteneingang nutzen, Hund im Hof">
+                    </div>
+                </div>
+                <button type="button" class="btn-primary" onclick="zugangshinweisSpeichern()" style="margin-top:0.5rem">Zugangshinweise speichern</button>
+                <div id="zugangshinweiseContent" style="margin-top:0.5rem"></div>
+            </section>
+
+            <section class="form-section">
+                <div class="list-header">
                     <h2>Objekt-Checklisten</h2>
                 </div>
                 <div class="form-row">
@@ -1572,6 +1624,19 @@
                     </div>
                 </div>
                 <div id="zertifikateContent" style="margin-top:0.5rem"></div>
+            </section>
+
+            <section class="form-section">
+                <div class="list-header">
+                    <h2>Jahresarbeitszeitkonto</h2>
+                </div>
+                <div class="form-row" style="margin-bottom:0.5rem">
+                    <div class="form-group">
+                        <label for="jazkJahr">Jahr</label>
+                        <input type="number" id="jazkJahr" min="2020" max="2040" onchange="renderJahresarbeitszeitkonto()">
+                    </div>
+                </div>
+                <div id="jahresAZKContent" style="overflow-x:auto"></div>
             </section>
 
             <section class="form-section">

@@ -87,10 +87,10 @@ document.querySelectorAll('.nav-btn').forEach(btn => {
         document.getElementById('tab-' + this.dataset.tab).classList.add('active');
 
         if (this.dataset.tab === 'dashboard') { updateDashboard(); renderEinsatzChronik(); renderEinsatzAnalytics(); renderWochenReport(); renderEinsatzTimeline(); renderKostenTrend(); renderObjektUmsatzRanking(); renderStundenkontoChart(); renderDashboardKacheln(); renderSchichtplanVorschau(); renderErweiterteStatistik(); renderTagesPersonal(); }
-        if (this.dataset.tab === 'objekte') { renderObjekte(); renderVertraege(); renderObjektAuslastung(); updateChecklisteObjekte(); updateObjektHistorieSelect(); updateObjektKontakteSelect(); renderObjektKontakte(); updateObjektAnweisungenSelect(); renderObjektAnweisungen(); updateObjektKostenMonat(); renderObjektKostenanalyse(); renderVertragsCountdown(); updateRevierplanSelect(); renderRevierplan(); updateBesObjektSelect(); renderBesichtigungen(); updateInfokarteSelect(); updateWetterObjektSelects(); renderWetterNotizen(); updateObjektChecklisteSelect(); renderObjektCheckliste(); renderVertragslaufzeitBalken(); }
+        if (this.dataset.tab === 'objekte') { renderObjekte(); renderVertraege(); renderObjektAuslastung(); updateChecklisteObjekte(); updateObjektHistorieSelect(); updateObjektKontakteSelect(); renderObjektKontakte(); updateObjektAnweisungenSelect(); renderObjektAnweisungen(); updateObjektKostenMonat(); renderObjektKostenanalyse(); renderVertragsCountdown(); updateRevierplanSelect(); renderRevierplan(); updateBesObjektSelect(); renderBesichtigungen(); updateInfokarteSelect(); updateWetterObjektSelects(); renderWetterNotizen(); updateObjektChecklisteSelect(); renderObjektCheckliste(); renderVertragslaufzeitBalken(); updateZugangshinweiseSelect(); renderZugangshinweise(); }
         if (this.dataset.tab === 'kalender') { renderKalender(); renderDienstplan(); renderJahresuebersicht(); }
         if (this.dataset.tab === 'abrechnung') { updateAbrechnung(); updateLohnvorschauSelects(); renderDuplikatCheck(); renderBewertungsUebersicht(); updateMonatsabschlussSelect(); renderMonatsabschluss(); updateCSVExportFilter(); }
-        if (this.dataset.tab === 'mitarbeiter') { renderMitarbeiter(); renderDokumente(); renderUeberstunden(); renderKontaktliste(); renderUrlaubskonto(); renderArbeitszeitkonto(); renderQualMatrix(); updateSchichtHistorieSelect(); renderNotfallkontakte(); updateMAKalSelect(); renderVerfuegbarkeitWoche(); renderDoppelschichtWarnungen(); renderMALeistung(); renderKrankenstatistik(); renderGeburtstageJubilaeen(); renderMASkills(); renderTauschBoard(); renderMAVerfuegbarkeitsKalender(); renderNachrichtenBoard(); renderZertifikateTracker(); }
+        if (this.dataset.tab === 'mitarbeiter') { renderMitarbeiter(); renderDokumente(); renderUeberstunden(); renderKontaktliste(); renderUrlaubskonto(); renderArbeitszeitkonto(); renderQualMatrix(); updateSchichtHistorieSelect(); renderNotfallkontakte(); updateMAKalSelect(); renderVerfuegbarkeitWoche(); renderDoppelschichtWarnungen(); renderMALeistung(); renderKrankenstatistik(); renderGeburtstageJubilaeen(); renderMASkills(); renderTauschBoard(); renderMAVerfuegbarkeitsKalender(); renderNachrichtenBoard(); renderZertifikateTracker(); renderJahresarbeitszeitkonto(); }
         if (this.dataset.tab === 'vorfaelle') { renderVorfaelle(); renderVorfallsStatistik(); }
         if (this.dataset.tab === 'wachbuch') { renderWachbuch(); renderUebergaben(); renderWachbuchStats(); updateSchichtUebergabeSelects(); renderSchichtUebergaben(); }
         if (this.dataset.tab === 'einstellungen') { updateDatenStats(); updateSpeicherStats(); ladeEinstellungen(); renderAuditLog(); renderSondernotizen(); renderFeiertagsKalender(); }
@@ -517,7 +517,7 @@ function renderTabelle() {
 
         tr.innerHTML = `
             <td class="no-print"><input type="checkbox" class="bulk-cb bulk-item-cb" data-id="${e.id}" onchange="bulkUpdateCount()"></td>
-            <td><span class="ampel" style="background:${getEinsatzAmpel(e).farbe}" title="${getEinsatzAmpel(e).label}"></span>${formatDatum(e.datum)}${e.status && e.status !== 'geplant' ? '<br><span class="status-badge status-' + e.status + '">' + escapeHtml(STATUS_LABELS[e.status] || e.status) + '</span>' : ''}${renderEinsatzTags(e)}</td>
+            <td><span class="ampel" style="background:${getEinsatzAmpel(e).farbe}" title="${getEinsatzAmpel(e).label}"></span>${formatDatum(e.datum)}${e.status && e.status !== 'geplant' ? '<br><span class="status-badge status-' + e.status + '">' + escapeHtml(STATUS_LABELS[e.status] || e.status) + '</span>' : ''}${renderEinsatzTags(e)}${renderEinsatzTagBadges(e.id)}</td>
             <td>${getPrioritaetBadge(e.id)}<span class="obj-farbe" style="background:${getObjektFarbe(e.objekt)}"></span>${escapeHtml(e.objekt)}</td>
             <td>${escapeHtml(e.mitarbeiter || '\u2014')}</td>
             <td>${e.zeitVon}</td>
@@ -548,6 +548,7 @@ function renderTabelle() {
         komRow.className = 'ek-row';
         komRow.innerHTML = `<td colspan="11" class="ek-cell">
             <div class="ek-container">
+                <div class="ft-selector" style="margin-bottom:0.3rem">${renderTagSelector(e.id)}</div>
                 <div id="ek_list_${e.id}"></div>
                 <div class="ek-input-row">
                     <input type="text" id="ek_input_${e.id}" placeholder="Kommentar hinzufügen..." class="ek-input" onkeydown="if(event.key==='Enter')kommentarSpeichern(${e.id})">
@@ -1574,7 +1575,7 @@ function loescheMitarbeiter(index) {
 // =============================================
 function erstelleBackup() {
     const backup = {
-        version: 19,
+        version: 20,
         datum: new Date().toISOString(),
         einsaetze,
         objekte,
@@ -1604,7 +1605,9 @@ function erstelleBackup() {
         einsatzPrioritaeten,
         maNachrichten,
         objektChecklisten,
-        maZertifikate
+        maZertifikate,
+        einsatzFarbTags,
+        objektZugangshinweise
     };
 
     const json = JSON.stringify(backup, null, 2);
@@ -1658,6 +1661,8 @@ function stelleWiederHer(event) {
             maNachrichten = data.maNachrichten || [];
             objektChecklisten = data.objektChecklisten || {};
             maZertifikate = data.maZertifikate || [];
+            einsatzFarbTags = data.einsatzFarbTags || {};
+            objektZugangshinweise = data.objektZugangshinweise || {};
 
             speichern();
             localStorage.setItem('bbprotect_objekte', JSON.stringify(objekte));
@@ -1688,6 +1693,8 @@ function stelleWiederHer(event) {
             localStorage.setItem('bbprotect_nachrichten', JSON.stringify(maNachrichten));
             localStorage.setItem('bbprotect_objektchecklisten', JSON.stringify(objektChecklisten));
             localStorage.setItem('bbprotect_zertifikate', JSON.stringify(maZertifikate));
+            localStorage.setItem('bbprotect_farbtags', JSON.stringify(einsatzFarbTags));
+            localStorage.setItem('bbprotect_zugangshinweise', JSON.stringify(objektZugangshinweise));
 
             renderTabelle();
             updateAlleFilter();
@@ -1739,6 +1746,8 @@ function loescheAlleDaten() {
     maNachrichten = [];
     objektChecklisten = {};
     maZertifikate = [];
+    einsatzFarbTags = {};
+    objektZugangshinweise = {};
 
     localStorage.removeItem('bbprotect_einsaetze');
     localStorage.removeItem('bbprotect_objekte');
@@ -1769,6 +1778,8 @@ function loescheAlleDaten() {
     localStorage.removeItem('bbprotect_nachrichten');
     localStorage.removeItem('bbprotect_objektchecklisten');
     localStorage.removeItem('bbprotect_zertifikate');
+    localStorage.removeItem('bbprotect_farbtags');
+    localStorage.removeItem('bbprotect_zugangshinweise');
 
     renderTabelle();
     updateAlleFilter();
@@ -8988,6 +8999,236 @@ function renderPausenInfo() {
 }
 
 // =============================================
+// EINSATZ-FARB-TAGS
+// =============================================
+let einsatzFarbTags = JSON.parse(localStorage.getItem('bbprotect_farbtags') || '{}');
+const FARB_TAG_OPTIONEN = [
+    { id: 'vip', label: 'VIP', farbe: '#805ad5' },
+    { id: 'sonder', label: 'Sonderbewachung', farbe: '#e53e3e' },
+    { id: 'routine', label: 'Routinedienst', farbe: '#4299e1' },
+    { id: 'event', label: 'Event/Veranstaltung', farbe: '#38a169' },
+    { id: 'nacht', label: 'Nachtdienst', farbe: '#2d3748' },
+    { id: 'probe', label: 'Probezeit/Einarbeitung', farbe: '#d69e2e' }
+];
+
+function setzeEinsatzTag(einsatzId, tagId) {
+    if (!einsatzFarbTags[einsatzId]) einsatzFarbTags[einsatzId] = [];
+    const idx = einsatzFarbTags[einsatzId].indexOf(tagId);
+    if (idx >= 0) einsatzFarbTags[einsatzId].splice(idx, 1);
+    else einsatzFarbTags[einsatzId].push(tagId);
+    if (einsatzFarbTags[einsatzId].length === 0) delete einsatzFarbTags[einsatzId];
+    localStorage.setItem('bbprotect_farbtags', JSON.stringify(einsatzFarbTags));
+    renderTabelle();
+}
+
+function renderEinsatzTagBadges(einsatzId) {
+    const tags = einsatzFarbTags[einsatzId] || [];
+    if (tags.length === 0) return '';
+    return tags.map(t => {
+        const opt = FARB_TAG_OPTIONEN.find(o => o.id === t);
+        if (!opt) return '';
+        return `<span class="ft-badge" style="background:${opt.farbe}" title="${opt.label}">${opt.label.substring(0, 3)}</span>`;
+    }).join('');
+}
+
+function renderTagSelector(einsatzId) {
+    const current = einsatzFarbTags[einsatzId] || [];
+    return FARB_TAG_OPTIONEN.map(o =>
+        `<label class="ft-option" style="border-color:${o.farbe}"><input type="checkbox" onchange="setzeEinsatzTag(${einsatzId},'${o.id}')" ${current.includes(o.id) ? 'checked' : ''}> <span style="color:${o.farbe}">${o.label}</span></label>`
+    ).join('');
+}
+
+// =============================================
+// MA-JAHRESARBEITSZEITKONTO
+// =============================================
+function renderJahresarbeitszeitkonto() {
+    const el = document.getElementById('jahresAZKContent');
+    if (!el) return;
+
+    const jahr = parseInt(document.getElementById('jazkJahr') ? document.getElementById('jazkJahr').value : new Date().getFullYear());
+    const maList = mitarbeiterListe_.filter(m => m.sollStunden > 0).sort((a, b) => a.name.localeCompare(b.name));
+
+    if (maList.length === 0) { el.innerHTML = '<p style="color:#a0aec0">Keine MA mit Soll-Stunden definiert.</p>'; return; }
+
+    let html = '<table class="jazk-table"><thead><tr><th>MA</th>';
+    for (let m = 0; m < 12; m++) {
+        html += `<th>${MONATSNAMEN[m].substring(0, 3)}</th>`;
+    }
+    html += '<th>Gesamt Soll</th><th>Gesamt Ist</th><th>Saldo</th></tr></thead><tbody>';
+
+    maList.forEach(ma => {
+        html += `<tr><td class="jazk-name">${escapeHtml(ma.name.split(' ').map(n => n.substring(0, 8)).join(' '))}</td>`;
+        let gesamtIst = 0;
+        for (let m = 1; m <= 12; m++) {
+            const monatStr = `${jahr}-${String(m).padStart(2, '0')}`;
+            const ist = einsaetze.filter(e => e.mitarbeiter === ma.name && e.datum.substring(0, 7) === monatStr && e.status !== 'storniert')
+                .reduce((s, e) => s + e.stunden, 0);
+            gesamtIst += ist;
+            const diff = ist - ma.sollStunden;
+            const cls = ist === 0 ? '' : diff >= 0 ? 'jazk-plus' : 'jazk-minus';
+            html += `<td class="${cls}" title="Soll: ${formatZahl(ma.sollStunden)} | Ist: ${formatZahl(ist)}">${ist > 0 ? formatZahl(ist) : ''}</td>`;
+        }
+        const gesamtSoll = ma.sollStunden * 12;
+        const saldo = gesamtIst - gesamtSoll;
+        html += `<td>${formatZahl(gesamtSoll)}</td>`;
+        html += `<td>${formatZahl(gesamtIst)}</td>`;
+        html += `<td class="${saldo >= 0 ? 'jazk-plus' : 'jazk-minus'}"><strong>${saldo >= 0 ? '+' : ''}${formatZahl(saldo)}</strong></td>`;
+        html += '</tr>';
+    });
+
+    html += '</tbody></table>';
+    el.innerHTML = html;
+}
+
+// =============================================
+// OBJEKT-ZUGANGSHINWEISE
+// =============================================
+let objektZugangshinweise = JSON.parse(localStorage.getItem('bbprotect_zugangshinweise') || '{}');
+
+function zugangshinweisSpeichern() {
+    const objekt = document.getElementById('zhObjekt') ? document.getElementById('zhObjekt').value : '';
+    const schluessel = document.getElementById('zhSchluessel') ? document.getElementById('zhSchluessel').value.trim() : '';
+    const code = document.getElementById('zhCode') ? document.getElementById('zhCode').value.trim() : '';
+    const parkplatz = document.getElementById('zhParkplatz') ? document.getElementById('zhParkplatz').value.trim() : '';
+    const notiz = document.getElementById('zhNotiz') ? document.getElementById('zhNotiz').value.trim() : '';
+
+    if (!objekt) { alert('Bitte Objekt wählen.'); return; }
+
+    objektZugangshinweise[objekt] = { schluessel, code, parkplatz, notiz, aktualisiert: new Date().toISOString() };
+    localStorage.setItem('bbprotect_zugangshinweise', JSON.stringify(objektZugangshinweise));
+    logAudit('bearbeitet', 'Zugangshinweise', objekt);
+    renderZugangshinweise();
+}
+
+function renderZugangshinweise() {
+    const el = document.getElementById('zugangshinweiseContent');
+    if (!el) return;
+
+    const objekt = document.getElementById('zhObjekt') ? document.getElementById('zhObjekt').value : '';
+    if (!objekt) { el.innerHTML = '<p style="color:#a0aec0">Bitte Objekt wählen.</p>'; return; }
+
+    const zh = objektZugangshinweise[objekt];
+    if (!zh) { el.innerHTML = '<p style="color:#a0aec0">Keine Zugangshinweise vorhanden.</p>'; return; }
+
+    // Felder befüllen
+    if (document.getElementById('zhSchluessel')) document.getElementById('zhSchluessel').value = zh.schluessel || '';
+    if (document.getElementById('zhCode')) document.getElementById('zhCode').value = zh.code || '';
+    if (document.getElementById('zhParkplatz')) document.getElementById('zhParkplatz').value = zh.parkplatz || '';
+    if (document.getElementById('zhNotiz')) document.getElementById('zhNotiz').value = zh.notiz || '';
+
+    el.innerHTML = `<div class="zh-info">
+        ${zh.schluessel ? '<div class="zh-row"><span class="zh-label">Schlüssel:</span> ' + escapeHtml(zh.schluessel) + '</div>' : ''}
+        ${zh.code ? '<div class="zh-row"><span class="zh-label">Code/PIN:</span> ' + escapeHtml(zh.code) + '</div>' : ''}
+        ${zh.parkplatz ? '<div class="zh-row"><span class="zh-label">Parkplatz:</span> ' + escapeHtml(zh.parkplatz) + '</div>' : ''}
+        ${zh.notiz ? '<div class="zh-row"><span class="zh-label">Hinweis:</span> ' + escapeHtml(zh.notiz) + '</div>' : ''}
+        <div class="zh-aktualisiert">Stand: ${new Date(zh.aktualisiert).toLocaleDateString('de-DE')}</div>
+    </div>`;
+}
+
+function updateZugangshinweiseSelect() {
+    const sel = document.getElementById('zhObjekt');
+    if (!sel) return;
+    const current = sel.value;
+    sel.innerHTML = '<option value="">Objekt wählen...</option>';
+    objekte.forEach(o => { sel.innerHTML += `<option value="${escapeHtml(o.name)}">${escapeHtml(o.name)}</option>`; });
+    if (current) sel.value = current;
+}
+
+// =============================================
+// DIENSTPLAN-PDF-GENERIERUNG (Druck)
+// =============================================
+function druckeDienstplanWoche() {
+    const startDatum = document.getElementById('dpStartDatum') ? document.getElementById('dpStartDatum').value : '';
+    if (!startDatum) { alert('Bitte Startdatum wählen.'); return; }
+
+    const start = new Date(startDatum);
+    // Zum Montag korrigieren
+    const wt = start.getDay();
+    const diff = wt === 0 ? -6 : 1 - wt;
+    start.setDate(start.getDate() + diff);
+
+    const tage = [];
+    for (let i = 0; i < 7; i++) {
+        const d = new Date(start);
+        d.setDate(d.getDate() + i);
+        tage.push(d.toISOString().split('T')[0]);
+    }
+
+    const WT = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
+    const einstName = einstellungen.firmenname || 'B.B. Protect';
+
+    let html = `<div style="font-family:sans-serif;max-width:900px;margin:auto">
+        <h2 style="margin-bottom:0.3rem">${escapeHtml(einstName)} - Wochendienstplan</h2>
+        <p style="font-size:0.8rem;color:#666">KW ${getKW(start)} | ${formatDatum(tage[0])} – ${formatDatum(tage[6])}</p>
+        <table style="width:100%;border-collapse:collapse;font-size:0.75rem;margin-top:0.5rem">
+            <thead><tr style="background:#edf2f7">
+                <th style="padding:0.4rem;border:1px solid #ccc;text-align:left">Tag</th>
+                <th style="padding:0.4rem;border:1px solid #ccc">Objekt</th>
+                <th style="padding:0.4rem;border:1px solid #ccc">MA</th>
+                <th style="padding:0.4rem;border:1px solid #ccc">Zeiten</th>
+                <th style="padding:0.4rem;border:1px solid #ccc">Std.</th>
+            </tr></thead><tbody>`;
+
+    tage.forEach((datum, i) => {
+        const tagesE = einsaetze.filter(e => e.datum === datum && e.status !== 'storniert').sort((a, b) => a.zeitVon.localeCompare(b.zeitVon));
+        const feiertag = typeof getFeiertage === 'function' ? getFeiertage(start.getFullYear())[datum] : null;
+
+        if (tagesE.length === 0) {
+            html += `<tr><td style="padding:0.3rem;border:1px solid #ccc;font-weight:600">${WT[i]} ${new Date(datum).getDate()}.${new Date(datum).getMonth() + 1}. ${feiertag ? '(' + feiertag + ')' : ''}</td><td colspan="4" style="padding:0.3rem;border:1px solid #ccc;color:#aaa;text-align:center">—</td></tr>`;
+        } else {
+            tagesE.forEach((e, j) => {
+                html += `<tr>${j === 0 ? '<td style="padding:0.3rem;border:1px solid #ccc;font-weight:600" rowspan="' + tagesE.length + '">' + WT[i] + ' ' + new Date(datum).getDate() + '.' + (new Date(datum).getMonth() + 1) + '.' + (feiertag ? ' <span style="color:red;font-size:0.6rem">(' + feiertag + ')</span>' : '') + '</td>' : ''}
+                    <td style="padding:0.3rem;border:1px solid #ccc">${escapeHtml(e.objekt)}</td>
+                    <td style="padding:0.3rem;border:1px solid #ccc">${escapeHtml(e.mitarbeiter || '—')}</td>
+                    <td style="padding:0.3rem;border:1px solid #ccc;text-align:center">${e.zeitVon}–${e.zeitBis}</td>
+                    <td style="padding:0.3rem;border:1px solid #ccc;text-align:right">${formatZahl(e.stunden)}</td>
+                </tr>`;
+            });
+        }
+    });
+
+    const totalStd = tage.reduce((s, d) => s + einsaetze.filter(e => e.datum === d && e.status !== 'storniert').reduce((ss, e) => ss + e.stunden, 0), 0);
+    html += `<tr style="background:#edf2f7;font-weight:700"><td colspan="4" style="padding:0.3rem;border:1px solid #ccc;text-align:right">Gesamt:</td><td style="padding:0.3rem;border:1px solid #ccc;text-align:right">${formatZahl(totalStd)}</td></tr>`;
+    html += '</tbody></table>';
+    html += `<p style="margin-top:1rem;font-size:0.65rem;color:#999">Erstellt: ${new Date().toLocaleDateString('de-DE')}</p></div>`;
+
+    document.getElementById('printArea').innerHTML = html;
+    window.print();
+}
+
+function getKW(d) {
+    const date = new Date(d);
+    date.setHours(0, 0, 0, 0);
+    date.setDate(date.getDate() + 3 - (date.getDay() + 6) % 7);
+    const week1 = new Date(date.getFullYear(), 0, 4);
+    return 1 + Math.round(((date - week1) / 86400000 - 3 + (week1.getDay() + 6) % 7) / 7);
+}
+
+// =============================================
+// QUICK-STATS-LEISTE
+// =============================================
+function renderQuickStats() {
+    const el = document.getElementById('quickStatsLeiste');
+    if (!el) return;
+
+    const heute = new Date().toISOString().split('T')[0];
+    const heuteE = einsaetze.filter(e => e.datum === heute && e.status !== 'storniert');
+    const heuteStd = heuteE.reduce((s, e) => s + e.stunden, 0);
+    const heuteUmsatz = heuteE.reduce((s, e) => s + e.gesamt, 0);
+    const aktiveMA = new Set(heuteE.filter(e => e.mitarbeiter).map(e => e.mitarbeiter)).size;
+    const morgen = new Date(Date.now() + 86400000).toISOString().split('T')[0];
+    const morgenE = einsaetze.filter(e => e.datum === morgen && e.status !== 'storniert').length;
+
+    el.innerHTML = `<div class="qs-leiste">
+        <span class="qs-item">Heute: <strong>${heuteE.length}</strong> Einsätze</span>
+        <span class="qs-item"><strong>${formatZahl(heuteStd)}</strong> Std.</span>
+        <span class="qs-item"><strong>${formatEuro(heuteUmsatz)}</strong></span>
+        <span class="qs-item"><strong>${aktiveMA}</strong> MA aktiv</span>
+        <span class="qs-item">Morgen: <strong>${morgenE}</strong></span>
+    </div>`;
+}
+
+// =============================================
 // INITIALISIERUNG
 // =============================================
 document.getElementById('datum').valueAsDate = new Date();
@@ -9001,6 +9242,7 @@ renderVorlagen();
 renderMitarbeiter();
 renderVerfuegbarkeit();
 updateHeaderStats();
+renderQuickStats();
 pruefeBenachrichtigungen();
 renderDokumente();
 renderUrlaubskonto();
@@ -9022,6 +9264,8 @@ document.getElementById('owDatum').valueAsDate = new Date();
 document.getElementById('skChartMonat').value = new Date().toISOString().substring(0, 7);
 document.getElementById('fkJahr').value = new Date().getFullYear();
 document.getElementById('tpDatum').valueAsDate = new Date();
+document.getElementById('jazkJahr').value = new Date().getFullYear();
+document.getElementById('dpStartDatum').valueAsDate = new Date();
 const jetztInit = new Date();
 document.getElementById('wbZeit').value = `${String(jetztInit.getHours()).padStart(2, '0')}:${String(jetztInit.getMinutes()).padStart(2, '0')}`;
 document.getElementById('ugZeit').value = `${String(jetztInit.getHours()).padStart(2, '0')}:${String(jetztInit.getMinutes()).padStart(2, '0')}`;
