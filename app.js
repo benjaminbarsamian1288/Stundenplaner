@@ -86,11 +86,11 @@ document.querySelectorAll('.nav-btn').forEach(btn => {
         this.classList.add('active');
         document.getElementById('tab-' + this.dataset.tab).classList.add('active');
 
-        if (this.dataset.tab === 'dashboard') { updateDashboard(); renderEinsatzChronik(); renderEinsatzAnalytics(); renderWochenReport(); }
-        if (this.dataset.tab === 'objekte') { renderObjekte(); renderVertraege(); renderObjektAuslastung(); updateChecklisteObjekte(); updateObjektHistorieSelect(); updateObjektKontakteSelect(); renderObjektKontakte(); updateObjektAnweisungenSelect(); renderObjektAnweisungen(); updateObjektKostenMonat(); renderObjektKostenanalyse(); renderVertragsCountdown(); updateRevierplanSelect(); renderRevierplan(); updateBesObjektSelect(); renderBesichtigungen(); }
+        if (this.dataset.tab === 'dashboard') { updateDashboard(); renderEinsatzChronik(); renderEinsatzAnalytics(); renderWochenReport(); renderEinsatzTimeline(); renderKostenTrend(); }
+        if (this.dataset.tab === 'objekte') { renderObjekte(); renderVertraege(); renderObjektAuslastung(); updateChecklisteObjekte(); updateObjektHistorieSelect(); updateObjektKontakteSelect(); renderObjektKontakte(); updateObjektAnweisungenSelect(); renderObjektAnweisungen(); updateObjektKostenMonat(); renderObjektKostenanalyse(); renderVertragsCountdown(); updateRevierplanSelect(); renderRevierplan(); updateBesObjektSelect(); renderBesichtigungen(); updateInfokarteSelect(); }
         if (this.dataset.tab === 'kalender') { renderKalender(); renderDienstplan(); renderJahresuebersicht(); }
         if (this.dataset.tab === 'abrechnung') { updateAbrechnung(); updateLohnvorschauSelects(); renderDuplikatCheck(); renderBewertungsUebersicht(); updateMonatsabschlussSelect(); renderMonatsabschluss(); }
-        if (this.dataset.tab === 'mitarbeiter') { renderMitarbeiter(); renderDokumente(); renderUeberstunden(); renderKontaktliste(); renderUrlaubskonto(); renderArbeitszeitkonto(); renderQualMatrix(); updateSchichtHistorieSelect(); renderNotfallkontakte(); updateMAKalSelect(); renderVerfuegbarkeitWoche(); renderDoppelschichtWarnungen(); renderMALeistung(); renderKrankenstatistik(); renderGeburtstageJubilaeen(); renderMASkills(); }
+        if (this.dataset.tab === 'mitarbeiter') { renderMitarbeiter(); renderDokumente(); renderUeberstunden(); renderKontaktliste(); renderUrlaubskonto(); renderArbeitszeitkonto(); renderQualMatrix(); updateSchichtHistorieSelect(); renderNotfallkontakte(); updateMAKalSelect(); renderVerfuegbarkeitWoche(); renderDoppelschichtWarnungen(); renderMALeistung(); renderKrankenstatistik(); renderGeburtstageJubilaeen(); renderMASkills(); renderTauschBoard(); }
         if (this.dataset.tab === 'vorfaelle') { renderVorfaelle(); renderVorfallsStatistik(); }
         if (this.dataset.tab === 'wachbuch') { renderWachbuch(); renderUebergaben(); renderWachbuchStats(); }
         if (this.dataset.tab === 'einstellungen') { updateDatenStats(); updateSpeicherStats(); ladeEinstellungen(); renderAuditLog(); renderSondernotizen(); }
@@ -527,7 +527,7 @@ function renderTabelle() {
             <td class="no-print">
                 <button class="btn-edit" onclick="bearbeiteEinsatz(${e.id})">Bearb.</button>
                 <button class="btn-secondary btn-small" onclick="dupliziereEinsatz(${e.id})">Dupl.</button>
-                ${e.mitarbeiter ? '<button class="btn-secondary btn-small" onclick="tauscheSchicht(' + e.id + ')">Tausch</button>' : ''}
+                ${e.mitarbeiter ? '<button class="btn-secondary btn-small" onclick="tauscheSchicht(' + e.id + ')">Tausch</button><button class="btn-secondary btn-small" onclick="tauschAnfrageErstellen(' + e.id + ')" title="Tausch-Board Anfrage">TB</button>' : ''}
                 <button class="btn-delete" onclick="loescheEinsatz(${e.id})">X</button>
             </td>
         `;
@@ -1550,7 +1550,7 @@ function loescheMitarbeiter(index) {
 // =============================================
 function erstelleBackup() {
     const backup = {
-        version: 14,
+        version: 15,
         datum: new Date().toISOString(),
         einsaetze,
         objekte,
@@ -1572,7 +1572,8 @@ function erstelleBackup() {
         monatsabschluesse,
         tagesSondernotizen,
         schnellvorlagen,
-        besichtigungen
+        besichtigungen,
+        tauschAnfragen
     };
 
     const json = JSON.stringify(backup, null, 2);
@@ -1618,6 +1619,7 @@ function stelleWiederHer(event) {
             tagesSondernotizen = data.tagesSondernotizen || {};
             schnellvorlagen = data.schnellvorlagen || [];
             besichtigungen = data.besichtigungen || [];
+            tauschAnfragen = data.tauschAnfragen || [];
 
             speichern();
             localStorage.setItem('bbprotect_objekte', JSON.stringify(objekte));
@@ -1640,6 +1642,7 @@ function stelleWiederHer(event) {
             localStorage.setItem('bbprotect_tagesnotizen_extra', JSON.stringify(tagesSondernotizen));
             localStorage.setItem('bbprotect_schnellvorlagen', JSON.stringify(schnellvorlagen));
             localStorage.setItem('bbprotect_besichtigungen', JSON.stringify(besichtigungen));
+            localStorage.setItem('bbprotect_tauschanfragen', JSON.stringify(tauschAnfragen));
 
             renderTabelle();
             updateAlleFilter();
@@ -1683,6 +1686,7 @@ function loescheAlleDaten() {
     tagesSondernotizen = {};
     schnellvorlagen = [];
     besichtigungen = [];
+    tauschAnfragen = [];
 
     localStorage.removeItem('bbprotect_einsaetze');
     localStorage.removeItem('bbprotect_objekte');
@@ -1705,6 +1709,7 @@ function loescheAlleDaten() {
     localStorage.removeItem('bbprotect_tagesnotizen_extra');
     localStorage.removeItem('bbprotect_schnellvorlagen');
     localStorage.removeItem('bbprotect_besichtigungen');
+    localStorage.removeItem('bbprotect_tauschanfragen');
 
     renderTabelle();
     updateAlleFilter();
@@ -7604,6 +7609,303 @@ function dienstplanSchnellzuweisung(datum) {
 }
 
 // =============================================
+// EINSATZ-TIMELINE (visuelle Zeitleiste)
+// =============================================
+function renderEinsatzTimeline() {
+    const el = document.getElementById('timelineContent');
+    if (!el) return;
+
+    const datum = document.getElementById('tlDatum') ? document.getElementById('tlDatum').value : new Date().toISOString().split('T')[0];
+    if (!datum) { el.innerHTML = '<p style="color:#a0aec0">Bitte Datum wählen.</p>'; return; }
+
+    const tagesE = einsaetze.filter(e => e.datum === datum && e.status !== 'storniert').sort((a, b) => a.zeitVon.localeCompare(b.zeitVon));
+
+    if (tagesE.length === 0) {
+        el.innerHTML = `<p style="color:#a0aec0">Keine Einsätze am ${formatDatum(datum)}.</p>`;
+        return;
+    }
+
+    // Finde Zeitbereich
+    let minStd = 24, maxStd = 0;
+    tagesE.forEach(e => {
+        const [vh] = e.zeitVon.split(':').map(Number);
+        const [bh] = e.zeitBis.split(':').map(Number);
+        minStd = Math.min(minStd, vh);
+        maxStd = Math.max(maxStd, bh === 0 ? 24 : bh);
+    });
+    minStd = Math.max(0, minStd - 1);
+    maxStd = Math.min(24, maxStd + 1);
+    const range = maxStd - minStd;
+
+    // Stunden-Header
+    let html = '<div class="tl-container">';
+    html += '<div class="tl-header">';
+    for (let h = minStd; h <= maxStd; h++) {
+        const left = ((h - minStd) / range) * 100;
+        html += `<span class="tl-stunde" style="left:${left}%">${String(h).padStart(2, '0')}</span>`;
+    }
+    html += '</div>';
+
+    // Einsatz-Balken
+    tagesE.forEach(e => {
+        const [vh, vm] = e.zeitVon.split(':').map(Number);
+        const [bh, bm] = e.zeitBis.split(':').map(Number);
+        let startMin = vh * 60 + vm;
+        let endMin = bh * 60 + bm;
+        if (endMin <= startMin) endMin += 24 * 60;
+
+        const left = ((startMin / 60 - minStd) / range) * 100;
+        const width = ((endMin - startMin) / 60 / range) * 100;
+
+        html += `<div class="tl-row">
+            <div class="tl-bar" style="left:${Math.max(0, left)}%;width:${Math.min(100 - left, width)}%;background:${getObjektFarbe(e.objekt)}">
+                <span class="tl-bar-text">${escapeHtml(e.objekt)} ${e.mitarbeiter ? '(' + escapeHtml(e.mitarbeiter) + ')' : ''} ${e.zeitVon}-${e.zeitBis}</span>
+            </div>
+        </div>`;
+    });
+
+    html += '</div>';
+    html += `<p style="font-size:0.7rem;color:#718096;margin-top:0.3rem">${tagesE.length} Einsätze | ${formatZahl(tagesE.reduce((s, e) => s + e.stunden, 0))} Stunden</p>`;
+
+    el.innerHTML = html;
+}
+
+// =============================================
+// KOSTEN-TRENDLINIE (6 Monate)
+// =============================================
+function renderKostenTrend() {
+    const el = document.getElementById('kostenTrendContent');
+    if (!el) return;
+
+    const monate = {};
+    einsaetze.filter(e => e.status !== 'storniert').forEach(e => {
+        const m = e.datum.substring(0, 7);
+        if (!monate[m]) monate[m] = { stunden: 0, grundlohn: 0, zuschlaege: 0, gesamt: 0, einsaetze: 0 };
+        monate[m].stunden += e.stunden;
+        monate[m].grundlohn += e.grundlohn;
+        monate[m].zuschlaege += e.zuschlagBetrag;
+        monate[m].gesamt += e.gesamt;
+        monate[m].einsaetze++;
+    });
+
+    const sortedMonate = Object.keys(monate).sort().slice(-6);
+    if (sortedMonate.length < 2) {
+        el.innerHTML = '<p style="color:#a0aec0">Mindestens 2 Monate Daten für Trendanzeige nötig.</p>';
+        return;
+    }
+
+    const maxGesamt = Math.max(...sortedMonate.map(m => monate[m].gesamt), 1);
+    const maxStd = Math.max(...sortedMonate.map(m => monate[m].stunden), 1);
+
+    let html = '<div class="kt-chart">';
+
+    // Umsatz-Balken
+    html += '<div class="kt-label">Umsatz</div>';
+    html += '<div class="kt-bars">';
+    sortedMonate.forEach(m => {
+        const pct = (monate[m].gesamt / maxGesamt) * 100;
+        const [j, mo] = m.split('-');
+        html += `<div class="kt-bar-group">
+            <div class="kt-bar kt-umsatz" style="height:${pct}%" title="${formatEuro(monate[m].gesamt)}"></div>
+            <div class="kt-bar-label">${MONATSNAMEN[parseInt(mo) - 1].substring(0, 3)}</div>
+            <div class="kt-bar-val">${formatEuro(monate[m].gesamt)}</div>
+        </div>`;
+    });
+    html += '</div>';
+
+    // Stunden-Balken
+    html += '<div class="kt-label">Stunden</div>';
+    html += '<div class="kt-bars">';
+    sortedMonate.forEach(m => {
+        const pct = (monate[m].stunden / maxStd) * 100;
+        const [j, mo] = m.split('-');
+        html += `<div class="kt-bar-group">
+            <div class="kt-bar kt-stunden" style="height:${pct}%"></div>
+            <div class="kt-bar-label">${MONATSNAMEN[parseInt(mo) - 1].substring(0, 3)}</div>
+            <div class="kt-bar-val">${formatZahl(monate[m].stunden)}</div>
+        </div>`;
+    });
+    html += '</div>';
+
+    // Trend-Zusammenfassung
+    const letzter = monate[sortedMonate[sortedMonate.length - 1]];
+    const vorher = monate[sortedMonate[sortedMonate.length - 2]];
+    const umsatzDiff = vorher.gesamt > 0 ? ((letzter.gesamt - vorher.gesamt) / vorher.gesamt * 100) : 0;
+    const stdDiff = vorher.stunden > 0 ? ((letzter.stunden - vorher.stunden) / vorher.stunden * 100) : 0;
+
+    html += `<div class="kt-summary">
+        <span>Umsatz-Trend: <strong class="${umsatzDiff >= 0 ? 'wr-up' : 'wr-down'}">${umsatzDiff >= 0 ? '+' : ''}${formatZahl(umsatzDiff)}%</strong></span>
+        <span>Stunden-Trend: <strong class="${stdDiff >= 0 ? 'wr-up' : 'wr-down'}">${stdDiff >= 0 ? '+' : ''}${formatZahl(stdDiff)}%</strong></span>
+        <span>Ø Kosten/Std.: <strong>${formatEuro(letzter.stunden > 0 ? letzter.gesamt / letzter.stunden : 0)}</strong></span>
+    </div>`;
+
+    html += '</div>';
+    el.innerHTML = html;
+}
+
+// =============================================
+// OBJEKT-INFOKARTE (druckbar)
+// =============================================
+function druckeObjektInfokarte() {
+    const sel = document.getElementById('ikObjekt');
+    if (!sel || !sel.value) { alert('Bitte Objekt wählen.'); return; }
+
+    const obj = objekte.find(o => o.name === sel.value);
+    if (!obj) return;
+
+    const kontakte = objektKontakte.filter(k => k.objekt === obj.name);
+    const anweisungen = (objektAnweisungen[obj.name] || []).filter(a => a.aktiv);
+    const plan = revierplaene[obj.name];
+
+    const einstName = einstellungen.firmenname || 'B.B. Protect';
+
+    let html = `<div style="font-family:sans-serif;max-width:600px;margin:auto">
+        <h2 style="border-bottom:2px solid #333;padding-bottom:0.5rem">${escapeHtml(einstName)} - Objekt-Infokarte</h2>
+        <h3>${escapeHtml(obj.name)}</h3>
+        <table style="width:100%;border-collapse:collapse;font-size:0.85rem;margin-bottom:1rem">
+            <tr><td style="padding:0.3rem;font-weight:600;width:40%">Adresse:</td><td style="padding:0.3rem">${escapeHtml(obj.adresse || '\u2014')}</td></tr>
+            <tr><td style="padding:0.3rem;font-weight:600">Ansprechpartner:</td><td style="padding:0.3rem">${escapeHtml(obj.ansprechpartner || '\u2014')}</td></tr>
+            <tr><td style="padding:0.3rem;font-weight:600">Stundensatz:</td><td style="padding:0.3rem">${obj.stundensatz ? formatEuro(obj.stundensatz) + '/Std.' : '\u2014'}</td></tr>
+            ${obj.mindestQual ? `<tr><td style="padding:0.3rem;font-weight:600">Mind. Qualifikation:</td><td style="padding:0.3rem">${escapeHtml(QUAL_LABELS[obj.mindestQual] || obj.mindestQual)}</td></tr>` : ''}
+            ${obj.minMA ? `<tr><td style="padding:0.3rem;font-weight:600">Min. MA/Schicht:</td><td style="padding:0.3rem">${obj.minMA}</td></tr>` : ''}
+            ${obj.anforderungen ? `<tr><td style="padding:0.3rem;font-weight:600">Anforderungen:</td><td style="padding:0.3rem">${escapeHtml(obj.anforderungen)}</td></tr>` : ''}
+        </table>`;
+
+    if (kontakte.length > 0) {
+        html += '<h4>Kontakte</h4><table style="width:100%;border-collapse:collapse;font-size:0.85rem;margin-bottom:1rem">';
+        kontakte.forEach(k => {
+            html += `<tr><td style="padding:0.2rem;font-weight:600">${escapeHtml(k.rolle || '\u2014')}</td><td style="padding:0.2rem">${escapeHtml(k.name)}</td><td style="padding:0.2rem">${escapeHtml(k.telefon || '\u2014')}</td></tr>`;
+        });
+        html += '</table>';
+    }
+
+    if (anweisungen.length > 0) {
+        html += '<h4>Dienstanweisungen</h4><ul style="font-size:0.85rem">';
+        anweisungen.forEach(a => { html += `<li>${escapeHtml(a.text)}</li>`; });
+        html += '</ul>';
+    }
+
+    if (plan && plan.text) {
+        html += `<h4>Revierplan</h4><pre style="white-space:pre-wrap;font-size:0.85rem;font-family:sans-serif;background:#f7f7f7;padding:0.5rem;border-radius:4px">${escapeHtml(plan.text)}</pre>`;
+    }
+
+    html += `<p style="margin-top:1rem;font-size:0.7rem;color:#999">Stand: ${formatDatum(new Date().toISOString().split('T')[0])}</p></div>`;
+
+    document.getElementById('printArea').innerHTML = html;
+    window.print();
+}
+
+function updateInfokarteSelect() {
+    const sel = document.getElementById('ikObjekt');
+    if (!sel) return;
+    sel.innerHTML = '<option value="">Objekt wählen...</option>';
+    objekte.forEach(o => {
+        sel.innerHTML += `<option value="${escapeHtml(o.name)}">${escapeHtml(o.name)}</option>`;
+    });
+}
+
+// =============================================
+// SCHICHTTAUSCH-BOARD
+// =============================================
+let tauschAnfragen = JSON.parse(localStorage.getItem('bbprotect_tauschanfragen') || '[]');
+
+function tauschAnfrageErstellen(einsatzId) {
+    const e = einsaetze.find(x => x.id === einsatzId);
+    if (!e || !e.mitarbeiter) { alert('Kein gültiger Einsatz mit Mitarbeiter.'); return; }
+
+    if (tauschAnfragen.find(t => t.einsatzId === einsatzId && t.status === 'offen')) {
+        alert('Für diesen Einsatz existiert bereits eine Tausch-Anfrage.');
+        return;
+    }
+
+    tauschAnfragen.push({
+        id: Date.now(),
+        einsatzId,
+        von: e.mitarbeiter,
+        objekt: e.objekt,
+        datum: e.datum,
+        zeitVon: e.zeitVon,
+        zeitBis: e.zeitBis,
+        status: 'offen',
+        erstellt: new Date().toISOString().split('T')[0]
+    });
+
+    localStorage.setItem('bbprotect_tauschanfragen', JSON.stringify(tauschAnfragen));
+    logAudit('erstellt', 'Schichttausch', `${e.mitarbeiter} bietet ${e.objekt} am ${formatDatum(e.datum)}`);
+    renderTauschBoard();
+}
+
+function tauschAnnehmen(tauschId, neuerMA) {
+    const t = tauschAnfragen.find(x => x.id === tauschId);
+    if (!t) return;
+
+    const e = einsaetze.find(x => x.id === t.einsatzId);
+    if (!e) return;
+
+    const alterMA = e.mitarbeiter;
+    e.mitarbeiter = neuerMA;
+    t.status = 'angenommen';
+    t.an = neuerMA;
+
+    speichern();
+    localStorage.setItem('bbprotect_tauschanfragen', JSON.stringify(tauschAnfragen));
+    logAudit('bearbeitet', 'Schichttausch', `${alterMA} → ${neuerMA} für ${t.objekt} am ${formatDatum(t.datum)}`);
+    renderTauschBoard();
+    renderTabelle();
+}
+
+function renderTauschBoard() {
+    const el = document.getElementById('tauschBoardContent');
+    if (!el) return;
+
+    const offene = tauschAnfragen.filter(t => t.status === 'offen');
+    const abgeschlossene = tauschAnfragen.filter(t => t.status === 'angenommen').slice(-5);
+
+    if (offene.length === 0 && abgeschlossene.length === 0) {
+        el.innerHTML = '<p style="color:#a0aec0">Keine Tausch-Anfragen. Nutze "Tausch" in der Einsatztabelle.</p>';
+        return;
+    }
+
+    let html = '';
+    if (offene.length > 0) {
+        html += '<div class="tb-section"><strong>Offene Anfragen:</strong></div>';
+        offene.forEach(t => {
+            const verfuegbar = mitarbeiterListe_.filter(m => {
+                if (m.name === t.von) return false;
+                const abw = verfuegbarkeit.find(v => v.mitarbeiter === m.name && v.von <= t.datum && v.bis >= t.datum);
+                return !abw;
+            });
+
+            html += `<div class="tb-item">
+                <div class="tb-info">
+                    <strong>${escapeHtml(t.von)}</strong> bietet:
+                    <span class="tb-einsatz">${escapeHtml(t.objekt)} | ${formatDatum(t.datum)} | ${t.zeitVon}-${t.zeitBis}</span>
+                </div>
+                <div class="tb-actions">
+                    <select class="tb-select" id="tbMA_${t.id}">
+                        <option value="">MA wählen...</option>
+                        ${verfuegbar.map(m => `<option value="${escapeHtml(m.name)}">${escapeHtml(m.name)}</option>`).join('')}
+                    </select>
+                    <button class="btn-primary btn-small" onclick="var s=document.getElementById('tbMA_${t.id}');if(s.value)tauschAnnehmen(${t.id},s.value)">Zuweisen</button>
+                </div>
+            </div>`;
+        });
+    }
+
+    if (abgeschlossene.length > 0) {
+        html += '<div class="tb-section" style="margin-top:0.75rem"><strong>Letzte Tausche:</strong></div>';
+        abgeschlossene.reverse().forEach(t => {
+            html += `<div class="tb-item tb-done">
+                <span>${escapeHtml(t.von)} → ${escapeHtml(t.an || '?')}</span>
+                <span class="tb-einsatz">${escapeHtml(t.objekt)} | ${formatDatum(t.datum)}</span>
+            </div>`;
+        });
+    }
+
+    el.innerHTML = html;
+}
+
+// =============================================
 // INITIALISIERUNG
 // =============================================
 document.getElementById('datum').valueAsDate = new Date();
@@ -7631,6 +7933,7 @@ document.getElementById('wbDatum').valueAsDate = new Date();
 document.getElementById('ugDatum').valueAsDate = new Date();
 document.getElementById('snDatum').valueAsDate = new Date();
 document.getElementById('besDatum').valueAsDate = new Date();
+document.getElementById('tlDatum').valueAsDate = new Date();
 const jetztInit = new Date();
 document.getElementById('wbZeit').value = `${String(jetztInit.getHours()).padStart(2, '0')}:${String(jetztInit.getMinutes()).padStart(2, '0')}`;
 document.getElementById('ugZeit').value = `${String(jetztInit.getHours()).padStart(2, '0')}:${String(jetztInit.getMinutes()).padStart(2, '0')}`;

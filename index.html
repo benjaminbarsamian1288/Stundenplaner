@@ -576,6 +576,26 @@
                         <div id="wochenReportContent"></div>
                     </div>
                 </div>
+
+                <div class="dashboard-details" style="margin-top:1rem">
+                    <div class="detail-card full-width">
+                        <h3>Einsatz-Timeline</h3>
+                        <div class="form-row" style="margin-bottom:0.5rem">
+                            <div class="form-group">
+                                <label for="tlDatum">Datum</label>
+                                <input type="date" id="tlDatum" onchange="renderEinsatzTimeline()">
+                            </div>
+                        </div>
+                        <div id="timelineContent"></div>
+                    </div>
+                </div>
+
+                <div class="dashboard-details" style="margin-top:1rem">
+                    <div class="detail-card full-width">
+                        <h3>Kosten-Trendlinie (6 Monate)</h3>
+                        <div id="kostenTrendContent"></div>
+                    </div>
+                </div>
             </section>
         </div>
 
@@ -906,6 +926,24 @@
                 </div>
                 <button type="button" class="btn-primary" onclick="besichtigungSpeichern()" style="margin-top:0.5rem">Besichtigung protokollieren</button>
                 <div id="besichtigungenContent" style="margin-top:0.5rem"></div>
+            </section>
+
+            <section class="form-section">
+                <div class="list-header">
+                    <h2>Objekt-Infokarte (druckbar)</h2>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="ikObjekt">Objekt</label>
+                        <select id="ikObjekt">
+                            <option value="">Objekt w&auml;hlen...</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="display:flex;align-items:flex-end">
+                        <button type="button" class="btn-primary" onclick="druckeObjektInfokarte()">Infokarte drucken</button>
+                    </div>
+                </div>
+                <p style="font-size:0.75rem;color:#718096;margin-top:0.25rem">Druckt alle Objektdaten, Kontakte, Anweisungen und Revierplan auf einer Seite.</p>
             </section>
 
             <section class="form-section">
@@ -1283,6 +1321,14 @@
                 </div>
                 <button type="button" class="btn-primary" onclick="notfallkontaktSpeichern()">Notfallkontakt speichern</button>
                 <div id="notfallkontakteContent" style="margin-top:0.75rem"></div>
+            </section>
+
+            <section class="form-section">
+                <div class="list-header">
+                    <h2>Schichttausch-Board</h2>
+                </div>
+                <p style="font-size:0.75rem;color:#718096;margin-bottom:0.5rem">Offene Tausch-Anfragen von Mitarbeitern. &Uuml;ber &bdquo;Tausch&ldquo; in der Einsatztabelle k&ouml;nnen MA ihre Schicht zum Tausch anbieten.</p>
+                <div id="tauschBoardContent"></div>
             </section>
         </div>
 
