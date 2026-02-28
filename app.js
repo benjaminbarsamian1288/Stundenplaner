@@ -24,6 +24,12 @@ let dienstplanJahr = new Date().getFullYear();
 let sortSpalte = 'datum';
 let sortRichtung = 1; // 1 = aufsteigend, -1 = absteigend
 
+// Status-Filter
+let aktuellerStatusFilter = 'alle';
+
+// Tagesnotizen
+let tagesnotizen = JSON.parse(localStorage.getItem('bbprotect_tagesnotizen') || '{}');
+
 // Kalender-State
 let kalenderJahr = new Date().getFullYear();
 let kalenderMonat = new Date().getMonth();
@@ -434,6 +440,14 @@ function renderTabelle() {
     let gefiltert = einsaetze;
     if (filterM) gefiltert = gefiltert.filter(e => e.datum.substring(0, 7) === filterM);
     if (filterO) gefiltert = gefiltert.filter(e => e.objekt === filterO);
+
+    // Status-Filter
+    if (aktuellerStatusFilter !== 'alle') {
+        gefiltert = gefiltert.filter(e => (e.status || 'geplant') === aktuellerStatusFilter);
+    }
+
+    // Statusleiste aktualisieren
+    updateStatusLeiste();
 
     // Suchfilter
     const suchfeld = document.getElementById('suchfeld');
@@ -1486,7 +1500,7 @@ function loescheMitarbeiter(index) {
 // =============================================
 function erstelleBackup() {
     const backup = {
-        version: 7,
+        version: 8,
         datum: new Date().toISOString(),
         einsaetze,
         objekte,
@@ -1496,7 +1510,8 @@ function erstelleBackup() {
         vorfaelle,
         wachbuch,
         dokumente,
-        wochenvorlagen
+        wochenvorlagen,
+        tagesnotizen
     };
 
     const json = JSON.stringify(backup, null, 2);
@@ -1530,6 +1545,7 @@ function stelleWiederHer(event) {
             wachbuch = data.wachbuch || [];
             dokumente = data.dokumente || [];
             wochenvorlagen = data.wochenvorlagen || [];
+            tagesnotizen = data.tagesnotizen || {};
 
             speichern();
             localStorage.setItem('bbprotect_objekte', JSON.stringify(objekte));
@@ -1540,6 +1556,7 @@ function stelleWiederHer(event) {
             localStorage.setItem('bbprotect_wachbuch', JSON.stringify(wachbuch));
             localStorage.setItem('bbprotect_dokumente', JSON.stringify(dokumente));
             localStorage.setItem('bbprotect_wochenvorlagen', JSON.stringify(wochenvorlagen));
+            localStorage.setItem('bbprotect_tagesnotizen', JSON.stringify(tagesnotizen));
 
             renderTabelle();
             updateAlleFilter();
@@ -1571,6 +1588,7 @@ function loescheAlleDaten() {
     wachbuch = [];
     dokumente = [];
     wochenvorlagen = [];
+    tagesnotizen = {};
 
     localStorage.removeItem('bbprotect_einsaetze');
     localStorage.removeItem('bbprotect_objekte');
@@ -1581,6 +1599,7 @@ function loescheAlleDaten() {
     localStorage.removeItem('bbprotect_wachbuch');
     localStorage.removeItem('bbprotect_dokumente');
     localStorage.removeItem('bbprotect_wochenvorlagen');
+    localStorage.removeItem('bbprotect_tagesnotizen');
 
     renderTabelle();
     updateAlleFilter();
@@ -2205,6 +2224,23 @@ function zeigeTagesDetail(datumStr) {
         });
         html += '</div>';
     }
+
+    // Tagesnotizen
+    const tnKey = datumStr;
+    const tnSafe = datumStr.replace(/-/g, '');
+    const notizen = tagesnotizen[tnKey] || [];
+    html += `<div class="modal-abschnitt"><h3>Tagesnotizen (${notizen.length})</h3>`;
+    if (notizen.length > 0) {
+        html += '<div class="tn-list">';
+        notizen.forEach(n => {
+            html += `<div class="tn-item"><span>${escapeHtml(n.text)}</span><button class="btn-delete btn-small" onclick="tagesnotizLoeschen('${tnKey}',${n.id});zeigeTagesDetail('${datumStr}')" style="padding:0.1rem 0.3rem;font-size:0.6rem">X</button></div>`;
+        });
+        html += '</div>';
+    }
+    html += `<div class="tn-form">
+        <input type="text" id="tnInput_${tnSafe}" class="tn-input" placeholder="Notiz hinzufügen..." onkeydown="if(event.key==='Enter'){tagesnotizSpeichern('${tnKey}');zeigeTagesDetail('${datumStr}');}">
+        <button class="btn-primary btn-small" onclick="tagesnotizSpeichern('${tnKey}');zeigeTagesDetail('${datumStr}');">+</button>
+    </div></div>`;
 
     // Button um neuen Einsatz an diesem Tag zu erstellen
     html += `<div class="modal-actions">
@@ -3501,6 +3537,238 @@ function renderPersonalkostenTrend() {
     </div>`;
 
     el.innerHTML = html;
+}
+
+// =============================================
+// EINSATZ-STATUSLEISTE
+// =============================================
+function updateStatusLeiste() {
+    const el = document.getElementById('statusLeiste');
+    if (!el) return;
+
+    const filterM = filterMonat.value;
+    const filterO = filterObjekt.value;
+
+    let gefiltert = einsaetze;
+    if (filterM) gefiltert = gefiltert.filter(e => e.datum.substring(0, 7) === filterM);
+    if (filterO) gefiltert = gefiltert.filter(e => e.objekt === filterO);
+
+    if (gefiltert.length === 0) {
+        el.innerHTML = '';
+        return;
+    }
+
+    const counts = { geplant: 0, bestaetigt: 0, abgeschlossen: 0, storniert: 0 };
+    gefiltert.forEach(e => {
+        const s = e.status || 'geplant';
+        if (counts[s] !== undefined) counts[s]++;
+    });
+
+    const total = gefiltert.length;
+
+    let html = '<div style="display:flex;gap:2px;width:100%;height:8px;border-radius:4px;overflow:hidden;margin-bottom:0.3rem">';
+    if (counts.geplant > 0) html += `<div class="sl-geplant" style="flex:${counts.geplant}" title="Geplant: ${counts.geplant}"></div>`;
+    if (counts.bestaetigt > 0) html += `<div class="sl-bestaetigt" style="flex:${counts.bestaetigt}" title="Bestätigt: ${counts.bestaetigt}"></div>`;
+    if (counts.abgeschlossen > 0) html += `<div class="sl-abgeschlossen" style="flex:${counts.abgeschlossen}" title="Abgeschlossen: ${counts.abgeschlossen}"></div>`;
+    if (counts.storniert > 0) html += `<div class="sl-storniert" style="flex:${counts.storniert}" title="Storniert: ${counts.storniert}"></div>`;
+    html += '</div>';
+
+    html += '<div class="sl-legende">';
+    html += `<span class="sl-leg-item"><span class="sl-leg-dot sl-geplant"></span>Geplant: ${counts.geplant}</span>`;
+    html += `<span class="sl-leg-item"><span class="sl-leg-dot sl-bestaetigt"></span>Bestätigt: ${counts.bestaetigt}</span>`;
+    html += `<span class="sl-leg-item"><span class="sl-leg-dot sl-abgeschlossen"></span>Abgeschlossen: ${counts.abgeschlossen}</span>`;
+    html += `<span class="sl-leg-item"><span class="sl-leg-dot sl-storniert"></span>Storniert: ${counts.storniert}</span>`;
+    html += '</div>';
+
+    el.innerHTML = html;
+}
+
+// =============================================
+// ERWEITERTE FILTERUNG (STATUS-CHIPS)
+// =============================================
+function filterStatus(status) {
+    aktuellerStatusFilter = status;
+
+    document.querySelectorAll('.filter-chip').forEach(chip => {
+        chip.classList.toggle('aktiv', chip.dataset.filter === status);
+    });
+
+    renderTabelle();
+}
+
+// =============================================
+// AUTO-SCHICHTEMPFEHLUNG
+// =============================================
+function updateAutoEmpfehlung() {
+    const el = document.getElementById('autoEmpfehlung');
+    const result = document.getElementById('autoEmpfehlungResult');
+    if (!el || !result) return;
+
+    const datum = document.getElementById('datum').value;
+    const zeitVon = document.getElementById('zeitVon').value;
+    const zeitBis = document.getElementById('zeitBis').value;
+    const objekt = document.getElementById('objekt').value.trim();
+
+    if (!datum || !zeitVon || !zeitBis || mitarbeiterListe_.length === 0) {
+        el.style.display = 'none';
+        return;
+    }
+
+    el.style.display = 'block';
+
+    // Score-Berechnung pro MA
+    const scores = mitarbeiterListe_.map(m => {
+        let score = 100;
+        let details = [];
+
+        // Verfügbarkeit prüfen
+        const abwesend = verfuegbarkeit.find(v =>
+            v.mitarbeiter === m.name && v.von <= datum && v.bis >= datum
+        );
+        if (abwesend) {
+            return { name: m.name, score: -1, details: ['Abwesend'], verfuegbar: false };
+        }
+
+        // Bereits eingeteilt an diesem Tag?
+        const tagesEinsaetze = einsaetze.filter(e => e.mitarbeiter === m.name && e.datum === datum);
+        if (tagesEinsaetze.length > 0) {
+            score -= 40;
+            details.push(`${tagesEinsaetze.length} Einsatz(e) am Tag`);
+        }
+
+        // Objekt-Erfahrung
+        if (objekt) {
+            const objErfahrung = einsaetze.filter(e => e.mitarbeiter === m.name && e.objekt === objekt).length;
+            if (objErfahrung > 0) {
+                score += Math.min(objErfahrung * 5, 30);
+                details.push(`${objErfahrung}x am Objekt`);
+            }
+        }
+
+        // Überstunden vermeiden
+        const monat = datum.substring(0, 7);
+        const monatStd = einsaetze.filter(e => e.mitarbeiter === m.name && e.datum.substring(0, 7) === monat).reduce((s, e) => s + e.stunden, 0);
+        if (m.sollStunden > 0 && monatStd >= m.sollStunden) {
+            score -= 20;
+            details.push('Soll erreicht');
+        }
+
+        return { name: m.name, score, details, verfuegbar: true };
+    });
+
+    const verfuegbare = scores.filter(s => s.verfuegbar).sort((a, b) => b.score - a.score);
+
+    if (verfuegbare.length === 0) {
+        result.innerHTML = '<p style="color:#a0aec0;font-size:0.8rem">Keine MA verfügbar.</p>';
+        return;
+    }
+
+    let html = '';
+    verfuegbare.slice(0, 5).forEach((s, i) => {
+        html += `<div class="ap-row">
+            <span>${i === 0 ? '<span class="ap-empfehlung">Empfohlen</span> ' : ''}${escapeHtml(s.name)}</span>
+            <span class="ap-score">${s.details.join(' | ')} (Score: ${s.score})</span>
+        </div>`;
+    });
+
+    result.innerHTML = html;
+}
+
+// Listener für Auto-Empfehlung
+document.getElementById('zeitVon').addEventListener('change', updateAutoEmpfehlung);
+document.getElementById('zeitBis').addEventListener('change', updateAutoEmpfehlung);
+document.getElementById('objekt').addEventListener('change', updateAutoEmpfehlung);
+
+// =============================================
+// TAGESNOTIZEN
+// =============================================
+function tagesnotizSpeichern(datum) {
+    const input = document.getElementById('tnInput_' + datum.replace(/-/g, ''));
+    if (!input) return;
+
+    const text = input.value.trim();
+    if (!text) return;
+
+    if (!tagesnotizen[datum]) tagesnotizen[datum] = [];
+    tagesnotizen[datum].push({
+        id: Date.now(),
+        text,
+        zeit: new Date().toISOString()
+    });
+
+    localStorage.setItem('bbprotect_tagesnotizen', JSON.stringify(tagesnotizen));
+    input.value = '';
+    renderKalender();
+}
+
+function tagesnotizLoeschen(datum, id) {
+    if (!tagesnotizen[datum]) return;
+    tagesnotizen[datum] = tagesnotizen[datum].filter(n => n.id !== id);
+    if (tagesnotizen[datum].length === 0) delete tagesnotizen[datum];
+    localStorage.setItem('bbprotect_tagesnotizen', JSON.stringify(tagesnotizen));
+}
+
+// =============================================
+// ERWEITERTE EXPORT-OPTIONEN
+// =============================================
+function exportJSON() {
+    const filterM = filterMonat.value;
+    let gefiltert = einsaetze;
+    if (filterM) gefiltert = gefiltert.filter(e => e.datum.substring(0, 7) === filterM);
+
+    if (gefiltert.length === 0) { alert('Keine Einsätze zum Exportieren.'); return; }
+
+    const data = {
+        export_datum: new Date().toISOString(),
+        zeitraum: filterM || 'Alle',
+        anzahl: gefiltert.length,
+        einsaetze: gefiltert
+    };
+
+    downloadFile(
+        `BBProtect_Einsaetze_${filterM || 'Alle'}.json`,
+        JSON.stringify(data, null, 2),
+        'application/json'
+    );
+}
+
+function exportDetailCSV() {
+    const filterM = filterMonat.value;
+    let gefiltert = einsaetze;
+    if (filterM) gefiltert = gefiltert.filter(e => e.datum.substring(0, 7) === filterM);
+
+    if (gefiltert.length === 0) { alert('Keine Einsätze zum Exportieren.'); return; }
+
+    gefiltert.sort((a, b) => a.datum.localeCompare(b.datum) || a.zeitVon.localeCompare(b.zeitVon));
+
+    const header = 'Datum;Wochentag;Objekt;Mitarbeiter;Von;Bis;Stunden;Nacht-Std.;Pause;Stundensatz;Grundlohn;Zuschlag Nacht;Zuschlag Sonntag;Zuschlag Feiertag;Zuschlag Gesamt;Gesamt;Status;Bemerkung';
+    const wochentage = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'];
+
+    const rows = gefiltert.map(e => {
+        const wt = wochentage[new Date(e.datum).getDay()];
+        const nachtZ = e.zuschlagDetails.find(z => z.typ === 'Nacht');
+        const sonntagZ = e.zuschlagDetails.find(z => z.typ === 'Sonntag');
+        const feiertagZ = e.zuschlagDetails.find(z => z.typ === 'Feiertag');
+
+        return [
+            formatDatum(e.datum), wt, e.objekt, e.mitarbeiter || '',
+            e.zeitVon, e.zeitBis, formatZahl(e.stunden), formatZahl(e.nachtStunden),
+            e.pauseMinuten || 0, formatZahl(e.stundensatz),
+            formatZahl(e.grundlohn),
+            nachtZ ? formatZahl(nachtZ.betrag) : '0,00',
+            sonntagZ ? formatZahl(sonntagZ.betrag) : '0,00',
+            feiertagZ ? formatZahl(feiertagZ.betrag) : '0,00',
+            formatZahl(e.zuschlagBetrag), formatZahl(e.gesamt),
+            STATUS_LABELS[e.status || 'geplant'],
+            e.bemerkung || ''
+        ].map(x => `"${String(x).replace(/"/g, '""')}"`).join(';');
+    });
+
+    downloadFile(
+        `BBProtect_Detail_${filterM || 'Alle'}.csv`,
+        '\uFEFF' + header + '\n' + rows.join('\n'),
+        'text/csv;charset=utf-8;'
+    );
 }
 
 // =============================================

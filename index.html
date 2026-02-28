@@ -119,6 +119,11 @@
                         <div class="verf-ma-list" id="verfMaList"></div>
                     </div>
 
+                    <div class="auto-plan" id="autoEmpfehlung" style="display:none">
+                        <div style="font-weight:600;font-size:0.8rem;margin-bottom:0.3rem">MA-Empfehlung f&uuml;r diese Schicht</div>
+                        <div class="auto-plan-result" id="autoEmpfehlungResult"></div>
+                    </div>
+
                     <div class="form-row">
                         <div class="form-group">
                             <label for="bemerkung">Bemerkung</label>
@@ -204,10 +209,25 @@
                         <select id="filterObjekt">
                             <option value="">Alle Objekte</option>
                         </select>
-                        <button class="btn-secondary" onclick="exportCSV()">CSV Export</button>
                         <button class="btn-secondary" onclick="druckeMonatsbericht()">Drucken</button>
                         <button class="btn-secondary" onclick="druckeGesamtbericht()">Gesamtbericht</button>
                         <button class="btn-secondary" onclick="pruefeArbZG()">ArbZG pr&uuml;fen</button>
+                    </div>
+                </div>
+                <div class="status-leiste" id="statusLeiste"></div>
+                <div class="filter-erweitert">
+                    <div class="filter-row">
+                        <span style="font-size:0.75rem;color:#718096;font-weight:600">Status:</span>
+                        <span class="filter-chip aktiv" data-filter="alle" onclick="filterStatus('alle')">Alle</span>
+                        <span class="filter-chip" data-filter="geplant" onclick="filterStatus('geplant')">Geplant</span>
+                        <span class="filter-chip" data-filter="bestaetigt" onclick="filterStatus('bestaetigt')">Best&auml;tigt</span>
+                        <span class="filter-chip" data-filter="abgeschlossen" onclick="filterStatus('abgeschlossen')">Abgeschlossen</span>
+                        <span class="filter-chip" data-filter="storniert" onclick="filterStatus('storniert')">Storniert</span>
+                    </div>
+                    <div class="export-optionen">
+                        <button class="export-btn" onclick="exportCSV()"><span class="export-icon">&#128196;</span> CSV</button>
+                        <button class="export-btn" onclick="exportJSON()"><span class="export-icon">&#128230;</span> JSON</button>
+                        <button class="export-btn" onclick="exportDetailCSV()"><span class="export-icon">&#128202;</span> Detail-CSV</button>
                     </div>
                 </div>
                 <div class="bulk-actions" id="bulkActions" style="display:none">

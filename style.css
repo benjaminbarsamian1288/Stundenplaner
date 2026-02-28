@@ -2006,6 +2006,202 @@ tbody tr:hover {
     margin-bottom: 0.75rem;
 }
 
+/* Einsatz-Statusleiste */
+.status-leiste {
+    display: flex;
+    gap: 0.3rem;
+    margin-bottom: 0.75rem;
+    align-items: center;
+}
+
+.sl-segment {
+    flex: var(--pct);
+    height: 8px;
+    border-radius: 4px;
+    transition: width 0.3s;
+}
+
+.sl-geplant {
+    background: #e2e8f0;
+}
+
+.sl-bestaetigt {
+    background: #48bb78;
+}
+
+.sl-abgeschlossen {
+    background: #4299e1;
+}
+
+.sl-storniert {
+    background: #fc8181;
+}
+
+.sl-legende {
+    display: flex;
+    gap: 1rem;
+    font-size: 0.7rem;
+    color: #718096;
+    flex-wrap: wrap;
+}
+
+.sl-leg-item {
+    display: flex;
+    align-items: center;
+    gap: 0.2rem;
+}
+
+.sl-leg-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+/* Erweiterte Filterung */
+.filter-erweitert {
+    background: #f7fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 0.75rem;
+    margin-bottom: 0.75rem;
+}
+
+.filter-row {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.filter-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.2rem 0.5rem;
+    border-radius: 12px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    background: #ebf8ff;
+    color: #2b6cb0;
+    cursor: pointer;
+}
+
+.filter-chip.aktiv {
+    background: #2b6cb0;
+    color: #fff;
+}
+
+.filter-chip:hover {
+    opacity: 0.85;
+}
+
+/* Automatische Schichtplanung */
+.auto-plan {
+    background: #f7fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 0.75rem;
+}
+
+.auto-plan-result {
+    margin-top: 0.5rem;
+}
+
+.ap-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.3rem 0;
+    border-bottom: 1px solid #f0f2f5;
+    font-size: 0.85rem;
+}
+
+.ap-score {
+    font-size: 0.7rem;
+    color: #718096;
+}
+
+.ap-empfehlung {
+    font-weight: 700;
+    color: #276749;
+    background: #f0fff4;
+    padding: 0.1rem 0.4rem;
+    border-radius: 3px;
+    font-size: 0.7rem;
+}
+
+/* Tagesnotizen im Kalender */
+.kalender-notiz {
+    font-size: 0.55rem;
+    color: #805ad5;
+    background: #faf5ff;
+    padding: 0.05rem 0.15rem;
+    border-radius: 2px;
+    margin-top: 0.1rem;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.tn-form {
+    display: flex;
+    gap: 0.3rem;
+    margin-top: 0.5rem;
+}
+
+.tn-input {
+    flex: 1;
+    padding: 0.3rem 0.5rem;
+    border: 1px solid #cbd5e0;
+    border-radius: 4px;
+    font-size: 0.8rem;
+}
+
+.tn-list {
+    margin-top: 0.3rem;
+}
+
+.tn-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.2rem 0;
+    font-size: 0.8rem;
+    border-bottom: 1px solid #f0f2f5;
+}
+
+/* Auswertungsexport */
+.export-optionen {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    margin-top: 0.5rem;
+}
+
+.export-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.3rem 0.6rem;
+    border-radius: 6px;
+    border: 1px solid #e2e8f0;
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+    background: #fff;
+}
+
+.export-btn:hover {
+    background: #f7fafc;
+    border-color: #cbd5e0;
+}
+
+.export-btn .export-icon {
+    font-size: 0.9rem;
+}
+
 /* =============================================
    DARK MODE
    ============================================= */
@@ -3532,6 +3728,64 @@ body.dark-mode .cl-input {
     border-color: #30363d;
 }
 
+body.dark-mode .sl-geplant {
+    background: #30363d;
+}
+
+body.dark-mode .filter-erweitert {
+    background: #0d1117;
+    border-color: #30363d;
+}
+
+body.dark-mode .filter-chip {
+    background: #0d2137;
+    color: #388bfd;
+}
+
+body.dark-mode .filter-chip.aktiv {
+    background: #1f6feb;
+    color: #fff;
+}
+
+body.dark-mode .auto-plan {
+    background: #0d1117;
+    border-color: #30363d;
+}
+
+body.dark-mode .ap-row {
+    border-bottom-color: #21262d;
+}
+
+body.dark-mode .ap-empfehlung {
+    background: #0d200d;
+    color: #3fb950;
+}
+
+body.dark-mode .kalender-notiz {
+    color: #a371f7;
+    background: #1c0d2e;
+}
+
+body.dark-mode .tn-input {
+    background: #0d1117;
+    color: #c9d1d9;
+    border-color: #30363d;
+}
+
+body.dark-mode .tn-item {
+    border-bottom-color: #21262d;
+}
+
+body.dark-mode .export-btn {
+    background: #161b22;
+    border-color: #30363d;
+    color: #c9d1d9;
+}
+
+body.dark-mode .export-btn:hover {
+    background: #21262d;
+}
+
 body.dark-mode .urlaub-row {
     border-bottom-color: #21262d;
 }
@@ -3805,5 +4059,18 @@ footer {
 
     .bulk-actions {
         flex-wrap: wrap;
+    }
+
+    .filter-row {
+        flex-direction: column;
+    }
+
+    .export-optionen {
+        flex-direction: column;
+    }
+
+    .sl-legende {
+        flex-direction: column;
+        gap: 0.2rem;
     }
 }
