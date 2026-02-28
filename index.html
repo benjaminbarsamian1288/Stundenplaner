@@ -18,6 +18,8 @@
             <button class="nav-btn" data-tab="abrechnung">Abrechnung</button>
             <button class="nav-btn" data-tab="dashboard">Dashboard</button>
             <button class="nav-btn" data-tab="objekte">Objekte</button>
+            <button class="nav-btn" data-tab="mitarbeiter">Mitarbeiter</button>
+            <button class="nav-btn" data-tab="einstellungen">Daten</button>
         </nav>
     </header>
 
@@ -163,6 +165,7 @@
                         </select>
                         <button class="btn-secondary" onclick="exportCSV()">CSV Export</button>
                         <button class="btn-secondary" onclick="druckeMonatsbericht()">Drucken</button>
+                        <button class="btn-secondary" onclick="pruefeArbZG()">ArbZG pr&uuml;fen</button>
                     </div>
                 </div>
                 <div class="table-wrapper">
@@ -195,6 +198,15 @@
                     </table>
                 </div>
                 <p class="empty-message" id="emptyMessage">Noch keine Einsätze erfasst.</p>
+            </section>
+
+            <!-- ArbZG Warnungen -->
+            <section class="arbzg-section" id="arbzgSection" style="display:none;">
+                <div class="arbzg-header">
+                    <h2>Arbeitszeitgesetz-Pr&uuml;fung</h2>
+                    <button class="btn-secondary btn-small" onclick="document.getElementById('arbzgSection').style.display='none'">Schlie&szlig;en</button>
+                </div>
+                <div id="arbzgContent"></div>
             </section>
         </div>
 
@@ -337,6 +349,110 @@
                     </table>
                 </div>
                 <p class="empty-message" id="objekteEmpty">Noch keine Objekte gespeichert.</p>
+            </section>
+        </div>
+        <!-- TAB: Mitarbeiter -->
+        <div class="tab-content" id="tab-mitarbeiter">
+            <section class="form-section">
+                <h2>Mitarbeiter verwalten</h2>
+                <form id="mitarbeiterForm">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="maVorname">Vorname</label>
+                            <input type="text" id="maVorname" placeholder="Max" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="maNachname">Nachname</label>
+                            <input type="text" id="maNachname" placeholder="Mustermann" required>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="maTelefon">Telefon</label>
+                            <input type="tel" id="maTelefon" placeholder="+49 170 1234567">
+                        </div>
+                        <div class="form-group">
+                            <label for="maEmail">E-Mail</label>
+                            <input type="email" id="maEmail" placeholder="max@beispiel.de">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="maQualifikation">Qualifikation</label>
+                            <select id="maQualifikation">
+                                <option value="34a">Sachkunde &sect;34a GewO</option>
+                                <option value="fachkraft">Fachkraft f&uuml;r Schutz und Sicherheit</option>
+                                <option value="meister">Meister f&uuml;r Schutz und Sicherheit</option>
+                                <option value="unterrichtung">Unterrichtung &sect;34a</option>
+                                <option value="sonstige">Sonstige</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="maStundensatz">Pers. Stundensatz (&euro;)</label>
+                            <input type="number" id="maStundensatz" step="0.01" min="0" placeholder="z.B. 14.00">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="maBemerkung">Bemerkung</label>
+                            <input type="text" id="maBemerkung" placeholder="z.B. nur Tagschicht, Ersthelfer">
+                        </div>
+                    </div>
+                    <button type="submit" class="btn-primary">Mitarbeiter speichern</button>
+                </form>
+            </section>
+
+            <section class="list-section">
+                <h2>Mitarbeiter-&Uuml;bersicht</h2>
+                <div class="table-wrapper">
+                    <table id="mitarbeiterTabelle">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Telefon</th>
+                                <th>E-Mail</th>
+                                <th>Qualifikation</th>
+                                <th>Stundensatz</th>
+                                <th>Bemerkung</th>
+                                <th>Aktionen</th>
+                            </tr>
+                        </thead>
+                        <tbody id="mitarbeiterBody"></tbody>
+                    </table>
+                </div>
+                <p class="empty-message" id="mitarbeiterEmpty">Noch keine Mitarbeiter gespeichert.</p>
+            </section>
+        </div>
+
+        <!-- TAB: Einstellungen / Daten -->
+        <div class="tab-content" id="tab-einstellungen">
+            <section class="daten-section">
+                <h2>Datensicherung &amp; Import</h2>
+                <p class="daten-info">Alle Daten werden lokal im Browser gespeichert (localStorage). Erstelle regelm&auml;&szlig;ig ein Backup, damit nichts verloren geht.</p>
+
+                <div class="daten-grid">
+                    <div class="daten-card">
+                        <h3>Backup erstellen</h3>
+                        <p>Speichert alle Eins&auml;tze, Objekte, Mitarbeiter und Vorlagen als JSON-Datei.</p>
+                        <button class="btn-primary" onclick="erstelleBackup()">Backup herunterladen</button>
+                    </div>
+                    <div class="daten-card">
+                        <h3>Backup wiederherstellen</h3>
+                        <p>L&auml;dt eine vorher gespeicherte JSON-Datei und stellt alle Daten wieder her.</p>
+                        <input type="file" id="restoreFile" accept=".json" style="display:none" onchange="stelleWiederHer(event)">
+                        <button class="btn-primary" onclick="document.getElementById('restoreFile').click()">JSON-Datei laden</button>
+                    </div>
+                    <div class="daten-card gefahr">
+                        <h3>Alle Daten l&ouml;schen</h3>
+                        <p>L&ouml;scht s&auml;mtliche gespeicherten Daten unwiderruflich.</p>
+                        <button class="btn-delete" onclick="loescheAlleDaten()">Alle Daten l&ouml;schen</button>
+                    </div>
+                </div>
+
+                <div class="daten-stats">
+                    <h3>Gespeicherte Daten</h3>
+                    <div id="datenStats"></div>
+                </div>
             </section>
         </div>
     </main>

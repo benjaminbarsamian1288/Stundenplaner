@@ -6,6 +6,7 @@
 let einsaetze = JSON.parse(localStorage.getItem('bbprotect_einsaetze') || '[]');
 let objekte = JSON.parse(localStorage.getItem('bbprotect_objekte') || '[]');
 let vorlagen = JSON.parse(localStorage.getItem('bbprotect_vorlagen') || '[]');
+let mitarbeiterListe_ = JSON.parse(localStorage.getItem('bbprotect_mitarbeiter') || '[]');
 
 // Kalender-State
 let kalenderJahr = new Date().getFullYear();
@@ -48,6 +49,8 @@ document.querySelectorAll('.nav-btn').forEach(btn => {
         if (this.dataset.tab === 'objekte') renderObjekte();
         if (this.dataset.tab === 'kalender') renderKalender();
         if (this.dataset.tab === 'abrechnung') updateAbrechnung();
+        if (this.dataset.tab === 'mitarbeiter') renderMitarbeiter();
+        if (this.dataset.tab === 'einstellungen') updateDatenStats();
     });
 });
 
@@ -408,6 +411,7 @@ function renderTabelle() {
             <td><strong>${formatEuro(e.gesamt)}</strong></td>
             <td class="no-print">
                 <button class="btn-edit" onclick="bearbeiteEinsatz(${e.id})">Bearb.</button>
+                <button class="btn-secondary btn-small" onclick="dupliziereEinsatz(${e.id})">Dupl.</button>
                 <button class="btn-delete" onclick="loescheEinsatz(${e.id})">X</button>
             </td>
         `;
@@ -967,6 +971,7 @@ function updateDataLists() {
     const maListe = document.getElementById('mitarbeiterListe');
     maListe.innerHTML = '';
     const alleMa = new Set();
+    mitarbeiterListe_.forEach(m => alleMa.add(m.name));
     einsaetze.forEach(e => { if (e.mitarbeiter) alleMa.add(e.mitarbeiter); });
     alleMa.forEach(name => { const opt = document.createElement('option'); opt.value = name; maListe.appendChild(opt); });
 }
@@ -1018,6 +1023,358 @@ function printFooter() {
 }
 
 // =============================================
+// SCHICHT DUPLIZIEREN
+// =============================================
+function dupliziereEinsatz(id) {
+    const orig = einsaetze.find(e => e.id === id);
+    if (!orig) return;
+
+    // Zum Erfassungs-Tab wechseln mit vorausgefüllten Daten
+    wechsleZuTab('erfassung');
+
+    document.getElementById('objekt').value = orig.objekt;
+    document.getElementById('zeitVon').value = orig.zeitVon;
+    document.getElementById('zeitBis').value = orig.zeitBis;
+    document.getElementById('stundensatz').value = orig.stundensatz;
+    document.getElementById('mitarbeiter').value = orig.mitarbeiter || '';
+    document.getElementById('bemerkung').value = orig.bemerkung || '';
+
+    // Datum auf nächsten Tag setzen
+    const naechsterTag = new Date(orig.datum);
+    naechsterTag.setDate(naechsterTag.getDate() + 1);
+    document.getElementById('datum').value = naechsterTag.toISOString().split('T')[0];
+
+    document.getElementById('einsatzFormSection').scrollIntoView({ behavior: 'smooth' });
+    updatePreview();
+}
+
+// =============================================
+// ARBZG-PRÜFUNG
+// =============================================
+function pruefeArbZG() {
+    const section = document.getElementById('arbzgSection');
+    const content = document.getElementById('arbzgContent');
+    section.style.display = 'block';
+
+    if (einsaetze.length === 0) {
+        content.innerHTML = '<p class="arbzg-ok">Keine Einsätze vorhanden.</p>';
+        return;
+    }
+
+    const warnungen = [];
+
+    // Gruppiere nach Mitarbeiter
+    const maMap = {};
+    einsaetze.forEach(e => {
+        const name = e.mitarbeiter || 'Nicht zugewiesen';
+        if (!maMap[name]) maMap[name] = [];
+        maMap[name].push(e);
+    });
+
+    Object.entries(maMap).forEach(([name, liste]) => {
+        liste.sort((a, b) => a.datum.localeCompare(b.datum) || a.zeitVon.localeCompare(b.zeitVon));
+
+        // Prüfung 1: Max 10 Stunden pro Tag (§3 ArbZG)
+        const tagesMap = {};
+        liste.forEach(e => {
+            if (!tagesMap[e.datum]) tagesMap[e.datum] = 0;
+            tagesMap[e.datum] += e.stunden;
+        });
+
+        Object.entries(tagesMap).forEach(([datum, stunden]) => {
+            if (stunden > 10) {
+                warnungen.push({
+                    typ: 'fehler',
+                    ma: name,
+                    text: `${formatDatum(datum)}: ${formatZahl(stunden)} Stunden (max. 10 Std. nach §3 ArbZG)`
+                });
+            } else if (stunden > 8) {
+                warnungen.push({
+                    typ: 'warnung',
+                    ma: name,
+                    text: `${formatDatum(datum)}: ${formatZahl(stunden)} Stunden (über 8 Std., max. 10 Std. Ausnahme)`
+                });
+            }
+        });
+
+        // Prüfung 2: Ruhezeit min. 11 Stunden (§5 ArbZG)
+        for (let i = 1; i < liste.length; i++) {
+            const vorher = liste[i - 1];
+            const jetzt = liste[i];
+
+            // Ende vorheriger Schicht
+            const endeVorher = schichtEndeTimestamp(vorher.datum, vorher.zeitVon, vorher.zeitBis);
+            // Beginn aktuelle Schicht
+            const startJetzt = new Date(jetzt.datum + 'T' + jetzt.zeitVon);
+
+            const ruhezeitStd = (startJetzt - endeVorher) / (1000 * 60 * 60);
+
+            if (ruhezeitStd >= 0 && ruhezeitStd < 11) {
+                warnungen.push({
+                    typ: 'fehler',
+                    ma: name,
+                    text: `${formatDatum(vorher.datum)} → ${formatDatum(jetzt.datum)}: Nur ${formatZahl(ruhezeitStd)} Std. Ruhezeit (min. 11 Std. nach §5 ArbZG)`
+                });
+            }
+        }
+
+        // Prüfung 3: Max 48 Stunden pro Woche im Durchschnitt (§3 ArbZG)
+        const wochen = {};
+        liste.forEach(e => {
+            const d = new Date(e.datum);
+            const kw = getKalenderWoche(d);
+            const key = `${d.getFullYear()}-KW${kw}`;
+            if (!wochen[key]) wochen[key] = 0;
+            wochen[key] += e.stunden;
+        });
+
+        Object.entries(wochen).forEach(([kw, stunden]) => {
+            if (stunden > 48) {
+                warnungen.push({
+                    typ: 'fehler',
+                    ma: name,
+                    text: `${kw}: ${formatZahl(stunden)} Wochenstunden (max. 48 Std. nach §3 ArbZG)`
+                });
+            } else if (stunden > 40) {
+                warnungen.push({
+                    typ: 'warnung',
+                    ma: name,
+                    text: `${kw}: ${formatZahl(stunden)} Wochenstunden (über 40 Std.)`
+                });
+            }
+        });
+    });
+
+    if (warnungen.length === 0) {
+        content.innerHTML = '<div class="arbzg-ok">Keine Verstöße gefunden. Alle Einsätze entsprechen dem Arbeitszeitgesetz.</div>';
+    } else {
+        // Sortiere: Fehler zuerst
+        warnungen.sort((a, b) => (a.typ === 'fehler' ? 0 : 1) - (b.typ === 'fehler' ? 0 : 1));
+
+        let html = `<div class="arbzg-zusammenfassung">
+            <span class="arbzg-count fehler">${warnungen.filter(w => w.typ === 'fehler').length} Verstöße</span>
+            <span class="arbzg-count warnung">${warnungen.filter(w => w.typ === 'warnung').length} Warnungen</span>
+        </div>`;
+
+        warnungen.forEach(w => {
+            html += `<div class="arbzg-item ${w.typ}">
+                <span class="arbzg-badge ${w.typ}">${w.typ === 'fehler' ? 'VERSTOSS' : 'WARNUNG'}</span>
+                <strong>${escapeHtml(w.ma)}</strong>: ${escapeHtml(w.text)}
+            </div>`;
+        });
+        content.innerHTML = html;
+    }
+
+    section.scrollIntoView({ behavior: 'smooth' });
+}
+
+function schichtEndeTimestamp(datum, zeitVon, zeitBis) {
+    const [vh, vm] = zeitVon.split(':').map(Number);
+    const [bh, bm] = zeitBis.split(':').map(Number);
+    const startMin = vh * 60 + vm;
+    const endMin = bh * 60 + bm;
+
+    const ende = new Date(datum + 'T' + zeitBis);
+    if (endMin <= startMin) {
+        ende.setDate(ende.getDate() + 1);
+    }
+    return ende;
+}
+
+function getKalenderWoche(d) {
+    const date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+    date.setUTCDate(date.getUTCDate() + 4 - (date.getUTCDay() || 7));
+    const yearStart = new Date(Date.UTC(date.getUTCFullYear(), 0, 1));
+    return Math.ceil(((date - yearStart) / 86400000 + 1) / 7);
+}
+
+// =============================================
+// MITARBEITER-VERWALTUNG
+// =============================================
+document.getElementById('mitarbeiterForm').addEventListener('submit', function (e) {
+    e.preventDefault();
+    const vorname = document.getElementById('maVorname').value.trim();
+    const nachname = document.getElementById('maNachname').value.trim();
+    const telefon = document.getElementById('maTelefon').value.trim();
+    const email = document.getElementById('maEmail').value.trim();
+    const qualifikation = document.getElementById('maQualifikation').value;
+    const stundensatz = parseFloat(document.getElementById('maStundensatz').value) || 0;
+    const bemerkung = document.getElementById('maBemerkung').value.trim();
+
+    if (!vorname || !nachname) return;
+
+    const vollname = `${vorname} ${nachname}`;
+    const idx = mitarbeiterListe_.findIndex(m => m.name === vollname);
+    const ma = { name: vollname, vorname, nachname, telefon, email, qualifikation, stundensatz, bemerkung };
+
+    if (idx !== -1) mitarbeiterListe_[idx] = ma; else mitarbeiterListe_.push(ma);
+
+    localStorage.setItem('bbprotect_mitarbeiter', JSON.stringify(mitarbeiterListe_));
+    renderMitarbeiter();
+    updateDataLists();
+    this.reset();
+});
+
+const QUAL_LABELS = {
+    '34a': 'Sachkunde §34a',
+    'fachkraft': 'Fachkraft Schutz & Sicherheit',
+    'meister': 'Meister Schutz & Sicherheit',
+    'unterrichtung': 'Unterrichtung §34a',
+    'sonstige': 'Sonstige'
+};
+
+function renderMitarbeiter() {
+    const body = document.getElementById('mitarbeiterBody');
+    const empty = document.getElementById('mitarbeiterEmpty');
+    body.innerHTML = '';
+
+    if (mitarbeiterListe_.length === 0) { empty.style.display = 'block'; return; }
+    empty.style.display = 'none';
+
+    mitarbeiterListe_.forEach((m, i) => {
+        // Einsatz-Statistik
+        const maEinsaetze = einsaetze.filter(e => e.mitarbeiter === m.name);
+        const totalStd = maEinsaetze.reduce((s, e) => s + e.stunden, 0);
+
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td><strong>${escapeHtml(m.name)}</strong><br><small>${maEinsaetze.length} Einsätze / ${formatZahl(totalStd)} Std.</small></td>
+            <td>${escapeHtml(m.telefon || '\u2014')}</td>
+            <td>${escapeHtml(m.email || '\u2014')}</td>
+            <td><span class="qual-badge">${escapeHtml(QUAL_LABELS[m.qualifikation] || m.qualifikation)}</span></td>
+            <td>${m.stundensatz ? formatEuro(m.stundensatz) + '/Std.' : '\u2014'}</td>
+            <td>${escapeHtml(m.bemerkung || '\u2014')}</td>
+            <td><button class="btn-delete" onclick="loescheMitarbeiter(${i})">X</button></td>
+        `;
+        body.appendChild(tr);
+    });
+}
+
+function loescheMitarbeiter(index) {
+    if (!confirm('Diesen Mitarbeiter wirklich löschen?')) return;
+    mitarbeiterListe_.splice(index, 1);
+    localStorage.setItem('bbprotect_mitarbeiter', JSON.stringify(mitarbeiterListe_));
+    renderMitarbeiter();
+    updateDataLists();
+}
+
+// =============================================
+// DATENSICHERUNG (BACKUP / RESTORE)
+// =============================================
+function erstelleBackup() {
+    const backup = {
+        version: 2,
+        datum: new Date().toISOString(),
+        einsaetze,
+        objekte,
+        vorlagen,
+        mitarbeiter: mitarbeiterListe_
+    };
+
+    const json = JSON.stringify(backup, null, 2);
+    const datum = new Date().toISOString().split('T')[0];
+    downloadFile(`BBProtect_Backup_${datum}.json`, json, 'application/json');
+}
+
+function stelleWiederHer(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function (e) {
+        try {
+            const data = JSON.parse(e.target.result);
+
+            if (!data.einsaetze || !Array.isArray(data.einsaetze)) {
+                alert('Ungültige Backup-Datei: Keine Einsätze gefunden.');
+                return;
+            }
+
+            const anzahl = data.einsaetze.length + (data.objekte || []).length + (data.mitarbeiter || []).length;
+            if (!confirm(`Backup vom ${data.datum || 'unbekannt'} wiederherstellen?\n\n${data.einsaetze.length} Einsätze, ${(data.objekte || []).length} Objekte, ${(data.mitarbeiter || []).length} Mitarbeiter, ${(data.vorlagen || []).length} Vorlagen\n\nAlle aktuellen Daten werden überschrieben!`)) return;
+
+            einsaetze = data.einsaetze;
+            objekte = data.objekte || [];
+            vorlagen = data.vorlagen || [];
+            mitarbeiterListe_ = data.mitarbeiter || [];
+
+            speichern();
+            localStorage.setItem('bbprotect_objekte', JSON.stringify(objekte));
+            localStorage.setItem('bbprotect_vorlagen', JSON.stringify(vorlagen));
+            localStorage.setItem('bbprotect_mitarbeiter', JSON.stringify(mitarbeiterListe_));
+
+            renderTabelle();
+            updateAlleFilter();
+            updateDataLists();
+            renderObjekte();
+            renderVorlagen();
+            renderMitarbeiter();
+            updateDatenStats();
+
+            alert('Backup erfolgreich wiederhergestellt!');
+        } catch (err) {
+            alert('Fehler beim Lesen der Datei: ' + err.message);
+        }
+    };
+    reader.readAsText(file);
+    event.target.value = '';
+}
+
+function loescheAlleDaten() {
+    if (!confirm('ACHTUNG: Alle Daten werden unwiderruflich gelöscht!\n\nEinsätze, Objekte, Mitarbeiter und Vorlagen.\n\nFortfahren?')) return;
+    if (!confirm('Wirklich ALLE Daten löschen? Dies kann nicht rückgängig gemacht werden!')) return;
+
+    einsaetze = [];
+    objekte = [];
+    vorlagen = [];
+    mitarbeiterListe_ = [];
+
+    localStorage.removeItem('bbprotect_einsaetze');
+    localStorage.removeItem('bbprotect_objekte');
+    localStorage.removeItem('bbprotect_vorlagen');
+    localStorage.removeItem('bbprotect_mitarbeiter');
+
+    renderTabelle();
+    updateAlleFilter();
+    updateDataLists();
+    renderObjekte();
+    renderVorlagen();
+    renderMitarbeiter();
+    updateDatenStats();
+}
+
+function updateDatenStats() {
+    const el = document.getElementById('datenStats');
+    if (!el) return;
+
+    const totalStd = einsaetze.reduce((s, e) => s + e.stunden, 0);
+    const totalGesamt = einsaetze.reduce((s, e) => s + e.gesamt, 0);
+
+    el.innerHTML = `
+        <div class="daten-stats-grid">
+            <div class="daten-stat"><strong>${einsaetze.length}</strong><span>Einsätze</span></div>
+            <div class="daten-stat"><strong>${objekte.length}</strong><span>Objekte</span></div>
+            <div class="daten-stat"><strong>${mitarbeiterListe_.length}</strong><span>Mitarbeiter</span></div>
+            <div class="daten-stat"><strong>${vorlagen.length}</strong><span>Vorlagen</span></div>
+            <div class="daten-stat"><strong>${formatZahl(totalStd)}</strong><span>Stunden gesamt</span></div>
+            <div class="daten-stat"><strong>${formatEuro(totalGesamt)}</strong><span>Umsatz gesamt</span></div>
+        </div>
+    `;
+}
+
+// =============================================
+// HILFSFUNKTION: TAB WECHSELN
+// =============================================
+function wechsleZuTab(tabName) {
+    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+    const btn = document.querySelector(`[data-tab="${tabName}"]`);
+    if (btn) btn.classList.add('active');
+    const tab = document.getElementById('tab-' + tabName);
+    if (tab) tab.classList.add('active');
+}
+
+// =============================================
 // INITIALISIERUNG
 // =============================================
 document.getElementById('datum').valueAsDate = new Date();
@@ -1027,3 +1384,4 @@ updateMitarbeiterFilter();
 updateDataLists();
 renderObjekte();
 renderVorlagen();
+renderMitarbeiter();
