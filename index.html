@@ -544,6 +544,7 @@
         <div class="tab-content" id="tab-dashboard">
             <section class="dashboard-section">
                 <div id="dashboardKacheln"></div>
+                <div id="wetterWidgetContent" style="text-align:center;margin-bottom:0.5rem"></div>
 
                 <h2>Monats&uuml;bersicht</h2>
                 <div class="dashboard-filter">
@@ -1196,6 +1197,37 @@
 
             <section class="form-section">
                 <div class="list-header">
+                    <h2>Objekt-Bewertung</h2>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="obObjekt">Objekt</label>
+                        <select id="obObjekt">
+                            <option value="">Objekt w&auml;hlen...</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="obSterne">Bewertung</label>
+                        <select id="obSterne">
+                            <option value="">W&auml;hlen...</option>
+                            <option value="5">&#9733;&#9733;&#9733;&#9733;&#9733; Ausgezeichnet</option>
+                            <option value="4">&#9733;&#9733;&#9733;&#9733;&#9734; Gut</option>
+                            <option value="3">&#9733;&#9733;&#9733;&#9734;&#9734; OK</option>
+                            <option value="2">&#9733;&#9733;&#9734;&#9734;&#9734; M&auml;&szlig;ig</option>
+                            <option value="1">&#9733;&#9734;&#9734;&#9734;&#9734; Schlecht</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="flex:2">
+                        <label for="obKommentar">Kommentar (optional)</label>
+                        <input type="text" id="obKommentar" placeholder="z.B. Gute Zusammenarbeit mit dem Kunden">
+                    </div>
+                </div>
+                <button type="button" class="btn-primary" onclick="objektBewertenSpeichern()" style="margin-top:0.5rem">Bewertung abgeben</button>
+                <div id="objektBewertungenContent" style="margin-top:0.5rem"></div>
+            </section>
+
+            <section class="form-section">
+                <div class="list-header">
                     <h2>Objekt-Infokarte (druckbar)</h2>
                 </div>
                 <div class="form-row">
@@ -1641,6 +1673,13 @@
 
             <section class="form-section">
                 <div class="list-header">
+                    <h2>&Uuml;berstunden-Warnung (&sect;3 ArbZG)</h2>
+                </div>
+                <div id="ueberstundenWarnungContent"></div>
+            </section>
+
+            <section class="form-section">
+                <div class="list-header">
                     <h2>MA-Nachrichten-Board</h2>
                 </div>
                 <div class="form-row">
@@ -1982,6 +2021,9 @@
                     </div>
                 </div>
                 <div id="sonderNotizenContent" style="margin-top:0.5rem"></div>
+
+                <h2 style="margin-top:1.5rem">Speicher-Statistik</h2>
+                <div id="speicherStatistikContent" style="margin-bottom:1rem"></div>
 
                 <h2 style="margin-top:1.5rem">Feiertags-Kalender</h2>
                 <div class="form-row" style="margin-bottom:0.5rem">

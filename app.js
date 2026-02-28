@@ -86,14 +86,14 @@ document.querySelectorAll('.nav-btn').forEach(btn => {
         this.classList.add('active');
         document.getElementById('tab-' + this.dataset.tab).classList.add('active');
 
-        if (this.dataset.tab === 'dashboard') { updateDashboard(); renderEinsatzChronik(); renderEinsatzAnalytics(); renderWochenReport(); renderEinsatzTimeline(); renderKostenTrend(); renderObjektUmsatzRanking(); renderStundenkontoChart(); renderDashboardKacheln(); renderSchichtplanVorschau(); renderErweiterteStatistik(); renderTagesPersonal(); }
-        if (this.dataset.tab === 'objekte') { renderObjekte(); renderVertraege(); renderObjektAuslastung(); updateChecklisteObjekte(); updateObjektHistorieSelect(); updateObjektKontakteSelect(); renderObjektKontakte(); updateObjektAnweisungenSelect(); renderObjektAnweisungen(); updateObjektKostenMonat(); renderObjektKostenanalyse(); renderVertragsCountdown(); updateRevierplanSelect(); renderRevierplan(); updateBesObjektSelect(); renderBesichtigungen(); updateInfokarteSelect(); updateWetterObjektSelects(); renderWetterNotizen(); updateObjektChecklisteSelect(); renderObjektCheckliste(); renderVertragslaufzeitBalken(); updateZugangshinweiseSelect(); renderZugangshinweise(); }
+        if (this.dataset.tab === 'dashboard') { updateDashboard(); renderEinsatzChronik(); renderEinsatzAnalytics(); renderWochenReport(); renderEinsatzTimeline(); renderKostenTrend(); renderObjektUmsatzRanking(); renderStundenkontoChart(); renderDashboardKacheln(); renderSchichtplanVorschau(); renderErweiterteStatistik(); renderTagesPersonal(); renderWetterWidget(); }
+        if (this.dataset.tab === 'objekte') { renderObjekte(); renderVertraege(); renderObjektAuslastung(); updateChecklisteObjekte(); updateObjektHistorieSelect(); updateObjektKontakteSelect(); renderObjektKontakte(); updateObjektAnweisungenSelect(); renderObjektAnweisungen(); updateObjektKostenMonat(); renderObjektKostenanalyse(); renderVertragsCountdown(); updateRevierplanSelect(); renderRevierplan(); updateBesObjektSelect(); renderBesichtigungen(); updateInfokarteSelect(); updateWetterObjektSelects(); renderWetterNotizen(); updateObjektChecklisteSelect(); renderObjektCheckliste(); renderVertragslaufzeitBalken(); updateZugangshinweiseSelect(); renderZugangshinweise(); updateObjektBewertungSelect(); renderObjektBewertungen(); }
         if (this.dataset.tab === 'kalender') { renderKalender(); renderDienstplan(); renderJahresuebersicht(); }
         if (this.dataset.tab === 'abrechnung') { updateAbrechnung(); updateLohnvorschauSelects(); renderDuplikatCheck(); renderBewertungsUebersicht(); updateMonatsabschlussSelect(); renderMonatsabschluss(); updateCSVExportFilter(); }
-        if (this.dataset.tab === 'mitarbeiter') { renderMitarbeiter(); renderDokumente(); renderUeberstunden(); renderKontaktliste(); renderUrlaubskonto(); renderArbeitszeitkonto(); renderQualMatrix(); updateSchichtHistorieSelect(); renderNotfallkontakte(); updateMAKalSelect(); renderVerfuegbarkeitWoche(); renderDoppelschichtWarnungen(); renderMALeistung(); renderKrankenstatistik(); renderGeburtstageJubilaeen(); renderMASkills(); renderTauschBoard(); renderMAVerfuegbarkeitsKalender(); renderNachrichtenBoard(); renderZertifikateTracker(); renderJahresarbeitszeitkonto(); }
+        if (this.dataset.tab === 'mitarbeiter') { renderMitarbeiter(); renderDokumente(); renderUeberstunden(); renderKontaktliste(); renderUrlaubskonto(); renderArbeitszeitkonto(); renderQualMatrix(); updateSchichtHistorieSelect(); renderNotfallkontakte(); updateMAKalSelect(); renderVerfuegbarkeitWoche(); renderDoppelschichtWarnungen(); renderMALeistung(); renderKrankenstatistik(); renderGeburtstageJubilaeen(); renderMASkills(); renderTauschBoard(); renderMAVerfuegbarkeitsKalender(); renderNachrichtenBoard(); renderZertifikateTracker(); renderJahresarbeitszeitkonto(); renderUeberstundenWarnung(); }
         if (this.dataset.tab === 'vorfaelle') { renderVorfaelle(); renderVorfallsStatistik(); }
         if (this.dataset.tab === 'wachbuch') { renderWachbuch(); renderUebergaben(); renderWachbuchStats(); updateSchichtUebergabeSelects(); renderSchichtUebergaben(); }
-        if (this.dataset.tab === 'einstellungen') { updateDatenStats(); updateSpeicherStats(); ladeEinstellungen(); renderAuditLog(); renderSondernotizen(); renderFeiertagsKalender(); }
+        if (this.dataset.tab === 'einstellungen') { updateDatenStats(); updateSpeicherStats(); ladeEinstellungen(); renderAuditLog(); renderSondernotizen(); renderFeiertagsKalender(); renderSpeicherStatistik(); }
     });
 });
 
@@ -518,7 +518,7 @@ function renderTabelle() {
         tr.innerHTML = `
             <td class="no-print"><input type="checkbox" class="bulk-cb bulk-item-cb" data-id="${e.id}" onchange="bulkUpdateCount()"></td>
             <td><span class="ampel" style="background:${getEinsatzAmpel(e).farbe}" title="${getEinsatzAmpel(e).label}"></span>${formatDatum(e.datum)}${e.status && e.status !== 'geplant' ? '<br><span class="status-badge status-' + e.status + '">' + escapeHtml(STATUS_LABELS[e.status] || e.status) + '</span>' : ''}${renderEinsatzTags(e)}${renderEinsatzTagBadges(e.id)}</td>
-            <td>${getPrioritaetBadge(e.id)}<span class="obj-farbe" style="background:${getObjektFarbe(e.objekt)}"></span>${escapeHtml(e.objekt)}</td>
+            <td>${getPrioritaetBadge(e.id)}<span class="obj-farbe" style="background:${getObjektFarbe(e.objekt)}"></span>${escapeHtml(e.objekt)}${renderStandortInfo(e.id)}</td>
             <td>${escapeHtml(e.mitarbeiter || '\u2014')}</td>
             <td>${e.zeitVon}</td>
             <td>${e.zeitBis}</td>
@@ -1575,7 +1575,7 @@ function loescheMitarbeiter(index) {
 // =============================================
 function erstelleBackup() {
     const backup = {
-        version: 20,
+        version: 21,
         datum: new Date().toISOString(),
         einsaetze,
         objekte,
@@ -1607,7 +1607,8 @@ function erstelleBackup() {
         objektChecklisten,
         maZertifikate,
         einsatzFarbTags,
-        objektZugangshinweise
+        objektZugangshinweise,
+        objektBewertungen
     };
 
     const json = JSON.stringify(backup, null, 2);
@@ -1663,6 +1664,7 @@ function stelleWiederHer(event) {
             maZertifikate = data.maZertifikate || [];
             einsatzFarbTags = data.einsatzFarbTags || {};
             objektZugangshinweise = data.objektZugangshinweise || {};
+            objektBewertungen = data.objektBewertungen || {};
 
             speichern();
             localStorage.setItem('bbprotect_objekte', JSON.stringify(objekte));
@@ -1695,6 +1697,7 @@ function stelleWiederHer(event) {
             localStorage.setItem('bbprotect_zertifikate', JSON.stringify(maZertifikate));
             localStorage.setItem('bbprotect_farbtags', JSON.stringify(einsatzFarbTags));
             localStorage.setItem('bbprotect_zugangshinweise', JSON.stringify(objektZugangshinweise));
+            localStorage.setItem('bbprotect_objektbewertungen', JSON.stringify(objektBewertungen));
 
             renderTabelle();
             updateAlleFilter();
@@ -1748,6 +1751,7 @@ function loescheAlleDaten() {
     maZertifikate = [];
     einsatzFarbTags = {};
     objektZugangshinweise = {};
+    objektBewertungen = {};
 
     localStorage.removeItem('bbprotect_einsaetze');
     localStorage.removeItem('bbprotect_objekte');
@@ -1780,6 +1784,7 @@ function loescheAlleDaten() {
     localStorage.removeItem('bbprotect_zertifikate');
     localStorage.removeItem('bbprotect_farbtags');
     localStorage.removeItem('bbprotect_zugangshinweise');
+    localStorage.removeItem('bbprotect_objektbewertungen');
 
     renderTabelle();
     updateAlleFilter();
@@ -9226,6 +9231,197 @@ function renderQuickStats() {
         <span class="qs-item"><strong>${aktiveMA}</strong> MA aktiv</span>
         <span class="qs-item">Morgen: <strong>${morgenE}</strong></span>
     </div>`;
+}
+
+// =============================================
+// EINSATZ-GPS/STANDORT
+// =============================================
+function renderStandortInfo(einsatzId) {
+    const e = einsaetze.find(x => x.id === einsatzId);
+    if (!e) return '';
+    // Standort aus Objekt holen
+    const obj = objekte.find(o => o.name === e.objekt);
+    if (obj && obj.adresse) {
+        return `<span class="gps-badge" title="Standort: ${escapeHtml(obj.adresse)}">📍</span>`;
+    }
+    return '';
+}
+
+// =============================================
+// MA-ÜBERSTUNDEN-WARNUNG (§3 ArbZG)
+// =============================================
+function renderUeberstundenWarnung() {
+    const el = document.getElementById('ueberstundenWarnungContent');
+    if (!el) return;
+
+    const heute = new Date();
+    const vor7 = new Date(heute);
+    vor7.setDate(vor7.getDate() - 6);
+
+    const warnungen = [];
+    mitarbeiterListe_.forEach(ma => {
+        // Letzte 7 Tage
+        let wochenStd = 0;
+        for (let i = 0; i < 7; i++) {
+            const d = new Date(vor7);
+            d.setDate(d.getDate() + i);
+            const datum = d.toISOString().split('T')[0];
+            const tagesStd = einsaetze.filter(e => e.mitarbeiter === ma.name && e.datum === datum && e.status !== 'storniert')
+                .reduce((s, e) => s + e.stunden, 0);
+
+            // §3 ArbZG: max 10h/Tag
+            if (tagesStd > 10) {
+                warnungen.push({ ma: ma.name, typ: 'tag', datum, stunden: tagesStd, text: `${formatZahl(tagesStd)} Std. am ${formatDatum(datum)} (max. 10h §3 ArbZG)` });
+            }
+            wochenStd += tagesStd;
+        }
+
+        // §3 ArbZG: max 48h/Woche (im Schnitt)
+        if (wochenStd > 48) {
+            warnungen.push({ ma: ma.name, typ: 'woche', stunden: wochenStd, text: `${formatZahl(wochenStd)} Std./Woche (max. 48h §3 ArbZG)` });
+        }
+    });
+
+    if (warnungen.length === 0) {
+        el.innerHTML = '<p style="color:#48bb78;font-size:0.8rem">Keine Überstunden-Verstöße in den letzten 7 Tagen.</p>';
+        return;
+    }
+
+    let html = `<div class="uw-banner">${warnungen.length} Warnung(en)</div>`;
+    warnungen.forEach(w => {
+        html += `<div class="uw-item uw-${w.typ}">
+            <strong>${escapeHtml(w.ma)}</strong>: ${escapeHtml(w.text)}
+        </div>`;
+    });
+    el.innerHTML = html;
+}
+
+// =============================================
+// OBJEKT-BEWERTUNG (1-5 Sterne)
+// =============================================
+let objektBewertungen = JSON.parse(localStorage.getItem('bbprotect_objektbewertungen') || '{}');
+
+function objektBewertenSpeichern() {
+    const objekt = document.getElementById('obObjekt') ? document.getElementById('obObjekt').value : '';
+    const sterne = parseInt(document.getElementById('obSterne') ? document.getElementById('obSterne').value : 0);
+    const kommentar = document.getElementById('obKommentar') ? document.getElementById('obKommentar').value.trim() : '';
+
+    if (!objekt || !sterne) { alert('Bitte Objekt und Bewertung auswählen.'); return; }
+
+    if (!objektBewertungen[objekt]) objektBewertungen[objekt] = [];
+    objektBewertungen[objekt].push({ sterne, kommentar, datum: new Date().toISOString() });
+    localStorage.setItem('bbprotect_objektbewertungen', JSON.stringify(objektBewertungen));
+
+    if (document.getElementById('obKommentar')) document.getElementById('obKommentar').value = '';
+    renderObjektBewertungen();
+}
+
+function renderObjektBewertungen() {
+    const el = document.getElementById('objektBewertungenContent');
+    if (!el) return;
+
+    const entries = Object.entries(objektBewertungen).filter(([, bew]) => bew.length > 0);
+    if (entries.length === 0) { el.innerHTML = '<p style="color:#a0aec0">Keine Bewertungen vorhanden.</p>'; return; }
+
+    let html = '<div class="ob-list">';
+    entries.sort((a, b) => {
+        const avgA = a[1].reduce((s, b2) => s + b2.sterne, 0) / a[1].length;
+        const avgB = b[1].reduce((s, b2) => s + b2.sterne, 0) / b[1].length;
+        return avgB - avgA;
+    }).forEach(([objekt, bew]) => {
+        const avg = bew.reduce((s, b2) => s + b2.sterne, 0) / bew.length;
+        const stars = '★'.repeat(Math.round(avg)) + '☆'.repeat(5 - Math.round(avg));
+        html += `<div class="ob-item">
+            <div class="ob-name">${escapeHtml(objekt)}</div>
+            <div class="ob-stars">${stars} <span class="ob-avg">${formatZahl(avg)}/5</span></div>
+            <div class="ob-count">${bew.length} Bewertung(en)</div>
+        </div>`;
+    });
+    html += '</div>';
+    el.innerHTML = html;
+}
+
+function updateObjektBewertungSelect() {
+    const sel = document.getElementById('obObjekt');
+    if (!sel) return;
+    sel.innerHTML = '<option value="">Objekt wählen...</option>';
+    objekte.forEach(o => { sel.innerHTML += `<option value="${escapeHtml(o.name)}">${escapeHtml(o.name)}</option>`; });
+}
+
+// =============================================
+// DASHBOARD-WETTER-WIDGET
+// =============================================
+function renderWetterWidget() {
+    const el = document.getElementById('wetterWidgetContent');
+    if (!el) return;
+
+    const heute = new Date().toISOString().split('T')[0];
+    const wetterIcons = { sonnig: '☀️', bewoelkt: '⛅', regen: '🌧️', schnee: '❄️', sturm: '🌪️', nebel: '🌫️' };
+
+    const heuteNotizen = Object.entries(objektWetterNotizen)
+        .filter(([key]) => key.endsWith('|' + heute))
+        .map(([key, val]) => ({ objekt: key.split('|')[0], ...val }));
+
+    if (heuteNotizen.length === 0) {
+        el.innerHTML = '<span style="color:#a0aec0;font-size:0.75rem">Keine Wetter-Daten für heute</span>';
+        return;
+    }
+
+    let html = '<div class="ww-items">';
+    heuteNotizen.forEach(n => {
+        html += `<span class="ww-item">${wetterIcons[n.wetter] || '🌡️'} ${escapeHtml(n.objekt.substring(0, 12))}</span>`;
+    });
+    html += '</div>';
+    el.innerHTML = html;
+}
+
+// =============================================
+// DATEN-STATISTIK-ERWEITERUNG (localStorage)
+// =============================================
+function renderSpeicherStatistik() {
+    const el = document.getElementById('speicherStatistikContent');
+    if (!el) return;
+
+    const keys = [
+        { key: 'bbprotect_einsaetze', label: 'Einsätze' },
+        { key: 'bbprotect_objekte', label: 'Objekte' },
+        { key: 'bbprotect_mitarbeiter', label: 'Mitarbeiter' },
+        { key: 'bbprotect_vorlagen', label: 'Vorlagen' },
+        { key: 'bbprotect_verfuegbarkeit', label: 'Verfügbarkeit' },
+        { key: 'bbprotect_vorfaelle', label: 'Vorfälle' },
+        { key: 'bbprotect_wachbuch', label: 'Wachbuch' },
+        { key: 'bbprotect_auditlog', label: 'Audit-Log' },
+        { key: 'bbprotect_nachrichten', label: 'Nachrichten' },
+        { key: 'bbprotect_bewertungen', label: 'Bewertungen' },
+        { key: 'bbprotect_tauschanfragen', label: 'Tausch-Anfragen' },
+        { key: 'bbprotect_schichtuebergaben', label: 'Schichtübergaben' },
+        { key: 'bbprotect_zertifikate', label: 'Zertifikate' },
+        { key: 'bbprotect_einsatzkommentare', label: 'Kommentare' }
+    ];
+
+    let total = 0;
+    const data = keys.map(k => {
+        const val = localStorage.getItem(k.key) || '';
+        const bytes = new Blob([val]).size;
+        total += bytes;
+        return { ...k, bytes };
+    }).sort((a, b) => b.bytes - a.bytes);
+
+    const maxBytes = Math.max(...data.map(d => d.bytes), 1);
+
+    let html = '<div class="sps-list">';
+    data.forEach(d => {
+        const pct = (d.bytes / maxBytes) * 100;
+        const kb = (d.bytes / 1024).toFixed(1);
+        html += `<div class="sps-row">
+            <span class="sps-label">${d.label}</span>
+            <div class="sps-bar-bg"><div class="sps-bar-fill" style="width:${pct}%"></div></div>
+            <span class="sps-val">${kb} KB</span>
+        </div>`;
+    });
+    html += '</div>';
+    html += `<div class="sps-total">Gesamt: <strong>${(total / 1024).toFixed(1)} KB</strong> von ~5 MB</div>`;
+    el.innerHTML = html;
 }
 
 // =============================================
