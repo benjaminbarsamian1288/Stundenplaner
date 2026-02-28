@@ -10097,6 +10097,245 @@ body.dark-mode .sn-sticky {
     border-color: #d69e2e;
 }
 
+/* =============================================
+   KOSTEN-SPLIT
+   ============================================= */
+.ks-bars {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+
+.ks-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.8rem;
+}
+
+.ks-label {
+    min-width: 160px;
+    font-weight: 600;
+    color: #4a5568;
+    font-size: 0.75rem;
+}
+
+body.dark-mode .ks-label {
+    color: #cbd5e0;
+}
+
+.ks-bar-bg {
+    flex: 1;
+    height: 12px;
+    background: #edf2f7;
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+body.dark-mode .ks-bar-bg {
+    background: #4a5568;
+}
+
+.ks-bar-fill {
+    height: 100%;
+    border-radius: 6px;
+    transition: width 0.3s;
+}
+
+.ks-val {
+    min-width: 100px;
+    text-align: right;
+    font-weight: 700;
+    color: #2d3748;
+    font-size: 0.75rem;
+}
+
+body.dark-mode .ks-val {
+    color: #e2e8f0;
+}
+
+.ks-total {
+    text-align: center;
+    margin-top: 0.75rem;
+    font-size: 0.85rem;
+    color: #4a5568;
+    padding-top: 0.5rem;
+    border-top: 1px solid #e2e8f0;
+}
+
+body.dark-mode .ks-total {
+    color: #cbd5e0;
+    border-top-color: #4a5568;
+}
+
+/* =============================================
+   SCHICHT-PRÄFERENZEN
+   ============================================= */
+.sp-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+}
+
+.sp-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.4rem 0.6rem;
+    background: #f7fafc;
+    border-radius: 6px;
+    font-size: 0.8rem;
+}
+
+body.dark-mode .sp-row {
+    background: #2d3748;
+}
+
+.sp-ma {
+    font-weight: 700;
+    color: #2d3748;
+    min-width: 120px;
+}
+
+body.dark-mode .sp-ma {
+    color: #e2e8f0;
+}
+
+.sp-praef {
+    font-weight: 600;
+    color: #4299e1;
+    min-width: 140px;
+}
+
+.sp-notiz {
+    flex: 1;
+    color: #718096;
+    font-size: 0.75rem;
+}
+
+body.dark-mode .sp-notiz {
+    color: #a0aec0;
+}
+
+/* =============================================
+   OBJEKT-DOKUMENTEN-ABLAGE
+   ============================================= */
+.od-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+}
+
+.od-item {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.5rem 0.75rem;
+    background: #f7fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 0.8rem;
+}
+
+body.dark-mode .od-item {
+    background: #2d3748;
+    border-color: #4a5568;
+}
+
+.od-icon {
+    font-size: 1.2rem;
+    flex-shrink: 0;
+}
+
+.od-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+}
+
+.od-info strong {
+    color: #2d3748;
+}
+
+body.dark-mode .od-info strong {
+    color: #e2e8f0;
+}
+
+.od-meta {
+    font-size: 0.65rem;
+    color: #718096;
+}
+
+body.dark-mode .od-meta {
+    color: #a0aec0;
+}
+
+.od-notiz {
+    font-size: 0.7rem;
+    color: #a0aec0;
+    font-style: italic;
+}
+
+/* =============================================
+   SYSTEM-INFO
+   ============================================= */
+.si-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.5rem;
+}
+
+.si-card {
+    text-align: center;
+    padding: 0.6rem;
+    background: #f7fafc;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+}
+
+body.dark-mode .si-card {
+    background: #2d3748;
+    border-color: #4a5568;
+}
+
+.si-val {
+    font-size: 1.2rem;
+    font-weight: 800;
+    color: #4299e1;
+}
+
+.si-lbl {
+    font-size: 0.65rem;
+    color: #718096;
+    margin-top: 0.1rem;
+}
+
+body.dark-mode .si-lbl {
+    color: #a0aec0;
+}
+
+.si-features {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem;
+    margin-top: 0.5rem;
+}
+
+.si-feat {
+    font-size: 0.65rem;
+    padding: 0.15rem 0.5rem;
+    background: #ebf8ff;
+    color: #2b6cb0;
+    border-radius: 12px;
+    font-weight: 600;
+}
+
+body.dark-mode .si-feat {
+    background: #2a4365;
+    color: #63b3ed;
+}
+
 @media (max-width: 768px) {
     .ob-item {
         flex-direction: column;
@@ -10138,6 +10377,18 @@ body.dark-mode .sn-sticky {
     }
 
     .ae-item {
+        flex-wrap: wrap;
+    }
+
+    .si-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .ks-row {
+        flex-wrap: wrap;
+    }
+
+    .sp-row, .od-item {
         flex-wrap: wrap;
     }
 }

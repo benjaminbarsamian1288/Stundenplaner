@@ -87,13 +87,13 @@ document.querySelectorAll('.nav-btn').forEach(btn => {
         document.getElementById('tab-' + this.dataset.tab).classList.add('active');
 
         if (this.dataset.tab === 'dashboard') { updateDashboard(); renderEinsatzChronik(); renderEinsatzAnalytics(); renderWochenReport(); renderEinsatzTimeline(); renderKostenTrend(); renderObjektUmsatzRanking(); renderStundenkontoChart(); renderDashboardKacheln(); renderSchichtplanVorschau(); renderErweiterteStatistik(); renderTagesPersonal(); renderWetterWidget(); renderDauerStatistik(); renderStornoquote(); renderWiederholungsStatistik(); }
-        if (this.dataset.tab === 'objekte') { renderObjekte(); renderVertraege(); renderObjektAuslastung(); updateChecklisteObjekte(); updateObjektHistorieSelect(); updateObjektKontakteSelect(); renderObjektKontakte(); updateObjektAnweisungenSelect(); renderObjektAnweisungen(); updateObjektKostenMonat(); renderObjektKostenanalyse(); renderVertragsCountdown(); updateRevierplanSelect(); renderRevierplan(); updateBesObjektSelect(); renderBesichtigungen(); updateInfokarteSelect(); updateWetterObjektSelects(); renderWetterNotizen(); updateObjektChecklisteSelect(); renderObjektCheckliste(); renderVertragslaufzeitBalken(); updateZugangshinweiseSelect(); renderZugangshinweise(); updateObjektBewertungSelect(); renderObjektBewertungen(); updateObjektNotfallSelects(); renderObjektNotfallKontakte(); updateObjektEinsatzKalSelects(); renderObjektEinsatzKalender(); renderObjektStatusampel(); }
+        if (this.dataset.tab === 'objekte') { renderObjekte(); renderVertraege(); renderObjektAuslastung(); updateChecklisteObjekte(); updateObjektHistorieSelect(); updateObjektKontakteSelect(); renderObjektKontakte(); updateObjektAnweisungenSelect(); renderObjektAnweisungen(); updateObjektKostenMonat(); renderObjektKostenanalyse(); renderVertragsCountdown(); updateRevierplanSelect(); renderRevierplan(); updateBesObjektSelect(); renderBesichtigungen(); updateInfokarteSelect(); updateWetterObjektSelects(); renderWetterNotizen(); updateObjektChecklisteSelect(); renderObjektCheckliste(); renderVertragslaufzeitBalken(); updateZugangshinweiseSelect(); renderZugangshinweise(); updateObjektBewertungSelect(); renderObjektBewertungen(); updateObjektNotfallSelects(); renderObjektNotfallKontakte(); updateObjektEinsatzKalSelects(); renderObjektEinsatzKalender(); renderObjektStatusampel(); updateObjektDokSelects(); renderObjektDokumenteAblage(); }
         if (this.dataset.tab === 'kalender') { renderKalender(); renderDienstplan(); renderJahresuebersicht(); }
-        if (this.dataset.tab === 'abrechnung') { updateAbrechnung(); updateLohnvorschauSelects(); renderDuplikatCheck(); renderBewertungsUebersicht(); updateMonatsabschlussSelect(); renderMonatsabschluss(); updateCSVExportFilter(); renderDuplikatFinder(); }
-        if (this.dataset.tab === 'mitarbeiter') { renderMitarbeiter(); renderDokumente(); renderUeberstunden(); renderKontaktliste(); renderUrlaubskonto(); renderArbeitszeitkonto(); renderQualMatrix(); updateSchichtHistorieSelect(); renderNotfallkontakte(); updateMAKalSelect(); renderVerfuegbarkeitWoche(); renderDoppelschichtWarnungen(); renderMALeistung(); renderKrankenstatistik(); renderGeburtstageJubilaeen(); renderMASkills(); renderTauschBoard(); renderMAVerfuegbarkeitsKalender(); renderNachrichtenBoard(); renderZertifikateTracker(); renderJahresarbeitszeitkonto(); renderUeberstundenWarnung(); renderMAEinsatzHeatmap(); renderMAFavoritobjekte(); renderMAStreaks(); }
+        if (this.dataset.tab === 'abrechnung') { updateAbrechnung(); updateLohnvorschauSelects(); renderDuplikatCheck(); renderBewertungsUebersicht(); updateMonatsabschlussSelect(); renderMonatsabschluss(); updateCSVExportFilter(); renderDuplikatFinder(); renderKostenSplit(); }
+        if (this.dataset.tab === 'mitarbeiter') { renderMitarbeiter(); renderDokumente(); renderUeberstunden(); renderKontaktliste(); renderUrlaubskonto(); renderArbeitszeitkonto(); renderQualMatrix(); updateSchichtHistorieSelect(); renderNotfallkontakte(); updateMAKalSelect(); renderVerfuegbarkeitWoche(); renderDoppelschichtWarnungen(); renderMALeistung(); renderKrankenstatistik(); renderGeburtstageJubilaeen(); renderMASkills(); renderTauschBoard(); renderMAVerfuegbarkeitsKalender(); renderNachrichtenBoard(); renderZertifikateTracker(); renderJahresarbeitszeitkonto(); renderUeberstundenWarnung(); renderMAEinsatzHeatmap(); renderMAFavoritobjekte(); renderMAStreaks(); renderSchichtPraeferenzen(); }
         if (this.dataset.tab === 'vorfaelle') { renderVorfaelle(); renderVorfallsStatistik(); }
         if (this.dataset.tab === 'wachbuch') { renderWachbuch(); renderUebergaben(); renderWachbuchStats(); updateSchichtUebergabeSelects(); renderSchichtUebergaben(); renderTagesprotokoll(); }
-        if (this.dataset.tab === 'einstellungen') { updateDatenStats(); updateSpeicherStats(); ladeEinstellungen(); renderAuditLog(); renderSondernotizen(); renderFeiertagsKalender(); renderSpeicherStatistik(); renderDatenChangelog(); renderAutoErinnerungen(); }
+        if (this.dataset.tab === 'einstellungen') { updateDatenStats(); updateSpeicherStats(); ladeEinstellungen(); renderAuditLog(); renderSondernotizen(); renderFeiertagsKalender(); renderSpeicherStatistik(); renderDatenChangelog(); renderAutoErinnerungen(); renderSystemInfo(); }
     });
 });
 
@@ -1575,7 +1575,7 @@ function loescheMitarbeiter(index) {
 // =============================================
 function erstelleBackup() {
     const backup = {
-        version: 22,
+        version: 23,
         datum: new Date().toISOString(),
         einsaetze,
         objekte,
@@ -1610,7 +1610,9 @@ function erstelleBackup() {
         objektZugangshinweise,
         objektBewertungen,
         objektNotfallKontakte,
-        datenChangelog
+        datenChangelog,
+        maSchichtPraef,
+        objektDokumente
     };
 
     const json = JSON.stringify(backup, null, 2);
@@ -1669,6 +1671,8 @@ function stelleWiederHer(event) {
             objektBewertungen = data.objektBewertungen || {};
             objektNotfallKontakte = data.objektNotfallKontakte || {};
             datenChangelog = data.datenChangelog || [];
+            maSchichtPraef = data.maSchichtPraef || {};
+            objektDokumente = data.objektDokumente || {};
 
             speichern();
             localStorage.setItem('bbprotect_objekte', JSON.stringify(objekte));
@@ -1704,6 +1708,8 @@ function stelleWiederHer(event) {
             localStorage.setItem('bbprotect_objektbewertungen', JSON.stringify(objektBewertungen));
             localStorage.setItem('bbprotect_objektnotfall', JSON.stringify(objektNotfallKontakte));
             localStorage.setItem('bbprotect_changelog', JSON.stringify(datenChangelog));
+            localStorage.setItem('bbprotect_schichtpraef', JSON.stringify(maSchichtPraef));
+            localStorage.setItem('bbprotect_objektdokumente', JSON.stringify(objektDokumente));
 
             renderTabelle();
             updateAlleFilter();
@@ -1760,6 +1766,8 @@ function loescheAlleDaten() {
     objektBewertungen = {};
     objektNotfallKontakte = {};
     datenChangelog = [];
+    maSchichtPraef = {};
+    objektDokumente = {};
 
     localStorage.removeItem('bbprotect_einsaetze');
     localStorage.removeItem('bbprotect_objekte');
@@ -1795,6 +1803,8 @@ function loescheAlleDaten() {
     localStorage.removeItem('bbprotect_objektbewertungen');
     localStorage.removeItem('bbprotect_objektnotfall');
     localStorage.removeItem('bbprotect_changelog');
+    localStorage.removeItem('bbprotect_schichtpraef');
+    localStorage.removeItem('bbprotect_objektdokumente');
 
     renderTabelle();
     updateAlleFilter();
@@ -9800,6 +9810,250 @@ function renderSchnellNotiz() {
         el.style.display = 'none';
         el.innerHTML = '';
     }
+}
+
+// =============================================
+// EINSATZ-KOSTEN-SPLIT
+// =============================================
+function renderKostenSplit() {
+    const el = document.getElementById('kostenSplitContent');
+    if (!el) return;
+
+    const monat = document.getElementById('ksSplitMonat') ? document.getElementById('ksSplitMonat').value : '';
+
+    const filtered = monat ? einsaetze.filter(e => e.datum && e.datum.startsWith(monat) && e.status !== 'storniert') : einsaetze.filter(e => e.status !== 'storniert');
+
+    if (filtered.length === 0) {
+        el.innerHTML = '<span style="color:#a0aec0;font-size:0.8rem">Keine Einsätze im gewählten Zeitraum.</span>';
+        return;
+    }
+
+    let grundlohn = 0, nachtZuschlag = 0, sonntagZuschlag = 0, feiertagZuschlag = 0;
+
+    filtered.forEach(e => {
+        const basis = (e.stunden || 0) * (e.stundensatz || 0);
+        grundlohn += basis;
+        nachtZuschlag += (e.zuschlagNacht || 0);
+        sonntagZuschlag += (e.zuschlagSonntag || 0);
+        feiertagZuschlag += (e.zuschlagFeiertag || 0);
+    });
+
+    const gesamt = grundlohn + nachtZuschlag + sonntagZuschlag + feiertagZuschlag;
+    const maxVal = Math.max(grundlohn, nachtZuschlag, sonntagZuschlag, feiertagZuschlag, 1);
+
+    const categories = [
+        { label: 'Grundlohn', val: grundlohn, color: '#4299e1' },
+        { label: 'Nachtzuschlag (25%)', val: nachtZuschlag, color: '#805ad5' },
+        { label: 'Sonntagszuschlag (50%)', val: sonntagZuschlag, color: '#d69e2e' },
+        { label: 'Feiertagszuschlag (100%)', val: feiertagZuschlag, color: '#e53e3e' }
+    ];
+
+    let html = '<div class="ks-bars">';
+    categories.forEach(c => {
+        const pct = (c.val / maxVal) * 100;
+        const anteil = gesamt > 0 ? ((c.val / gesamt) * 100).toFixed(1) : '0.0';
+        html += `<div class="ks-row">
+            <span class="ks-label">${c.label}</span>
+            <div class="ks-bar-bg"><div class="ks-bar-fill" style="width:${pct}%;background:${c.color}"></div></div>
+            <span class="ks-val">${formatWaehrung(c.val)} (${anteil}%)</span>
+        </div>`;
+    });
+    html += '</div>';
+    html += `<div class="ks-total">Gesamt: <strong>${formatWaehrung(gesamt)}</strong> | ${filtered.length} Einsätze</div>`;
+    el.innerHTML = html;
+}
+
+// =============================================
+// MA-SCHICHT-PRÄFERENZEN
+// =============================================
+let maSchichtPraef = JSON.parse(localStorage.getItem('bbprotect_schichtpraef') || '{}');
+
+function schichtPraefSpeichern() {
+    const ma = document.getElementById('spMA') ? document.getElementById('spMA').value.trim() : '';
+    const praef = document.getElementById('spPraeferenz') ? document.getElementById('spPraeferenz').value : '';
+    const notiz = document.getElementById('spNotiz') ? document.getElementById('spNotiz').value.trim() : '';
+
+    if (!ma) { alert('Bitte Mitarbeiter angeben.'); return; }
+
+    maSchichtPraef[ma] = { praeferenz: praef, notiz, datum: new Date().toISOString() };
+    localStorage.setItem('bbprotect_schichtpraef', JSON.stringify(maSchichtPraef));
+    renderSchichtPraeferenzen();
+}
+
+function renderSchichtPraeferenzen() {
+    const el = document.getElementById('schichtPraefContent');
+    if (!el) return;
+
+    const praefIcons = { frueh: '🌅 Frühschicht', spaet: '🌇 Spätschicht', nacht: '🌙 Nachtschicht', flexibel: '🔄 Flexibel', wochenende: '📅 Wochenende' };
+
+    const entries = Object.entries(maSchichtPraef);
+    if (entries.length === 0) {
+        el.innerHTML = '<span style="color:#a0aec0;font-size:0.8rem">Keine Präferenzen hinterlegt.</span>';
+        return;
+    }
+
+    let html = '<div class="sp-list">';
+    entries.sort((a, b) => a[0].localeCompare(b[0])).forEach(([ma, p]) => {
+        html += `<div class="sp-row">
+            <span class="sp-ma">${escapeHtml(ma)}</span>
+            <span class="sp-praef">${praefIcons[p.praeferenz] || p.praeferenz}</span>
+            <span class="sp-notiz">${escapeHtml(p.notiz || '—')}</span>
+            <button class="btn-delete btn-small" onclick="delete maSchichtPraef['${escapeHtml(ma)}'];localStorage.setItem('bbprotect_schichtpraef',JSON.stringify(maSchichtPraef));renderSchichtPraeferenzen();">X</button>
+        </div>`;
+    });
+    html += '</div>';
+    el.innerHTML = html;
+}
+
+// =============================================
+// OBJEKT-DOKUMENTEN-ABLAGE
+// =============================================
+let objektDokumente = JSON.parse(localStorage.getItem('bbprotect_objektdokumente') || '{}');
+
+function objektDokumentSpeichern() {
+    const objekt = document.getElementById('odObjekt') ? document.getElementById('odObjekt').value : '';
+    const bezeichnung = document.getElementById('odBezeichnung') ? document.getElementById('odBezeichnung').value.trim() : '';
+    const typ = document.getElementById('odTyp') ? document.getElementById('odTyp').value : '';
+    const notiz = document.getElementById('odNotiz') ? document.getElementById('odNotiz').value.trim() : '';
+
+    if (!objekt || !bezeichnung) { alert('Bitte Objekt und Bezeichnung angeben.'); return; }
+
+    if (!objektDokumente[objekt]) objektDokumente[objekt] = [];
+    objektDokumente[objekt].push({ bezeichnung, typ, notiz, datum: new Date().toISOString() });
+    localStorage.setItem('bbprotect_objektdokumente', JSON.stringify(objektDokumente));
+
+    document.getElementById('odBezeichnung').value = '';
+    document.getElementById('odNotiz').value = '';
+    renderObjektDokumenteAblage();
+}
+
+function loescheObjektDokument(objekt, idx) {
+    if (!confirm('Dokument-Referenz löschen?')) return;
+    objektDokumente[objekt].splice(idx, 1);
+    if (objektDokumente[objekt].length === 0) delete objektDokumente[objekt];
+    localStorage.setItem('bbprotect_objektdokumente', JSON.stringify(objektDokumente));
+    renderObjektDokumenteAblage();
+}
+
+function renderObjektDokumenteAblage() {
+    const el = document.getElementById('objektDokAblageContent');
+    if (!el) return;
+
+    const objekt = document.getElementById('odFilterObjekt') ? document.getElementById('odFilterObjekt').value : '';
+    const typIcons = { vertrag: '📄', grundriss: '🗺️', anweisung: '📋', genehmigung: '✅', sonstiges: '📎' };
+
+    let alle = [];
+    Object.entries(objektDokumente).forEach(([obj, liste]) => {
+        if (objekt && obj !== objekt) return;
+        liste.forEach((d, idx) => alle.push({ ...d, objekt: obj, idx }));
+    });
+
+    if (alle.length === 0) {
+        el.innerHTML = '<span style="color:#a0aec0;font-size:0.8rem">Keine Dokument-Referenzen vorhanden.</span>';
+        return;
+    }
+
+    let html = '<div class="od-list">';
+    alle.forEach(d => {
+        html += `<div class="od-item">
+            <span class="od-icon">${typIcons[d.typ] || '📎'}</span>
+            <div class="od-info">
+                <strong>${escapeHtml(d.bezeichnung)}</strong>
+                <span class="od-meta">${escapeHtml(d.objekt)} | ${d.typ} | ${formatDatum(d.datum.split('T')[0])}</span>
+                ${d.notiz ? `<span class="od-notiz">${escapeHtml(d.notiz)}</span>` : ''}
+            </div>
+            <button class="btn-delete btn-small" onclick="loescheObjektDokument('${escapeHtml(d.objekt)}',${d.idx})">X</button>
+        </div>`;
+    });
+    html += '</div>';
+    el.innerHTML = html;
+}
+
+function updateObjektDokSelects() {
+    ['odObjekt', 'odFilterObjekt'].forEach(id => {
+        const sel = document.getElementById(id);
+        if (!sel) return;
+        const val = sel.value;
+        const firstOpt = id === 'odFilterObjekt' ? '<option value="">Alle Objekte</option>' : '<option value="">Objekt wählen...</option>';
+        sel.innerHTML = firstOpt + objekte.map(o => `<option value="${escapeHtml(o.name)}">${escapeHtml(o.name)}</option>`).join('');
+        sel.value = val;
+    });
+}
+
+// =============================================
+// WACHBUCH-EXPORT-DRUCKEN
+// =============================================
+function druckeWachbuchZeitraum() {
+    const von = document.getElementById('wbeDruckVon') ? document.getElementById('wbeDruckVon').value : '';
+    const bis = document.getElementById('wbeDruckBis') ? document.getElementById('wbeDruckBis').value : '';
+
+    if (!von || !bis) { alert('Bitte Von- und Bis-Datum angeben.'); return; }
+
+    const filtered = wachbuch.filter(w => w.datum >= von && w.datum <= bis).sort((a, b) => (a.datum + a.zeit).localeCompare(b.datum + b.zeit));
+
+    if (filtered.length === 0) { alert('Keine Wachbuch-Einträge im gewählten Zeitraum.'); return; }
+
+    let html = `<h2>B.B. Protect — Wachbuch</h2><h3>${formatDatum(von)} bis ${formatDatum(bis)}</h3>`;
+    html += '<table style="width:100%;border-collapse:collapse;font-size:11px;margin-top:10px">';
+    html += '<tr style="background:#2d3748;color:#fff"><th style="padding:4px;border:1px solid #4a5568">Datum</th><th style="padding:4px;border:1px solid #4a5568">Zeit</th><th style="padding:4px;border:1px solid #4a5568">Objekt</th><th style="padding:4px;border:1px solid #4a5568">Kategorie</th><th style="padding:4px;border:1px solid #4a5568">MA</th><th style="padding:4px;border:1px solid #4a5568">Eintrag</th></tr>';
+
+    filtered.forEach(w => {
+        html += `<tr><td style="padding:3px;border:1px solid #e2e8f0">${formatDatum(w.datum)}</td><td style="padding:3px;border:1px solid #e2e8f0">${w.zeit || ''}</td><td style="padding:3px;border:1px solid #e2e8f0">${escapeHtml(w.objekt)}</td><td style="padding:3px;border:1px solid #e2e8f0">${escapeHtml(w.kategorie)}</td><td style="padding:3px;border:1px solid #e2e8f0">${escapeHtml(w.mitarbeiter || '')}</td><td style="padding:3px;border:1px solid #e2e8f0">${escapeHtml(w.eintrag || '')}</td></tr>`;
+    });
+    html += '</table>';
+    html += `<p style="margin-top:10px;font-size:10px;color:#718096">${filtered.length} Einträge | Erstellt am ${new Date().toLocaleString('de-DE')}</p>`;
+
+    const printArea = document.getElementById('printArea');
+    printArea.innerHTML = html;
+    printArea.style.display = 'block';
+    document.body.classList.add('print-mode');
+    window.print();
+    document.body.classList.remove('print-mode');
+    printArea.style.display = 'none';
+}
+
+// =============================================
+// SYSTEM-INFO
+// =============================================
+function renderSystemInfo() {
+    const el = document.getElementById('systemInfoContent');
+    if (!el) return;
+
+    let totalBytes = 0;
+    for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith('bbprotect_')) {
+            totalBytes += new Blob([localStorage.getItem(key) || '']).size;
+        }
+    }
+
+    const features = [
+        'Einsatzerfassung', 'Schichtvorlagen', 'Kalender', 'Dienstplan', 'Jahresübersicht',
+        'Abrechnung', 'Lohnvorschau', 'Dashboard & KPIs', 'Heatmap', 'Analytics',
+        'Objekte & Verträge', 'Mitarbeiterverwaltung', 'Qualifikationsmatrix',
+        'Vorfallsberichte', 'Wachbuch', 'Schichtübergabe', 'Audit-Log',
+        'Backup/Restore', 'Dark Mode', 'Globale Suche', 'CSV Export',
+        'Prioritäten', 'Farb-Tags', 'Kommentare', 'GPS-Standort',
+        'Tausch-Board', 'Nachrichten-Board', 'Zertifikats-Tracker',
+        'Auto-Erinnerungen', 'Objekt-Statusampel', 'Schnell-Notiz',
+        'Kosten-Split', 'Schicht-Präferenzen', 'Objekt-Dokumente'
+    ];
+
+    let html = '<div class="si-grid">';
+    html += `<div class="si-card"><div class="si-val">22</div><div class="si-lbl">Backup-Version</div></div>`;
+    html += `<div class="si-card"><div class="si-val">${(totalBytes / 1024).toFixed(1)} KB</div><div class="si-lbl">Datenbank-Größe</div></div>`;
+    html += `<div class="si-card"><div class="si-val">${features.length}</div><div class="si-lbl">Features</div></div>`;
+    html += `<div class="si-card"><div class="si-val">${einsaetze.length}</div><div class="si-lbl">Einsätze</div></div>`;
+    html += `<div class="si-card"><div class="si-val">${objekte.length}</div><div class="si-lbl">Objekte</div></div>`;
+    html += `<div class="si-card"><div class="si-val">${mitarbeiterListe_.length}</div><div class="si-lbl">Mitarbeiter</div></div>`;
+    html += '</div>';
+
+    html += '<details style="margin-top:0.75rem"><summary style="cursor:pointer;font-size:0.8rem;font-weight:600;color:#4299e1">Alle Features anzeigen</summary>';
+    html += '<div class="si-features">';
+    features.forEach(f => { html += `<span class="si-feat">${f}</span>`; });
+    html += '</div></details>';
+
+    el.innerHTML = html;
 }
 
 // =============================================

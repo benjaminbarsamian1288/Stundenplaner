@@ -549,6 +549,21 @@
                 <p style="font-size:0.7rem;color:#718096;margin-bottom:0.5rem">Erkennt Eins&auml;tze mit identischem MA, Datum, Objekt und Uhrzeit.</p>
                 <div id="duplikatFinderContent"></div>
             </section>
+
+            <section class="form-section">
+                <div class="list-header">
+                    <h2>Kosten-Split (Zuschlagsaufschl&uuml;sselung)</h2>
+                </div>
+                <div class="form-row" style="margin-bottom:0.5rem">
+                    <div class="form-group">
+                        <label for="ksSplitMonat">Monat</label>
+                        <select id="ksSplitMonat" onchange="renderKostenSplit()">
+                            <option value="">Alle Monate</option>
+                        </select>
+                    </div>
+                </div>
+                <div id="kostenSplitContent"></div>
+            </section>
         </div>
 
         <!-- TAB: Dashboard -->
@@ -1260,6 +1275,54 @@
 
             <section class="form-section">
                 <div class="list-header">
+                    <h2>Objekt-Dokumenten-Ablage</h2>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="odObjekt">Objekt</label>
+                        <select id="odObjekt">
+                            <option value="">Objekt w&auml;hlen...</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="odTyp">Dokumenttyp</label>
+                        <select id="odTyp">
+                            <option value="vertrag">Vertrag</option>
+                            <option value="grundriss">Grundriss/Plan</option>
+                            <option value="anweisung">Dienstanweisung</option>
+                            <option value="genehmigung">Genehmigung</option>
+                            <option value="sonstiges">Sonstiges</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group" style="flex:2">
+                        <label for="odBezeichnung">Bezeichnung</label>
+                        <input type="text" id="odBezeichnung" placeholder="z.B. Bewachungsvertrag 2026, Grundriss EG">
+                    </div>
+                    <div class="form-group">
+                        <label for="odNotiz">Notiz (optional)</label>
+                        <input type="text" id="odNotiz" placeholder="z.B. Ordner 3, Regal A">
+                    </div>
+                    <div class="form-group" style="display:flex;align-items:flex-end">
+                        <button type="button" class="btn-primary" onclick="objektDokumentSpeichern()">+ Dokument</button>
+                    </div>
+                </div>
+                <div style="margin-top:0.75rem">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="odFilterObjekt">Filter</label>
+                            <select id="odFilterObjekt" onchange="renderObjektDokumenteAblage()">
+                                <option value="">Alle Objekte</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div id="objektDokAblageContent"></div>
+                </div>
+            </section>
+
+            <section class="form-section">
+                <div class="list-header">
                     <h2>Objekt-Einsatz-Kalender</h2>
                 </div>
                 <div class="form-row">
@@ -1836,6 +1899,36 @@
                 <p style="font-size:0.7rem;color:#718096;margin-bottom:0.5rem">L&auml;ngste ununterbrochene Arbeitstage-Serien pro Mitarbeiter</p>
                 <div id="maStreaksContent"></div>
             </section>
+
+            <section class="form-section">
+                <div class="list-header">
+                    <h2>Schicht-Pr&auml;ferenzen</h2>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="spMA">Mitarbeiter</label>
+                        <input type="text" id="spMA" list="mitarbeiterFilterListe" placeholder="Name">
+                    </div>
+                    <div class="form-group">
+                        <label for="spPraeferenz">Pr&auml;ferenz</label>
+                        <select id="spPraeferenz">
+                            <option value="frueh">Fr&uuml;hschicht</option>
+                            <option value="spaet">Sp&auml;tschicht</option>
+                            <option value="nacht">Nachtschicht</option>
+                            <option value="flexibel">Flexibel</option>
+                            <option value="wochenende">Wochenende</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="spNotiz">Notiz</label>
+                        <input type="text" id="spNotiz" placeholder="z.B. nur Mo-Fr, max 3 Nachtschichten/Woche">
+                    </div>
+                    <div class="form-group" style="display:flex;align-items:flex-end">
+                        <button type="button" class="btn-primary" onclick="schichtPraefSpeichern()">Speichern</button>
+                    </div>
+                </div>
+                <div id="schichtPraefContent" style="margin-top:0.5rem"></div>
+            </section>
         </div>
 
         <!-- TAB: Vorfälle -->
@@ -2129,6 +2222,25 @@
                 </div>
                 <div id="tagesprotokollContent"></div>
             </section>
+
+            <section class="form-section">
+                <div class="list-header">
+                    <h2>Wachbuch-Zeitraum drucken</h2>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="wbeDruckVon">Von</label>
+                        <input type="date" id="wbeDruckVon">
+                    </div>
+                    <div class="form-group">
+                        <label for="wbeDruckBis">Bis</label>
+                        <input type="date" id="wbeDruckBis">
+                    </div>
+                    <div class="form-group" style="display:flex;align-items:flex-end">
+                        <button type="button" class="btn-primary" onclick="druckeWachbuchZeitraum()">Drucken</button>
+                    </div>
+                </div>
+            </section>
         </div>
 
         <!-- TAB: Einstellungen / Daten -->
@@ -2200,6 +2312,9 @@
                     </div>
                 </div>
                 <div id="feiertagsKalContent"></div>
+
+                <h2 style="margin-top:1.5rem">System-Info</h2>
+                <div id="systemInfoContent" style="margin-bottom:1rem"></div>
 
                 <h2 style="margin-top:1.5rem">Datensicherung &amp; Import</h2>
                 <p class="daten-info">Alle Daten werden lokal im Browser gespeichert (localStorage). Erstelle regelm&auml;&szlig;ig ein Backup, damit nichts verloren geht.</p>
