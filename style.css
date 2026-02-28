@@ -10391,4 +10391,227 @@ body.dark-mode .si-feat {
     .sp-row, .od-item {
         flex-wrap: wrap;
     }
+
+    .mkp-stats {
+        grid-template-columns: repeat(3, 1fr) !important;
+    }
+
+    .mzf-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+    }
+}
+
+/* =============================================
+   ZEITKONFLIKT-WARNUNG
+   ============================================= */
+.zk-warn {
+    background: #fff5f5;
+    color: #e53e3e;
+    padding: 0.5rem 0.75rem;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    border: 1px solid #feb2b2;
+    margin: 0.3rem 0;
+}
+
+body.dark-mode .zk-warn {
+    background: #4a1d1d;
+    border-color: #e53e3e;
+    color: #fc8181;
+}
+
+/* =============================================
+   MA-KOMPETENZPROFIL
+   ============================================= */
+.mkp-card {
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+body.dark-mode .mkp-card {
+    border-color: #4a5568;
+}
+
+.mkp-header {
+    background: #2d3748;
+    color: #fff;
+    padding: 0.6rem 0.75rem;
+    font-size: 0.85rem;
+}
+
+body.dark-mode .mkp-header {
+    background: #1a202c;
+}
+
+.mkp-stats {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 0.5rem;
+    padding: 0.75rem;
+}
+
+.mkp-stat {
+    text-align: center;
+}
+
+.mkp-num {
+    display: block;
+    font-size: 1.2rem;
+    font-weight: 800;
+    color: #4299e1;
+}
+
+.mkp-lbl {
+    font-size: 0.6rem;
+    color: #718096;
+    text-transform: uppercase;
+}
+
+body.dark-mode .mkp-lbl {
+    color: #a0aec0;
+}
+
+.mkp-info {
+    padding: 0.3rem 0.75rem;
+    font-size: 0.75rem;
+    color: #4a5568;
+    border-top: 1px solid #edf2f7;
+}
+
+body.dark-mode .mkp-info {
+    color: #cbd5e0;
+    border-top-color: #4a5568;
+}
+
+/* =============================================
+   OBJEKT-QR-KARTE
+   ============================================= */
+.oqr-card {
+    max-width: 280px;
+    border: 2px solid #2d3748;
+    border-radius: 10px;
+    padding: 1rem;
+    text-align: center;
+}
+
+body.dark-mode .oqr-card {
+    border-color: #a0aec0;
+}
+
+.oqr-header {
+    font-weight: 800;
+    font-size: 0.9rem;
+    color: #2d3748;
+    margin-bottom: 0.5rem;
+}
+
+body.dark-mode .oqr-header {
+    color: #e2e8f0;
+}
+
+.oqr-qr {
+    display: inline-block;
+    margin: 0.5rem auto;
+    padding: 4px;
+    background: #fff;
+    border: 1px solid #e2e8f0;
+}
+
+.oqr-row {
+    display: flex;
+}
+
+.oqr-cell {
+    width: 10px;
+    height: 10px;
+    background: #fff;
+}
+
+.oqr-filled {
+    background: #2d3748;
+}
+
+.oqr-line {
+    font-size: 0.7rem;
+    color: #4a5568;
+    text-align: left;
+    padding: 1px 0;
+}
+
+body.dark-mode .oqr-line {
+    color: #cbd5e0;
+}
+
+/* =============================================
+   MONATS-ZUSAMMENFASSUNG
+   ============================================= */
+.mzf-card {
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+body.dark-mode .mzf-card {
+    border-color: #4a5568;
+}
+
+.mzf-header {
+    background: #2d3748;
+    color: #fff;
+    padding: 0.6rem 0.75rem;
+    font-size: 0.9rem;
+    font-weight: 700;
+}
+
+body.dark-mode .mzf-header {
+    background: #1a202c;
+}
+
+.mzf-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.5rem;
+    padding: 0.75rem;
+}
+
+.mzf-item {
+    text-align: center;
+}
+
+.mzf-num {
+    display: block;
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: #4299e1;
+}
+
+.mzf-lbl {
+    font-size: 0.6rem;
+    color: #718096;
+    text-transform: uppercase;
+}
+
+body.dark-mode .mzf-lbl {
+    color: #a0aec0;
+}
+
+/* =============================================
+   CSV-IMPORT
+   ============================================= */
+.ci-result {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #38a169;
+    padding: 0.4rem 0.6rem;
+    background: #f0fff4;
+    border-radius: 6px;
+    border: 1px solid #c6f6d5;
+}
+
+body.dark-mode .ci-result {
+    background: #1d4a2e;
+    border-color: #38a169;
+    color: #68d391;
 }

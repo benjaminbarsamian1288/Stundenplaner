@@ -86,11 +86,11 @@ document.querySelectorAll('.nav-btn').forEach(btn => {
         this.classList.add('active');
         document.getElementById('tab-' + this.dataset.tab).classList.add('active');
 
-        if (this.dataset.tab === 'dashboard') { updateDashboard(); renderEinsatzChronik(); renderEinsatzAnalytics(); renderWochenReport(); renderEinsatzTimeline(); renderKostenTrend(); renderObjektUmsatzRanking(); renderStundenkontoChart(); renderDashboardKacheln(); renderSchichtplanVorschau(); renderErweiterteStatistik(); renderTagesPersonal(); renderWetterWidget(); renderDauerStatistik(); renderStornoquote(); renderWiederholungsStatistik(); }
-        if (this.dataset.tab === 'objekte') { renderObjekte(); renderVertraege(); renderObjektAuslastung(); updateChecklisteObjekte(); updateObjektHistorieSelect(); updateObjektKontakteSelect(); renderObjektKontakte(); updateObjektAnweisungenSelect(); renderObjektAnweisungen(); updateObjektKostenMonat(); renderObjektKostenanalyse(); renderVertragsCountdown(); updateRevierplanSelect(); renderRevierplan(); updateBesObjektSelect(); renderBesichtigungen(); updateInfokarteSelect(); updateWetterObjektSelects(); renderWetterNotizen(); updateObjektChecklisteSelect(); renderObjektCheckliste(); renderVertragslaufzeitBalken(); updateZugangshinweiseSelect(); renderZugangshinweise(); updateObjektBewertungSelect(); renderObjektBewertungen(); updateObjektNotfallSelects(); renderObjektNotfallKontakte(); updateObjektEinsatzKalSelects(); renderObjektEinsatzKalender(); renderObjektStatusampel(); updateObjektDokSelects(); renderObjektDokumenteAblage(); }
+        if (this.dataset.tab === 'dashboard') { updateDashboard(); renderEinsatzChronik(); renderEinsatzAnalytics(); renderWochenReport(); renderEinsatzTimeline(); renderKostenTrend(); renderObjektUmsatzRanking(); renderStundenkontoChart(); renderDashboardKacheln(); renderSchichtplanVorschau(); renderErweiterteStatistik(); renderTagesPersonal(); renderWetterWidget(); renderDauerStatistik(); renderStornoquote(); renderWiederholungsStatistik(); renderMonatsZusammenfassung(); }
+        if (this.dataset.tab === 'objekte') { renderObjekte(); renderVertraege(); renderObjektAuslastung(); updateChecklisteObjekte(); updateObjektHistorieSelect(); updateObjektKontakteSelect(); renderObjektKontakte(); updateObjektAnweisungenSelect(); renderObjektAnweisungen(); updateObjektKostenMonat(); renderObjektKostenanalyse(); renderVertragsCountdown(); updateRevierplanSelect(); renderRevierplan(); updateBesObjektSelect(); renderBesichtigungen(); updateInfokarteSelect(); updateWetterObjektSelects(); renderWetterNotizen(); updateObjektChecklisteSelect(); renderObjektCheckliste(); renderVertragslaufzeitBalken(); updateZugangshinweiseSelect(); renderZugangshinweise(); updateObjektBewertungSelect(); renderObjektBewertungen(); updateObjektNotfallSelects(); renderObjektNotfallKontakte(); updateObjektEinsatzKalSelects(); renderObjektEinsatzKalender(); renderObjektStatusampel(); updateObjektDokSelects(); renderObjektDokumenteAblage(); updateObjektQRSelect(); }
         if (this.dataset.tab === 'kalender') { renderKalender(); renderDienstplan(); renderJahresuebersicht(); }
         if (this.dataset.tab === 'abrechnung') { updateAbrechnung(); updateLohnvorschauSelects(); renderDuplikatCheck(); renderBewertungsUebersicht(); updateMonatsabschlussSelect(); renderMonatsabschluss(); updateCSVExportFilter(); renderDuplikatFinder(); renderKostenSplit(); }
-        if (this.dataset.tab === 'mitarbeiter') { renderMitarbeiter(); renderDokumente(); renderUeberstunden(); renderKontaktliste(); renderUrlaubskonto(); renderArbeitszeitkonto(); renderQualMatrix(); updateSchichtHistorieSelect(); renderNotfallkontakte(); updateMAKalSelect(); renderVerfuegbarkeitWoche(); renderDoppelschichtWarnungen(); renderMALeistung(); renderKrankenstatistik(); renderGeburtstageJubilaeen(); renderMASkills(); renderTauschBoard(); renderMAVerfuegbarkeitsKalender(); renderNachrichtenBoard(); renderZertifikateTracker(); renderJahresarbeitszeitkonto(); renderUeberstundenWarnung(); renderMAEinsatzHeatmap(); renderMAFavoritobjekte(); renderMAStreaks(); renderSchichtPraeferenzen(); }
+        if (this.dataset.tab === 'mitarbeiter') { renderMitarbeiter(); renderDokumente(); renderUeberstunden(); renderKontaktliste(); renderUrlaubskonto(); renderArbeitszeitkonto(); renderQualMatrix(); updateSchichtHistorieSelect(); renderNotfallkontakte(); updateMAKalSelect(); renderVerfuegbarkeitWoche(); renderDoppelschichtWarnungen(); renderMALeistung(); renderKrankenstatistik(); renderGeburtstageJubilaeen(); renderMASkills(); renderTauschBoard(); renderMAVerfuegbarkeitsKalender(); renderNachrichtenBoard(); renderZertifikateTracker(); renderJahresarbeitszeitkonto(); renderUeberstundenWarnung(); renderMAEinsatzHeatmap(); renderMAFavoritobjekte(); renderMAStreaks(); renderSchichtPraeferenzen(); renderMAKompetenzprofil(); }
         if (this.dataset.tab === 'vorfaelle') { renderVorfaelle(); renderVorfallsStatistik(); }
         if (this.dataset.tab === 'wachbuch') { renderWachbuch(); renderUebergaben(); renderWachbuchStats(); updateSchichtUebergabeSelects(); renderSchichtUebergaben(); renderTagesprotokoll(); }
         if (this.dataset.tab === 'einstellungen') { updateDatenStats(); updateSpeicherStats(); ladeEinstellungen(); renderAuditLog(); renderSondernotizen(); renderFeiertagsKalender(); renderSpeicherStatistik(); renderDatenChangelog(); renderAutoErinnerungen(); renderSystemInfo(); }
@@ -5075,14 +5075,16 @@ function renderHeatmap(filterM) {
 // MA-SCHICHTHISTORIE
 // =============================================
 function updateSchichtHistorieSelect() {
-    const sel = document.getElementById('shMa');
-    if (!sel) return;
-    const current = sel.value;
-    sel.innerHTML = '<option value="">Mitarbeiter wählen...</option>';
-    mitarbeiterListe_.forEach(m => {
-        sel.innerHTML += `<option value="${escapeHtml(m.name)}">${escapeHtml(m.name)}</option>`;
+    ['shMa', 'mkpMA'].forEach(id => {
+        const sel = document.getElementById(id);
+        if (!sel) return;
+        const current = sel.value;
+        sel.innerHTML = '<option value="">Mitarbeiter wählen...</option>';
+        mitarbeiterListe_.forEach(m => {
+            sel.innerHTML += `<option value="${escapeHtml(m.name)}">${escapeHtml(m.name)}</option>`;
+        });
+        if (current) sel.value = current;
     });
-    if (current) sel.value = current;
 }
 
 function renderSchichtHistorie() {
@@ -9602,6 +9604,286 @@ function druckeTagesprotokoll() {
 }
 
 // =============================================
+// EINSATZ-ZEITKONFLIKT-PRÜFUNG
+// =============================================
+function pruefeZeitkonflikt(datum, zeitVon, zeitBis, mitarbeiter, editId) {
+    if (!datum || !zeitVon || !zeitBis || !mitarbeiter) return [];
+
+    const vonMin = zeitZuMinuten(zeitVon);
+    const bisMin = zeitZuMinuten(zeitBis);
+
+    return einsaetze.filter(e => {
+        if (editId && e.id === editId) return false;
+        if (e.datum !== datum || e.mitarbeiter !== mitarbeiter || e.status === 'storniert') return false;
+        const eVon = zeitZuMinuten(e.zeitVon);
+        const eBis = zeitZuMinuten(e.zeitBis);
+        // Überlappung prüfen
+        if (bisMin <= vonMin) { // Nachtschicht (über Mitternacht)
+            return true; // Vereinfacht: bei Nachtschichten immer Konflikt am gleichen Tag
+        }
+        if (eBis <= eVon) return true; // Bestehender Einsatz ist auch Nachtschicht
+        return vonMin < eBis && bisMin > eVon;
+    });
+}
+
+function zeitZuMinuten(zeit) {
+    if (!zeit) return 0;
+    const [h, m] = zeit.split(':').map(Number);
+    return h * 60 + (m || 0);
+}
+
+function renderZeitkonfliktWarnung() {
+    const el = document.getElementById('zeitkonfliktWarnung');
+    if (!el) return;
+
+    const datum = document.getElementById('datum') ? document.getElementById('datum').value : '';
+    const zeitVon = document.getElementById('zeitVon') ? document.getElementById('zeitVon').value : '';
+    const zeitBis = document.getElementById('zeitBis') ? document.getElementById('zeitBis').value : '';
+    const mitarbeiter = document.getElementById('mitarbeiter') ? document.getElementById('mitarbeiter').value : '';
+    const editId = document.getElementById('editId') ? document.getElementById('editId').value : '';
+
+    const konflikte = pruefeZeitkonflikt(datum, zeitVon, zeitBis, mitarbeiter, editId || null);
+
+    if (konflikte.length === 0) {
+        el.style.display = 'none';
+        el.innerHTML = '';
+        return;
+    }
+
+    let html = '<div class="zk-warn">⚠️ Zeitkonflikt! ' + mitarbeiter + ' hat bereits:';
+    konflikte.forEach(k => {
+        html += ` <strong>${k.zeitVon}-${k.zeitBis} @ ${escapeHtml(k.objekt)}</strong>`;
+    });
+    html += '</div>';
+    el.innerHTML = html;
+    el.style.display = 'block';
+}
+
+// =============================================
+// MA-KOMPETENZPROFIL
+// =============================================
+function renderMAKompetenzprofil() {
+    const el = document.getElementById('maKompetenzContent');
+    if (!el) return;
+
+    const maName = document.getElementById('mkpMA') ? document.getElementById('mkpMA').value : '';
+    if (!maName) {
+        el.innerHTML = '<span style="color:#a0aec0;font-size:0.8rem">Mitarbeiter wählen</span>';
+        return;
+    }
+
+    const ma = mitarbeiterListe_.find(m => m.name === maName);
+    const maEinsaetze = einsaetze.filter(e => e.mitarbeiter === maName && e.status !== 'storniert');
+    const totalStd = maEinsaetze.reduce((s, e) => s + (e.stunden || 0), 0);
+    const objekte_set = new Set(maEinsaetze.map(e => e.objekt));
+    const maVorf = vorfaelle.filter(v => v.mitarbeiter === maName);
+    const maZerts = maZertifikate.filter(z => z.ma === maName);
+    const praef = maSchichtPraef[maName];
+
+    const qualLabels = { '34a': 'Sachkunde §34a', fachkraft: 'Fachkraft', meister: 'Meister', unterrichtung: 'Unterrichtung §34a', sonstige: 'Sonstige' };
+
+    let html = '<div class="mkp-card">';
+    html += `<div class="mkp-header"><strong>${escapeHtml(maName)}</strong>${ma ? ' | ' + (qualLabels[ma.qualifikation] || ma.qualifikation) : ''}</div>`;
+    html += '<div class="mkp-stats">';
+    html += `<div class="mkp-stat"><span class="mkp-num">${maEinsaetze.length}</span><span class="mkp-lbl">Einsätze</span></div>`;
+    html += `<div class="mkp-stat"><span class="mkp-num">${formatZahl(totalStd)}</span><span class="mkp-lbl">Stunden</span></div>`;
+    html += `<div class="mkp-stat"><span class="mkp-num">${objekte_set.size}</span><span class="mkp-lbl">Objekte</span></div>`;
+    html += `<div class="mkp-stat"><span class="mkp-num">${maVorf.length}</span><span class="mkp-lbl">Vorfälle</span></div>`;
+    html += `<div class="mkp-stat"><span class="mkp-num">${maZerts.length}</span><span class="mkp-lbl">Zertifikate</span></div>`;
+    html += '</div>';
+
+    if (praef) {
+        const praefLabels = { frueh: 'Frühschicht', spaet: 'Spätschicht', nacht: 'Nachtschicht', flexibel: 'Flexibel', wochenende: 'Wochenende' };
+        html += `<div class="mkp-info">Präferenz: <strong>${praefLabels[praef.praeferenz] || praef.praeferenz}</strong>${praef.notiz ? ' (' + escapeHtml(praef.notiz) + ')' : ''}</div>`;
+    }
+
+    if (ma && ma.eintrittsdatum) {
+        const eintritt = new Date(ma.eintrittsdatum);
+        const diff = Math.floor((Date.now() - eintritt) / (365.25 * 86400000));
+        html += `<div class="mkp-info">Betriebszugehörigkeit: <strong>${diff} Jahre</strong> (seit ${formatDatum(ma.eintrittsdatum)})</div>`;
+    }
+
+    html += '</div>';
+    el.innerHTML = html;
+}
+
+// =============================================
+// OBJEKT-QR-PLATZHALTER (Objektdaten-Karte)
+// =============================================
+function generiereObjektQR() {
+    const el = document.getElementById('objektQRContent');
+    if (!el) return;
+
+    const objName = document.getElementById('oqrObjekt') ? document.getElementById('oqrObjekt').value : '';
+    if (!objName) { el.innerHTML = '<span style="color:#a0aec0;font-size:0.8rem">Objekt wählen</span>'; return; }
+
+    const obj = objekte.find(o => o.name === objName);
+    if (!obj) { el.innerHTML = '<span style="color:#a0aec0;font-size:0.8rem">Objekt nicht gefunden</span>'; return; }
+
+    // Generiere eine visuelle "QR-Karte" als Platzhalter
+    const data = [
+        `Objekt: ${obj.name}`,
+        obj.adresse ? `Adresse: ${obj.adresse}` : '',
+        obj.ansprechpartner ? `AP: ${obj.ansprechpartner}` : '',
+        obj.vertragNr ? `Vertrag: ${obj.vertragNr}` : '',
+        obj.stundensatz ? `Satz: ${obj.stundensatz}€/h` : ''
+    ].filter(Boolean);
+
+    let html = '<div class="oqr-card">';
+    html += '<div class="oqr-header">Objekt-Datenkarte</div>';
+    html += `<div class="oqr-qr">`;
+    // Pseudo-QR: Grid aus Blöcken basierend auf Objektname-Hash
+    let hash = 0;
+    for (let i = 0; i < objName.length; i++) hash = ((hash << 5) - hash) + objName.charCodeAt(i);
+    for (let row = 0; row < 7; row++) {
+        html += '<div class="oqr-row">';
+        for (let col = 0; col < 7; col++) {
+            const filled = ((hash >> (row * 7 + col)) & 1) || (row === 0 || row === 6 || col === 0 || col === 6);
+            html += `<span class="oqr-cell${filled ? ' oqr-filled' : ''}"></span>`;
+        }
+        html += '</div>';
+    }
+    html += '</div>';
+    data.forEach(d => { html += `<div class="oqr-line">${escapeHtml(d)}</div>`; });
+    html += '<button class="btn-secondary btn-small" onclick="druckeObjektQR()" style="margin-top:0.5rem">Karte drucken</button>';
+    html += '</div>';
+    el.innerHTML = html;
+}
+
+function druckeObjektQR() {
+    const content = document.getElementById('objektQRContent');
+    if (!content) return;
+    const printArea = document.getElementById('printArea');
+    printArea.innerHTML = '<h2>B.B. Protect — Objektkarte</h2>' + content.innerHTML;
+    printArea.style.display = 'block';
+    document.body.classList.add('print-mode');
+    window.print();
+    document.body.classList.remove('print-mode');
+    printArea.style.display = 'none';
+}
+
+function updateObjektQRSelect() {
+    const sel = document.getElementById('oqrObjekt');
+    if (!sel) return;
+    const val = sel.value;
+    sel.innerHTML = '<option value="">Objekt wählen...</option>' + objekte.map(o => `<option value="${escapeHtml(o.name)}">${escapeHtml(o.name)}</option>`).join('');
+    sel.value = val;
+}
+
+// =============================================
+// MONATS-ZUSAMMENFASSUNG (druckbar)
+// =============================================
+function renderMonatsZusammenfassung() {
+    const el = document.getElementById('monatsZusFContent');
+    if (!el) return;
+
+    const monat = document.getElementById('mzfMonat') ? document.getElementById('mzfMonat').value : '';
+    if (!monat) { el.innerHTML = '<span style="color:#a0aec0;font-size:0.8rem">Monat wählen</span>'; return; }
+
+    const [j, m] = monat.split('-').map(Number);
+    const monatsE = einsaetze.filter(e => e.datum && e.datum.startsWith(monat) && e.status !== 'storniert');
+    const storniertE = einsaetze.filter(e => e.datum && e.datum.startsWith(monat) && e.status === 'storniert');
+    const monatsV = vorfaelle.filter(v => v.datum && v.datum.startsWith(monat));
+
+    const totalStd = monatsE.reduce((s, e) => s + (e.stunden || 0), 0);
+    const totalBrutto = monatsE.reduce((s, e) => s + (e.brutto || 0), 0);
+    const maSet = new Set(monatsE.map(e => e.mitarbeiter).filter(Boolean));
+    const objSet = new Set(monatsE.map(e => e.objekt).filter(Boolean));
+    const avgStdProEinsatz = monatsE.length > 0 ? (totalStd / monatsE.length).toFixed(1) : '0.0';
+
+    let html = '<div class="mzf-card">';
+    html += `<div class="mzf-header">${MONATSNAMEN[m - 1]} ${j} — Zusammenfassung</div>`;
+    html += '<div class="mzf-grid">';
+    html += `<div class="mzf-item"><span class="mzf-num">${monatsE.length}</span><span class="mzf-lbl">Einsätze</span></div>`;
+    html += `<div class="mzf-item"><span class="mzf-num">${formatZahl(totalStd)}</span><span class="mzf-lbl">Stunden</span></div>`;
+    html += `<div class="mzf-item"><span class="mzf-num">${formatWaehrung(totalBrutto)}</span><span class="mzf-lbl">Umsatz</span></div>`;
+    html += `<div class="mzf-item"><span class="mzf-num">${maSet.size}</span><span class="mzf-lbl">Aktive MA</span></div>`;
+    html += `<div class="mzf-item"><span class="mzf-num">${objSet.size}</span><span class="mzf-lbl">Objekte</span></div>`;
+    html += `<div class="mzf-item"><span class="mzf-num">${avgStdProEinsatz}</span><span class="mzf-lbl">Ø Std/Einsatz</span></div>`;
+    html += `<div class="mzf-item"><span class="mzf-num">${storniertE.length}</span><span class="mzf-lbl">Storniert</span></div>`;
+    html += `<div class="mzf-item"><span class="mzf-num">${monatsV.length}</span><span class="mzf-lbl">Vorfälle</span></div>`;
+    html += '</div></div>';
+    el.innerHTML = html;
+}
+
+function druckeMonatsZusammenfassung() {
+    const content = document.getElementById('monatsZusFContent');
+    if (!content || !content.innerHTML.trim()) { alert('Bitte zuerst Monat wählen.'); return; }
+    const printArea = document.getElementById('printArea');
+    printArea.innerHTML = '<h2>B.B. Protect — Monatszusammenfassung</h2>' + content.innerHTML;
+    printArea.style.display = 'block';
+    document.body.classList.add('print-mode');
+    window.print();
+    document.body.classList.remove('print-mode');
+    printArea.style.display = 'none';
+}
+
+// =============================================
+// DATEN-IMPORT-ASSISTENT (CSV)
+// =============================================
+function importiereCSV(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function (e) {
+        try {
+            const text = e.target.result;
+            const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+
+            if (lines.length < 2) { alert('CSV-Datei muss mindestens eine Kopfzeile und eine Datenzeile enthalten.'); return; }
+
+            // Erkennt Semikolon oder Komma als Trennzeichen
+            const sep = lines[0].includes(';') ? ';' : ',';
+            const header = lines[0].split(sep).map(h => h.replace(/"/g, '').trim().toLowerCase());
+
+            const datumIdx = header.findIndex(h => h === 'datum' || h === 'date');
+            const vonIdx = header.findIndex(h => h === 'zeitvon' || h === 'von' || h === 'start');
+            const bisIdx = header.findIndex(h => h === 'zeitbis' || h === 'bis' || h === 'ende' || h === 'end');
+            const objektIdx = header.findIndex(h => h === 'objekt' || h === 'einsatzort' || h === 'location');
+            const maIdx = header.findIndex(h => h === 'mitarbeiter' || h === 'ma' || h === 'name');
+            const satzIdx = header.findIndex(h => h === 'stundensatz' || h === 'satz' || h === 'rate');
+
+            if (datumIdx === -1) { alert('Spalte "Datum" nicht gefunden. Erwartete Spalten: datum, zeitvon, zeitbis, objekt, mitarbeiter, stundensatz'); return; }
+
+            let importiert = 0;
+            let fehler = 0;
+
+            for (let i = 1; i < lines.length; i++) {
+                const cols = lines[i].split(sep).map(c => c.replace(/"/g, '').trim());
+                const datum = cols[datumIdx] || '';
+                const zeitVon = vonIdx >= 0 ? cols[vonIdx] || '08:00' : '08:00';
+                const zeitBis = bisIdx >= 0 ? cols[bisIdx] || '16:00' : '16:00';
+                const objekt = objektIdx >= 0 ? cols[objektIdx] || 'Import' : 'Import';
+                const mitarbeiter = maIdx >= 0 ? cols[maIdx] || '' : '';
+                const stundensatz = satzIdx >= 0 ? parseFloat(cols[satzIdx]) || 0 : 0;
+
+                if (!datum || !/^\d{4}-\d{2}-\d{2}$/.test(datum)) { fehler++; continue; }
+
+                const einsatz = berechneEinsatz(datum, zeitVon, zeitBis, stundensatz);
+                einsatz.id = Date.now().toString(36) + Math.random().toString(36).substr(2, 4) + i;
+                einsatz.objekt = objekt;
+                einsatz.mitarbeiter = mitarbeiter;
+                einsatz.status = 'geplant';
+                einsaetze.push(einsatz);
+                importiert++;
+            }
+
+            speichern();
+            renderTabelle();
+            updateAlleFilter();
+
+            const el = document.getElementById('csvImportErgebnis');
+            if (el) el.innerHTML = `<div class="ci-result">✅ ${importiert} Einsätze importiert${fehler > 0 ? `, ${fehler} Zeilen übersprungen` : ''}</div>`;
+        } catch (err) {
+            alert('Fehler beim CSV-Import: ' + err.message);
+        }
+    };
+    reader.readAsText(file);
+    event.target.value = '';
+}
+
+// =============================================
 // EINSATZ-WIEDERHOLUNGS-STATISTIK
 // =============================================
 function renderWiederholungsStatistik() {
@@ -10484,6 +10766,7 @@ document.getElementById('jazkJahr').value = new Date().getFullYear();
 document.getElementById('dpStartDatum').valueAsDate = new Date();
 document.getElementById('tprtDatum').valueAsDate = new Date();
 document.getElementById('oekMonat').value = new Date().toISOString().substring(0, 7);
+document.getElementById('mzfMonat').value = new Date().toISOString().substring(0, 7);
 const jetztInit = new Date();
 document.getElementById('wbZeit').value = `${String(jetztInit.getHours()).padStart(2, '0')}:${String(jetztInit.getMinutes()).padStart(2, '0')}`;
 document.getElementById('ugZeit').value = `${String(jetztInit.getHours()).padStart(2, '0')}:${String(jetztInit.getMinutes()).padStart(2, '0')}`;

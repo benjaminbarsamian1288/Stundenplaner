@@ -109,11 +109,11 @@
                     <div class="form-row">
                         <div class="form-group">
                             <label for="zeitVon">Zeit von</label>
-                            <input type="time" id="zeitVon" required onchange="renderPausenInfo()">
+                            <input type="time" id="zeitVon" required onchange="renderPausenInfo();renderZeitkonfliktWarnung()">
                         </div>
                         <div class="form-group">
                             <label for="zeitBis">Zeit bis</label>
-                            <input type="time" id="zeitBis" required onchange="renderPausenInfo()">
+                            <input type="time" id="zeitBis" required onchange="renderPausenInfo();renderZeitkonfliktWarnung()">
                         </div>
                     </div>
                     <div id="pausenInfoContent" style="margin-bottom:0.5rem"></div>
@@ -125,10 +125,11 @@
                         </div>
                         <div class="form-group">
                             <label for="mitarbeiter">Mitarbeiter</label>
-                            <input type="text" id="mitarbeiter" list="mitarbeiterListe" placeholder="Name des Mitarbeiters">
+                            <input type="text" id="mitarbeiter" list="mitarbeiterListe" placeholder="Name des Mitarbeiters" onchange="renderZeitkonfliktWarnung()">
                             <datalist id="mitarbeiterListe"></datalist>
                         </div>
                     </div>
+                    <div id="zeitkonfliktWarnung" style="display:none"></div>
 
                     <div class="verf-anzeige" id="verfAnzeige" style="display:none">
                         <div class="verf-anzeige-title">Verf&uuml;gbarkeit am gew&auml;hlten Datum:</div>
@@ -803,6 +804,22 @@
                         <div id="wiederholungsStatContent"></div>
                     </div>
                 </div>
+
+                <div class="dashboard-details" style="margin-top:1rem">
+                    <div class="detail-card full-width">
+                        <div style="display:flex;justify-content:space-between;align-items:center">
+                            <h3>Monats-Zusammenfassung</h3>
+                            <button class="btn-secondary btn-small" onclick="druckeMonatsZusammenfassung()">Drucken</button>
+                        </div>
+                        <div class="form-row" style="margin-bottom:0.5rem">
+                            <div class="form-group">
+                                <label for="mzfMonat">Monat</label>
+                                <input type="month" id="mzfMonat" onchange="renderMonatsZusammenfassung()">
+                            </div>
+                        </div>
+                        <div id="monatsZusFContent"></div>
+                    </div>
+                </div>
         </div>
 
         <!-- TAB: Objekte -->
@@ -1416,6 +1433,21 @@
             </section>
 
             <section class="form-section">
+                <div class="list-header">
+                    <h2>Objekt-Datenkarte</h2>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="oqrObjekt">Objekt</label>
+                        <select id="oqrObjekt" onchange="generiereObjektQR()">
+                            <option value="">Objekt w&auml;hlen...</option>
+                        </select>
+                    </div>
+                </div>
+                <div id="objektQRContent" style="margin-top:0.5rem"></div>
+            </section>
+
+            <section class="form-section">
                 <h2>Personalbedarfsrechner</h2>
                 <div class="form-row">
                     <div class="form-group">
@@ -1929,6 +1961,21 @@
                 </div>
                 <div id="schichtPraefContent" style="margin-top:0.5rem"></div>
             </section>
+
+            <section class="form-section">
+                <div class="list-header">
+                    <h2>MA-Kompetenzprofil</h2>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="mkpMA">Mitarbeiter</label>
+                        <select id="mkpMA" onchange="renderMAKompetenzprofil()">
+                            <option value="">Mitarbeiter w&auml;hlen...</option>
+                        </select>
+                    </div>
+                </div>
+                <div id="maKompetenzContent" style="margin-top:0.5rem"></div>
+            </section>
         </div>
 
         <!-- TAB: Vorfälle -->
@@ -2315,6 +2362,12 @@
 
                 <h2 style="margin-top:1.5rem">System-Info</h2>
                 <div id="systemInfoContent" style="margin-bottom:1rem"></div>
+
+                <h2 style="margin-top:1.5rem">CSV-Import (Eins&auml;tze)</h2>
+                <p style="font-size:0.75rem;color:#718096;margin-bottom:0.5rem">Importiert Eins&auml;tze aus einer CSV-Datei. Erwartete Spalten: datum (YYYY-MM-DD), zeitvon, zeitbis, objekt, mitarbeiter, stundensatz. Trennzeichen: Semikolon oder Komma.</p>
+                <input type="file" id="csvImportFile" accept=".csv" style="display:none" onchange="importiereCSV(event)">
+                <button class="btn-primary" onclick="document.getElementById('csvImportFile').click()">CSV-Datei importieren</button>
+                <div id="csvImportErgebnis" style="margin-top:0.5rem"></div>
 
                 <h2 style="margin-top:1.5rem">Datensicherung &amp; Import</h2>
                 <p class="daten-info">Alle Daten werden lokal im Browser gespeichert (localStorage). Erstelle regelm&auml;&szlig;ig ein Backup, damit nichts verloren geht.</p>
