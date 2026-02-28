@@ -87,10 +87,10 @@ document.querySelectorAll('.nav-btn').forEach(btn => {
         document.getElementById('tab-' + this.dataset.tab).classList.add('active');
 
         if (this.dataset.tab === 'dashboard') { updateDashboard(); renderEinsatzChronik(); renderEinsatzAnalytics(); }
-        if (this.dataset.tab === 'objekte') { renderObjekte(); renderVertraege(); renderObjektAuslastung(); updateChecklisteObjekte(); updateObjektHistorieSelect(); updateObjektKontakteSelect(); renderObjektKontakte(); updateObjektAnweisungenSelect(); renderObjektAnweisungen(); updateObjektKostenMonat(); renderObjektKostenanalyse(); renderVertragsCountdown(); }
+        if (this.dataset.tab === 'objekte') { renderObjekte(); renderVertraege(); renderObjektAuslastung(); updateChecklisteObjekte(); updateObjektHistorieSelect(); updateObjektKontakteSelect(); renderObjektKontakte(); updateObjektAnweisungenSelect(); renderObjektAnweisungen(); updateObjektKostenMonat(); renderObjektKostenanalyse(); renderVertragsCountdown(); updateRevierplanSelect(); renderRevierplan(); }
         if (this.dataset.tab === 'kalender') { renderKalender(); renderDienstplan(); renderJahresuebersicht(); }
-        if (this.dataset.tab === 'abrechnung') { updateAbrechnung(); updateLohnvorschauSelects(); renderDuplikatCheck(); }
-        if (this.dataset.tab === 'mitarbeiter') { renderMitarbeiter(); renderDokumente(); renderUeberstunden(); renderKontaktliste(); renderUrlaubskonto(); renderArbeitszeitkonto(); renderQualMatrix(); updateSchichtHistorieSelect(); renderNotfallkontakte(); updateMAKalSelect(); renderVerfuegbarkeitWoche(); renderDoppelschichtWarnungen(); renderMALeistung(); renderKrankenstatistik(); }
+        if (this.dataset.tab === 'abrechnung') { updateAbrechnung(); updateLohnvorschauSelects(); renderDuplikatCheck(); renderBewertungsUebersicht(); updateMonatsabschlussSelect(); renderMonatsabschluss(); }
+        if (this.dataset.tab === 'mitarbeiter') { renderMitarbeiter(); renderDokumente(); renderUeberstunden(); renderKontaktliste(); renderUrlaubskonto(); renderArbeitszeitkonto(); renderQualMatrix(); updateSchichtHistorieSelect(); renderNotfallkontakte(); updateMAKalSelect(); renderVerfuegbarkeitWoche(); renderDoppelschichtWarnungen(); renderMALeistung(); renderKrankenstatistik(); renderGeburtstageJubilaeen(); }
         if (this.dataset.tab === 'vorfaelle') { renderVorfaelle(); renderVorfallsStatistik(); }
         if (this.dataset.tab === 'wachbuch') { renderWachbuch(); renderUebergaben(); renderWachbuchStats(); }
         if (this.dataset.tab === 'einstellungen') { updateDatenStats(); updateSpeicherStats(); ladeEinstellungen(); renderAuditLog(); renderSondernotizen(); }
@@ -452,6 +452,7 @@ function renderTabelle() {
     const filterO = filterObjekt.value;
 
     let gefiltert = einsaetze;
+    if (einsaetze._quickFilter) gefiltert = gefiltert.filter(einsaetze._quickFilter);
     if (filterM) gefiltert = gefiltert.filter(e => e.datum.substring(0, 7) === filterM);
     if (filterO) gefiltert = gefiltert.filter(e => e.objekt === filterO);
 
@@ -1460,13 +1461,15 @@ document.getElementById('mitarbeiterForm').addEventListener('submit', function (
     const qualAblauf = document.getElementById('maQualAblauf').value;
     const sollStunden = parseFloat(document.getElementById('maSollStunden').value) || 0;
     const urlaubstage = parseInt(document.getElementById('maUrlaubstage').value) || 0;
+    const geburtstag = document.getElementById('maGeburtstag').value;
+    const eintrittsdatum = document.getElementById('maEintrittsdatum').value;
     const bemerkung = document.getElementById('maBemerkung').value.trim();
 
     if (!vorname || !nachname) return;
 
     const vollname = `${vorname} ${nachname}`;
     const idx = mitarbeiterListe_.findIndex(m => m.name === vollname);
-    const ma = { name: vollname, vorname, nachname, telefon, email, qualifikation, stundensatz, qualAblauf, sollStunden, urlaubstage, bemerkung };
+    const ma = { name: vollname, vorname, nachname, telefon, email, qualifikation, stundensatz, qualAblauf, sollStunden, urlaubstage, geburtstag, eintrittsdatum, bemerkung };
 
     if (idx !== -1) {
         mitarbeiterListe_[idx] = ma;
@@ -1547,7 +1550,7 @@ function loescheMitarbeiter(index) {
 // =============================================
 function erstelleBackup() {
     const backup = {
-        version: 12,
+        version: 13,
         datum: new Date().toISOString(),
         einsaetze,
         objekte,
@@ -1563,7 +1566,11 @@ function erstelleBackup() {
         notfallkontakte,
         auditLog,
         objektKontakte,
-        objektAnweisungen
+        objektAnweisungen,
+        einsatzBewertungen,
+        revierplaene,
+        monatsabschluesse,
+        tagesSondernotizen
     };
 
     const json = JSON.stringify(backup, null, 2);
@@ -1603,6 +1610,10 @@ function stelleWiederHer(event) {
             auditLog = data.auditLog || [];
             objektKontakte = data.objektKontakte || [];
             objektAnweisungen = data.objektAnweisungen || {};
+            einsatzBewertungen = data.einsatzBewertungen || {};
+            revierplaene = data.revierplaene || {};
+            monatsabschluesse = data.monatsabschluesse || {};
+            tagesSondernotizen = data.tagesSondernotizen || {};
 
             speichern();
             localStorage.setItem('bbprotect_objekte', JSON.stringify(objekte));
@@ -1619,6 +1630,10 @@ function stelleWiederHer(event) {
             localStorage.setItem('bbprotect_auditlog', JSON.stringify(auditLog));
             localStorage.setItem('bbprotect_objektkontakte', JSON.stringify(objektKontakte));
             localStorage.setItem('bbprotect_objektanweisungen', JSON.stringify(objektAnweisungen));
+            localStorage.setItem('bbprotect_bewertungen', JSON.stringify(einsatzBewertungen));
+            localStorage.setItem('bbprotect_revierplaene', JSON.stringify(revierplaene));
+            localStorage.setItem('bbprotect_monatsabschluesse', JSON.stringify(monatsabschluesse));
+            localStorage.setItem('bbprotect_tagesnotizen_extra', JSON.stringify(tagesSondernotizen));
 
             renderTabelle();
             updateAlleFilter();
@@ -1656,6 +1671,10 @@ function loescheAlleDaten() {
     auditLog = [];
     objektKontakte = [];
     objektAnweisungen = {};
+    einsatzBewertungen = {};
+    revierplaene = {};
+    monatsabschluesse = {};
+    tagesSondernotizen = {};
 
     localStorage.removeItem('bbprotect_einsaetze');
     localStorage.removeItem('bbprotect_objekte');
@@ -1672,6 +1691,10 @@ function loescheAlleDaten() {
     localStorage.removeItem('bbprotect_auditlog');
     localStorage.removeItem('bbprotect_objektkontakte');
     localStorage.removeItem('bbprotect_objektanweisungen');
+    localStorage.removeItem('bbprotect_bewertungen');
+    localStorage.removeItem('bbprotect_revierplaene');
+    localStorage.removeItem('bbprotect_monatsabschluesse');
+    localStorage.removeItem('bbprotect_tagesnotizen_extra');
 
     renderTabelle();
     updateAlleFilter();
@@ -6945,6 +6968,300 @@ function loescheSondernotiz(datum, id) {
     if (tagesSondernotizen[datum].length === 0) delete tagesSondernotizen[datum];
     localStorage.setItem('bbprotect_tagesnotizen_extra', JSON.stringify(tagesSondernotizen));
     renderSondernotizen();
+}
+
+// =============================================
+// MA-GEBURTSTAGE & JUBILÄEN
+// =============================================
+function renderGeburtstageJubilaeen() {
+    const el = document.getElementById('geburtstageContent');
+    if (!el) return;
+
+    const heute = new Date();
+    const heuteTag = heute.getDate();
+    const heuteMonat = heute.getMonth();
+
+    const events = [];
+
+    mitarbeiterListe_.forEach(m => {
+        if (m.geburtstag) {
+            const geb = new Date(m.geburtstag + 'T12:00:00');
+            const alter = heute.getFullYear() - geb.getFullYear();
+            const naechster = new Date(heute.getFullYear(), geb.getMonth(), geb.getDate());
+            if (naechster < heute) naechster.setFullYear(naechster.getFullYear() + 1);
+            const tagesBis = Math.ceil((naechster - heute) / (1000 * 60 * 60 * 24));
+
+            events.push({
+                name: m.name,
+                typ: 'geburtstag',
+                datum: naechster,
+                tagesBis,
+                detail: `wird ${alter + (tagesBis === 0 ? 0 : 1)} Jahre`,
+                istHeute: tagesBis === 0
+            });
+        }
+
+        if (m.eintrittsdatum) {
+            const eintritt = new Date(m.eintrittsdatum + 'T12:00:00');
+            const jahre = heute.getFullYear() - eintritt.getFullYear();
+            const naechster = new Date(heute.getFullYear(), eintritt.getMonth(), eintritt.getDate());
+            if (naechster < heute) naechster.setFullYear(naechster.getFullYear() + 1);
+            const tagesBis = Math.ceil((naechster - heute) / (1000 * 60 * 60 * 24));
+            const jubJahre = naechster.getFullYear() - eintritt.getFullYear();
+
+            if (jubJahre > 0 && (jubJahre % 5 === 0 || jubJahre === 1)) {
+                events.push({
+                    name: m.name,
+                    typ: 'jubilaeum',
+                    datum: naechster,
+                    tagesBis,
+                    detail: `${jubJahre} Jahre im Unternehmen`,
+                    istHeute: tagesBis === 0
+                });
+            }
+        }
+    });
+
+    events.sort((a, b) => a.tagesBis - b.tagesBis);
+
+    if (events.length === 0) {
+        el.innerHTML = '<p style="color:#a0aec0">Keine Geburtstage/Jubiläen erfasst.</p>';
+        return;
+    }
+
+    let html = '<div class="gj-liste">';
+    events.slice(0, 15).forEach(e => {
+        const icon = e.typ === 'geburtstag' ? '\uD83C\uDF82' : '\uD83C\uDF89';
+        html += `<div class="gj-item ${e.istHeute ? 'gj-heute' : ''} ${e.tagesBis <= 7 ? 'gj-bald' : ''}">
+            <span class="gj-icon">${icon}</span>
+            <span class="gj-name"><strong>${escapeHtml(e.name)}</strong></span>
+            <span class="gj-detail">${escapeHtml(e.detail)}</span>
+            <span class="gj-countdown">${e.istHeute ? 'HEUTE!' : `in ${e.tagesBis} Tagen`}</span>
+        </div>`;
+    });
+    html += '</div>';
+    el.innerHTML = html;
+}
+
+// =============================================
+// EINSATZ-BEWERTUNG / FEEDBACK
+// =============================================
+let einsatzBewertungen = JSON.parse(localStorage.getItem('bbprotect_bewertungen') || '{}');
+
+function bewerteEinsatz(einsatzId, sterne) {
+    if (!einsatzBewertungen[einsatzId]) einsatzBewertungen[einsatzId] = {};
+    einsatzBewertungen[einsatzId].sterne = sterne;
+    localStorage.setItem('bbprotect_bewertungen', JSON.stringify(einsatzBewertungen));
+    renderBewertungsUebersicht();
+}
+
+function einsatzFeedback(einsatzId) {
+    const text = prompt('Feedback zum Einsatz:');
+    if (!text) return;
+    if (!einsatzBewertungen[einsatzId]) einsatzBewertungen[einsatzId] = {};
+    einsatzBewertungen[einsatzId].feedback = text;
+    einsatzBewertungen[einsatzId].datum = new Date().toISOString().split('T')[0];
+    localStorage.setItem('bbprotect_bewertungen', JSON.stringify(einsatzBewertungen));
+    renderBewertungsUebersicht();
+}
+
+function renderBewertungsUebersicht() {
+    const el = document.getElementById('bewertungContent');
+    if (!el) return;
+
+    const bewIds = Object.keys(einsatzBewertungen);
+    if (bewIds.length === 0) {
+        el.innerHTML = '<p style="color:#a0aec0">Noch keine Bewertungen abgegeben.</p>';
+        return;
+    }
+
+    // Durchschnitt
+    const sterneArr = bewIds.map(id => einsatzBewertungen[id].sterne).filter(s => s);
+    const avgSterne = sterneArr.length > 0 ? sterneArr.reduce((s, v) => s + v, 0) / sterneArr.length : 0;
+
+    let html = `<div class="bew-header"><span class="bew-avg">${'\u2605'.repeat(Math.round(avgSterne))}${'\u2606'.repeat(5 - Math.round(avgSterne))}</span> <strong>${formatZahl(avgSterne)}/5</strong> (${sterneArr.length} Bewertungen)</div>`;
+
+    html += '<div class="bew-liste">';
+    const letzte = bewIds.slice(-10).reverse();
+    letzte.forEach(id => {
+        const b = einsatzBewertungen[id];
+        const e = einsaetze.find(x => x.id === parseInt(id));
+        if (!e) return;
+
+        html += `<div class="bew-item">
+            <span class="bew-sterne">${'\u2605'.repeat(b.sterne || 0)}${'\u2606'.repeat(5 - (b.sterne || 0))}</span>
+            <span class="bew-einsatz">${formatDatum(e.datum)} | ${escapeHtml(e.objekt)}</span>
+            ${b.feedback ? '<span class="bew-feedback">"' + escapeHtml(b.feedback) + '"</span>' : ''}
+        </div>`;
+    });
+    html += '</div>';
+
+    el.innerHTML = html;
+}
+
+// =============================================
+// OBJEKT-REVIERPLAN (Grundriss-Notizen)
+// =============================================
+let revierplaene = JSON.parse(localStorage.getItem('bbprotect_revierplaene') || '{}');
+
+function speichereRevierplan() {
+    const objekt = document.getElementById('rpObjekt').value;
+    const text = document.getElementById('rpText').value.trim();
+
+    if (!objekt) { alert('Bitte Objekt wählen.'); return; }
+
+    revierplaene[objekt] = {
+        text,
+        aktualisiert: new Date().toISOString().split('T')[0]
+    };
+
+    localStorage.setItem('bbprotect_revierplaene', JSON.stringify(revierplaene));
+    logAudit('bearbeitet', 'Revierplan', objekt);
+    renderRevierplan();
+}
+
+function renderRevierplan() {
+    const el = document.getElementById('revierplanContent');
+    if (!el) return;
+
+    const objekt = document.getElementById('rpObjekt').value;
+    if (!objekt) {
+        el.innerHTML = '<p style="color:#a0aec0">Bitte Objekt wählen.</p>';
+        return;
+    }
+
+    const plan = revierplaene[objekt];
+    if (!plan || !plan.text) {
+        document.getElementById('rpText').value = '';
+        el.innerHTML = '<p style="color:#a0aec0">Kein Revierplan für dieses Objekt vorhanden.</p>';
+        return;
+    }
+
+    document.getElementById('rpText').value = plan.text;
+    el.innerHTML = `<p style="font-size:0.75rem;color:#718096">Zuletzt aktualisiert: ${formatDatum(plan.aktualisiert)}</p><div class="rp-vorschau"><pre style="white-space:pre-wrap;font-size:0.8rem;font-family:inherit">${escapeHtml(plan.text)}</pre></div>`;
+}
+
+function updateRevierplanSelect() {
+    const sel = document.getElementById('rpObjekt');
+    if (!sel) return;
+    const val = sel.value;
+    sel.innerHTML = '<option value="">Objekt wählen...</option>';
+    objekte.forEach(o => {
+        sel.innerHTML += `<option value="${escapeHtml(o.name)}" ${o.name === val ? 'selected' : ''}>${escapeHtml(o.name)}</option>`;
+    });
+}
+
+// =============================================
+// MONATSABSCHLUSS-WORKFLOW
+// =============================================
+let monatsabschluesse = JSON.parse(localStorage.getItem('bbprotect_monatsabschluesse') || '{}');
+
+function monatsabschluss() {
+    const monat = document.getElementById('maMonatSelect').value;
+    if (!monat) { alert('Bitte Monat wählen.'); return; }
+
+    const monatsE = einsaetze.filter(e => e.datum.substring(0, 7) === monat && e.status !== 'storniert');
+    const offene = monatsE.filter(e => !e.status || e.status === 'geplant');
+
+    if (offene.length > 0) {
+        if (!confirm(`${offene.length} Einsätze sind noch im Status "Geplant". Alle auf "Abgeschlossen" setzen?`)) return;
+        offene.forEach(e => e.status = 'abgeschlossen');
+        speichern();
+        logAudit('status', 'Einsatz', `Monatsabschluss ${monat}: ${offene.length} Einsätze → Abgeschlossen`);
+    }
+
+    const totalStd = monatsE.reduce((s, e) => s + e.stunden, 0);
+    const totalGesamt = monatsE.reduce((s, e) => s + e.gesamt, 0);
+
+    monatsabschluesse[monat] = {
+        datum: new Date().toISOString(),
+        einsaetze: monatsE.length,
+        stunden: totalStd,
+        umsatz: totalGesamt,
+        abgeschlossen: true
+    };
+
+    localStorage.setItem('bbprotect_monatsabschluesse', JSON.stringify(monatsabschluesse));
+    logAudit('status', 'Monatsabschluss', `${monat}: ${monatsE.length} Einsätze, ${formatZahl(totalStd)} Std., ${formatEuro(totalGesamt)}`);
+    renderMonatsabschluss();
+    renderTabelle();
+}
+
+function renderMonatsabschluss() {
+    const el = document.getElementById('monatsabschlussContent');
+    if (!el) return;
+
+    const monate = Object.keys(monatsabschluesse).sort().reverse();
+    if (monate.length === 0) {
+        el.innerHTML = '<p style="color:#a0aec0">Noch keine Monatsabschlüsse durchgeführt.</p>';
+        return;
+    }
+
+    let html = '<div class="mab-liste">';
+    monate.forEach(m => {
+        const d = monatsabschluesse[m];
+        const [j, mo] = m.split('-');
+        html += `<div class="mab-item">
+            <span class="mab-monat">${MONATSNAMEN[parseInt(mo) - 1]} ${j}</span>
+            <span class="mab-info">${d.einsaetze} Einsätze | ${formatZahl(d.stunden)} Std. | ${formatEuro(d.umsatz)}</span>
+            <span class="mab-status">Abgeschlossen</span>
+        </div>`;
+    });
+    html += '</div>';
+    el.innerHTML = html;
+}
+
+function updateMonatsabschlussSelect() {
+    const sel = document.getElementById('maMonatSelect');
+    if (!sel) return;
+    const monate = new Set();
+    einsaetze.forEach(e => monate.add(e.datum.substring(0, 7)));
+    sel.innerHTML = '<option value="">Monat wählen...</option>';
+    [...monate].sort().reverse().forEach(m => {
+        const [j, mo] = m.split('-');
+        const istAbgeschlossen = monatsabschluesse[m];
+        sel.innerHTML += `<option value="${m}" ${istAbgeschlossen ? 'disabled' : ''}>${MONATSNAMEN[parseInt(mo) - 1]} ${j}${istAbgeschlossen ? ' (abgeschlossen)' : ''}</option>`;
+    });
+}
+
+// =============================================
+// QUICK-FILTER LEISTE
+// =============================================
+function quickFilter(typ) {
+    const heute = new Date();
+    const heuteStr = heute.toISOString().split('T')[0];
+
+    // Quick-Filter-Buttons aktivieren/deaktivieren
+    document.querySelectorAll('.qf-btn').forEach(b => b.classList.remove('qf-aktiv'));
+
+    if (typ === 'heute') {
+        filterMonat.value = '';
+        const suchfeld = document.getElementById('suchfeld');
+        if (suchfeld) suchfeld.value = '';
+        // Datum-Filter: nur heute
+        einsaetze._quickFilter = e => e.datum === heuteStr;
+    } else if (typ === 'woche') {
+        const montag = new Date(heute);
+        const tag = montag.getDay();
+        const diff = tag === 0 ? 6 : tag - 1;
+        montag.setDate(montag.getDate() - diff);
+        const montagStr = montag.toISOString().split('T')[0];
+        const sonntag = new Date(montag);
+        sonntag.setDate(sonntag.getDate() + 6);
+        const sonntagStr = sonntag.toISOString().split('T')[0];
+        einsaetze._quickFilter = e => e.datum >= montagStr && e.datum <= sonntagStr;
+    } else if (typ === 'monat') {
+        const monatStr = heuteStr.substring(0, 7);
+        filterMonat.value = monatStr;
+        einsaetze._quickFilter = null;
+    } else {
+        einsaetze._quickFilter = null;
+    }
+
+    const btn = document.querySelector(`.qf-btn[data-qf="${typ}"]`);
+    if (btn) btn.classList.add('qf-aktiv');
+
+    renderTabelle();
 }
 
 // =============================================

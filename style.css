@@ -6818,3 +6818,232 @@ body.dark-mode .sn-datum-header {
         gap: 0.25rem;
     }
 }
+
+/* =============================================
+   QUICK-FILTER LEISTE
+   ============================================= */
+.qf-btn {
+    background: #edf2f7;
+    border: 1px solid #e2e8f0;
+    border-radius: 4px;
+    padding: 0.25rem 0.5rem;
+    font-size: 0.7rem;
+    font-weight: 600;
+    cursor: pointer;
+    color: #4a5568;
+    transition: all 0.15s;
+}
+
+.qf-btn:hover {
+    background: #e2e8f0;
+}
+
+.qf-btn.qf-aktiv {
+    background: #3182ce;
+    color: #fff;
+    border-color: #3182ce;
+}
+
+body.dark-mode .qf-btn {
+    background: #4a5568;
+    border-color: #4a5568;
+    color: #e2e8f0;
+}
+
+body.dark-mode .qf-btn:hover {
+    background: #718096;
+}
+
+body.dark-mode .qf-btn.qf-aktiv {
+    background: #2b6cb0;
+    border-color: #2b6cb0;
+}
+
+/* =============================================
+   GEBURTSTAGE & JUBILÄEN
+   ============================================= */
+.gj-liste {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+}
+
+.gj-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.4rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    background: #f7fafc;
+}
+
+body.dark-mode .gj-item {
+    background: #2d3748;
+}
+
+.gj-heute {
+    background: #fefcbf !important;
+    border-left: 3px solid #f6e05e;
+}
+
+body.dark-mode .gj-heute {
+    background: #744210 !important;
+}
+
+.gj-bald {
+    background: #ebf8ff;
+}
+
+body.dark-mode .gj-bald {
+    background: #2a4365;
+}
+
+.gj-icon {
+    font-size: 1rem;
+}
+
+.gj-name {
+    min-width: 120px;
+}
+
+.gj-detail {
+    color: #718096;
+    flex: 1;
+}
+
+.gj-countdown {
+    font-weight: 600;
+    font-size: 0.75rem;
+    white-space: nowrap;
+}
+
+/* =============================================
+   EINSATZ-BEWERTUNGEN
+   ============================================= */
+.bew-header {
+    font-size: 0.9rem;
+    margin-bottom: 0.5rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+body.dark-mode .bew-header {
+    border-bottom-color: #4a5568;
+}
+
+.bew-avg {
+    color: #f6e05e;
+    font-size: 1.1rem;
+}
+
+.bew-liste {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+}
+
+.bew-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.3rem 0.5rem;
+    font-size: 0.8rem;
+}
+
+.bew-sterne {
+    color: #f6e05e;
+    font-size: 0.9rem;
+}
+
+.bew-einsatz {
+    color: #718096;
+}
+
+body.dark-mode .bew-einsatz {
+    color: #a0aec0;
+}
+
+.bew-feedback {
+    font-style: italic;
+    color: #4a5568;
+    font-size: 0.75rem;
+}
+
+body.dark-mode .bew-feedback {
+    color: #cbd5e0;
+}
+
+/* =============================================
+   MONATSABSCHLUSS
+   ============================================= */
+.mab-liste {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+}
+
+.mab-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.5rem 0.75rem;
+    background: #f0fff4;
+    border-left: 3px solid #48bb78;
+    border-radius: 4px;
+    font-size: 0.8rem;
+}
+
+body.dark-mode .mab-item {
+    background: #1c4532;
+    border-left-color: #48bb78;
+}
+
+.mab-monat {
+    font-weight: 600;
+    min-width: 100px;
+}
+
+.mab-info {
+    flex: 1;
+    color: #718096;
+}
+
+body.dark-mode .mab-info {
+    color: #a0aec0;
+}
+
+.mab-status {
+    color: #48bb78;
+    font-weight: 600;
+    font-size: 0.75rem;
+}
+
+/* =============================================
+   REVIERPLAN
+   ============================================= */
+.rp-vorschau {
+    background: #f7fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    padding: 0.75rem;
+    margin-top: 0.5rem;
+}
+
+body.dark-mode .rp-vorschau {
+    background: #2d3748;
+    border-color: #4a5568;
+}
+
+@media (max-width: 768px) {
+    .gj-item {
+        flex-wrap: wrap;
+        gap: 0.25rem;
+    }
+
+    .mab-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.2rem;
+    }
+}

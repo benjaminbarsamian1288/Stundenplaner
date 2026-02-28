@@ -213,6 +213,10 @@
                 <div class="list-header">
                     <h2>Einsatz&uuml;bersicht</h2>
                     <div class="list-actions">
+                        <button class="qf-btn" data-qf="heute" onclick="quickFilter('heute')">Heute</button>
+                        <button class="qf-btn" data-qf="woche" onclick="quickFilter('woche')">Woche</button>
+                        <button class="qf-btn" data-qf="monat" onclick="quickFilter('monat')">Monat</button>
+                        <button class="qf-btn" data-qf="alle" onclick="quickFilter('alle')">Alle</button>
                         <input type="text" id="suchfeld" placeholder="Suche..." class="such-input" oninput="renderTabelle()">
                         <select id="filterMonat">
                             <option value="">Alle Monate</option>
@@ -378,6 +382,20 @@
             <section class="abrechnung-section">
                 <h2>Einsatz-Duplikat-Pr&uuml;fung</h2>
                 <div id="duplikatCheckContent"></div>
+            </section>
+
+            <section class="abrechnung-section">
+                <h2>Einsatz-Bewertungen</h2>
+                <div id="bewertungContent"></div>
+            </section>
+
+            <section class="abrechnung-section">
+                <h2>Monatsabschluss</h2>
+                <div class="abrechnung-filter">
+                    <select id="maMonatSelect"></select>
+                    <button class="btn-primary" onclick="monatsabschluss()">Monat abschlie&szlig;en</button>
+                </div>
+                <div id="monatsabschlussContent" style="margin-top:0.75rem"></div>
             </section>
         </div>
 
@@ -800,6 +818,26 @@
             </section>
 
             <section class="form-section">
+                <div class="list-header">
+                    <h2>Revierplan / Grundriss-Notizen</h2>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="rpObjekt">Objekt</label>
+                        <select id="rpObjekt" onchange="renderRevierplan()">
+                            <option value="">Objekt w&auml;hlen...</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="rpText">Revierplan (Rundg&auml;nge, Kontrollpunkte, Besonderheiten)</label>
+                    <textarea id="rpText" rows="6" placeholder="Beschreibung des Revierverlaufs, Kontrollpunkte, Schl&uuml;sselstellen..." style="width:100%;padding:0.6rem;border:1px solid #cbd5e0;border-radius:6px;font-family:inherit;font-size:0.85rem;resize:vertical"></textarea>
+                </div>
+                <button type="button" class="btn-primary" onclick="speichereRevierplan()" style="margin-top:0.5rem">Revierplan speichern</button>
+                <div id="revierplanContent" style="margin-top:0.5rem"></div>
+            </section>
+
+            <section class="form-section">
                 <h2>Personalbedarfsrechner</h2>
                 <div class="form-row">
                     <div class="form-group">
@@ -889,6 +927,16 @@
                             <label for="maUrlaubstage">Urlaubstage / Jahr</label>
                             <input type="number" id="maUrlaubstage" step="1" min="0" placeholder="z.B. 30">
                         </div>
+                        <div class="form-group">
+                            <label for="maGeburtstag">Geburtstag</label>
+                            <input type="date" id="maGeburtstag">
+                        </div>
+                        <div class="form-group">
+                            <label for="maEintrittsdatum">Eintrittsdatum</label>
+                            <input type="date" id="maEintrittsdatum">
+                        </div>
+                    </div>
+                    <div class="form-row">
                         <div class="form-group">
                             <label for="maBemerkung">Bemerkung</label>
                             <input type="text" id="maBemerkung" placeholder="z.B. nur Tagschicht, Ersthelfer">
@@ -1115,6 +1163,13 @@
                     <h2>Krankenstatistik</h2>
                 </div>
                 <div id="krankenStatsContent"></div>
+            </section>
+
+            <section class="form-section">
+                <div class="list-header">
+                    <h2>Geburtstage &amp; Jubil&auml;en</h2>
+                </div>
+                <div id="geburtstageContent"></div>
             </section>
 
             <section class="form-section">
