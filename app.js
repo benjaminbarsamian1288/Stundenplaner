@@ -30,6 +30,9 @@ let aktuellerStatusFilter = 'alle';
 // Tagesnotizen
 let tagesnotizen = JSON.parse(localStorage.getItem('bbprotect_tagesnotizen') || '{}');
 
+// Schichtübergabe-Protokolle
+let uebergaben = JSON.parse(localStorage.getItem('bbprotect_uebergaben') || '[]');
+
 // Kalender-State
 let kalenderJahr = new Date().getFullYear();
 let kalenderMonat = new Date().getMonth();
@@ -78,9 +81,9 @@ document.querySelectorAll('.nav-btn').forEach(btn => {
         if (this.dataset.tab === 'objekte') { renderObjekte(); renderVertraege(); renderObjektAuslastung(); updateChecklisteObjekte(); }
         if (this.dataset.tab === 'kalender') { renderKalender(); renderDienstplan(); renderJahresuebersicht(); }
         if (this.dataset.tab === 'abrechnung') updateAbrechnung();
-        if (this.dataset.tab === 'mitarbeiter') { renderMitarbeiter(); renderDokumente(); renderUeberstunden(); renderKontaktliste(); renderUrlaubskonto(); }
+        if (this.dataset.tab === 'mitarbeiter') { renderMitarbeiter(); renderDokumente(); renderUeberstunden(); renderKontaktliste(); renderUrlaubskonto(); renderArbeitszeitkonto(); }
         if (this.dataset.tab === 'vorfaelle') renderVorfaelle();
-        if (this.dataset.tab === 'wachbuch') renderWachbuch();
+        if (this.dataset.tab === 'wachbuch') { renderWachbuch(); renderUebergaben(); }
         if (this.dataset.tab === 'einstellungen') updateDatenStats();
     });
 });
@@ -1028,6 +1031,12 @@ function updateDashboard() {
 
     // Personalkosten-Trend
     renderPersonalkostenTrend();
+
+    // Wochentage-Verteilung
+    renderWochentageVerteilung(gefiltert);
+
+    // Konflikterkennung
+    renderKonflikte();
 }
 
 function renderMonatsVergleich(aktuellerMonat) {
@@ -1500,7 +1509,7 @@ function loescheMitarbeiter(index) {
 // =============================================
 function erstelleBackup() {
     const backup = {
-        version: 8,
+        version: 9,
         datum: new Date().toISOString(),
         einsaetze,
         objekte,
@@ -1511,7 +1520,8 @@ function erstelleBackup() {
         wachbuch,
         dokumente,
         wochenvorlagen,
-        tagesnotizen
+        tagesnotizen,
+        uebergaben
     };
 
     const json = JSON.stringify(backup, null, 2);
@@ -1546,6 +1556,7 @@ function stelleWiederHer(event) {
             dokumente = data.dokumente || [];
             wochenvorlagen = data.wochenvorlagen || [];
             tagesnotizen = data.tagesnotizen || {};
+            uebergaben = data.uebergaben || [];
 
             speichern();
             localStorage.setItem('bbprotect_objekte', JSON.stringify(objekte));
@@ -1557,6 +1568,7 @@ function stelleWiederHer(event) {
             localStorage.setItem('bbprotect_dokumente', JSON.stringify(dokumente));
             localStorage.setItem('bbprotect_wochenvorlagen', JSON.stringify(wochenvorlagen));
             localStorage.setItem('bbprotect_tagesnotizen', JSON.stringify(tagesnotizen));
+            localStorage.setItem('bbprotect_uebergaben', JSON.stringify(uebergaben));
 
             renderTabelle();
             updateAlleFilter();
@@ -1589,6 +1601,7 @@ function loescheAlleDaten() {
     dokumente = [];
     wochenvorlagen = [];
     tagesnotizen = {};
+    uebergaben = [];
 
     localStorage.removeItem('bbprotect_einsaetze');
     localStorage.removeItem('bbprotect_objekte');
@@ -1600,6 +1613,7 @@ function loescheAlleDaten() {
     localStorage.removeItem('bbprotect_dokumente');
     localStorage.removeItem('bbprotect_wochenvorlagen');
     localStorage.removeItem('bbprotect_tagesnotizen');
+    localStorage.removeItem('bbprotect_uebergaben');
 
     renderTabelle();
     updateAlleFilter();
@@ -4136,6 +4150,349 @@ function druckeGesamtbericht() {
 }
 
 // =============================================
+// GLOBALE SUCHE
+// =============================================
+function globalSuchen(query) {
+    const box = document.getElementById('globaleSucheErgebnis');
+    if (!box) return;
+    const q = query.toLowerCase().trim();
+    if (q.length < 2) { box.style.display = 'none'; return; }
+
+    const ergebnisse = [];
+
+    // Einsätze durchsuchen
+    einsaetze.forEach(e => {
+        if (e.objekt.toLowerCase().includes(q) || (e.mitarbeiter || '').toLowerCase().includes(q) || (e.bemerkung || '').toLowerCase().includes(q) || formatDatum(e.datum).includes(q)) {
+            ergebnisse.push({ typ: 'Einsatz', text: `${formatDatum(e.datum)} - ${e.objekt} (${e.mitarbeiter || '\u2014'})`, tab: 'erfassung' });
+        }
+    });
+
+    // Mitarbeiter
+    mitarbeiterListe_.forEach(m => {
+        if (m.name.toLowerCase().includes(q) || (m.telefon || '').includes(q) || (m.email || '').toLowerCase().includes(q)) {
+            ergebnisse.push({ typ: 'Mitarbeiter', text: `${m.name}${m.telefon ? ' - ' + m.telefon : ''}`, tab: 'mitarbeiter' });
+        }
+    });
+
+    // Objekte
+    objekte.forEach(o => {
+        if (o.name.toLowerCase().includes(q) || (o.adresse || '').toLowerCase().includes(q) || (o.ansprechpartner || '').toLowerCase().includes(q)) {
+            ergebnisse.push({ typ: 'Objekt', text: `${o.name}${o.adresse ? ' - ' + o.adresse : ''}`, tab: 'objekte' });
+        }
+    });
+
+    // Vorfälle
+    vorfaelle.forEach(v => {
+        if (v.objekt.toLowerCase().includes(q) || v.beschreibung.toLowerCase().includes(q) || (v.mitarbeiter || '').toLowerCase().includes(q)) {
+            ergebnisse.push({ typ: 'Vorfall', text: `${formatDatum(v.datum)} - ${v.objekt}: ${v.beschreibung.substring(0, 60)}`, tab: 'vorfaelle' });
+        }
+    });
+
+    // Wachbuch
+    wachbuch.forEach(w => {
+        if (w.objekt.toLowerCase().includes(q) || w.eintrag.toLowerCase().includes(q) || (w.mitarbeiter || '').toLowerCase().includes(q)) {
+            ergebnisse.push({ typ: 'Wachbuch', text: `${formatDatum(w.datum)} - ${w.objekt}: ${w.eintrag.substring(0, 60)}`, tab: 'wachbuch' });
+        }
+    });
+
+    if (ergebnisse.length === 0) {
+        box.innerHTML = '<div class="gs-leer">Keine Ergebnisse gefunden.</div>';
+    } else {
+        let html = '';
+        const max = Math.min(ergebnisse.length, 12);
+        for (let i = 0; i < max; i++) {
+            const r = ergebnisse[i];
+            html += `<div class="gs-item" onclick="globalSucheNavigieren('${r.tab}')"><span class="gs-typ">${escapeHtml(r.typ)}</span> ${escapeHtml(r.text)}</div>`;
+        }
+        if (ergebnisse.length > 12) html += `<div class="gs-mehr">...und ${ergebnisse.length - 12} weitere Ergebnisse</div>`;
+        box.innerHTML = html;
+    }
+    box.style.display = 'block';
+}
+
+function globalSucheNavigieren(tab) {
+    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+    const btn = document.querySelector(`.nav-btn[data-tab="${tab}"]`);
+    if (btn) btn.classList.add('active');
+    document.getElementById('tab-' + tab).classList.add('active');
+    document.getElementById('globaleSucheErgebnis').style.display = 'none';
+    document.getElementById('globaleSuche').value = '';
+}
+
+// Globale Suche schließen bei Klick außerhalb
+document.addEventListener('click', function (e) {
+    const box = document.getElementById('globaleSucheErgebnis');
+    const input = document.getElementById('globaleSuche');
+    if (box && !box.contains(e.target) && e.target !== input) {
+        box.style.display = 'none';
+    }
+});
+
+// =============================================
+// ARBEITSZEITKONTO
+// =============================================
+function renderArbeitszeitkonto() {
+    const el = document.getElementById('arbeitszeitkontoContent');
+    if (!el) return;
+
+    // Monatsselektor befüllen
+    const sel = document.getElementById('azkMonat');
+    if (sel && sel.options.length <= 1) {
+        const monate = new Set();
+        einsaetze.forEach(e => monate.add(e.datum.substring(0, 7)));
+        const jetzt = new Date();
+        monate.add(`${jetzt.getFullYear()}-${String(jetzt.getMonth() + 1).padStart(2, '0')}`);
+        const sorted = [...monate].sort().reverse();
+        sel.innerHTML = '';
+        sorted.forEach(m => {
+            const [j, mo] = m.split('-');
+            sel.innerHTML += `<option value="${m}">${MONATSNAMEN[parseInt(mo) - 1]} ${j}</option>`;
+        });
+    }
+
+    const filterM = sel ? sel.value : '';
+    if (!filterM) return;
+
+    const maList = mitarbeiterListe_.filter(m => m.sollStunden > 0);
+    if (maList.length === 0) {
+        el.innerHTML = '<p style="color:#a0aec0">Mitarbeiter mit Soll-Stunden anlegen, um das Arbeitszeitkonto zu sehen.</p>';
+        return;
+    }
+
+    let html = '<div class="azk-grid">';
+
+    maList.forEach(m => {
+        const sollStd = m.sollStunden || 0;
+        const [filterJahr, filterMonatNr] = filterM.split('-').map(Number);
+
+        // Ist-Stunden diesen Monat
+        const istStd = einsaetze.filter(e => e.mitarbeiter === m.name && e.datum.substring(0, 7) === filterM)
+            .reduce((s, e) => s + e.stunden, 0);
+
+        // Saldo dieses Monats
+        const saldo = istStd - sollStd;
+
+        // Kumuliertes Saldo aller vorherigen Monate
+        let kumuliert = 0;
+        const alleMonate = new Set();
+        einsaetze.filter(e => e.mitarbeiter === m.name).forEach(e => alleMonate.add(e.datum.substring(0, 7)));
+        [...alleMonate].sort().forEach(monat => {
+            if (monat >= filterM) return;
+            const monIst = einsaetze.filter(e => e.mitarbeiter === m.name && e.datum.substring(0, 7) === monat)
+                .reduce((s, e) => s + e.stunden, 0);
+            kumuliert += monIst - sollStd;
+        });
+
+        const gesamtSaldo = kumuliert + saldo;
+        const pctIst = sollStd > 0 ? Math.min((istStd / sollStd) * 100, 150) : 0;
+        const saldoClass = gesamtSaldo >= 0 ? 'azk-positiv' : 'azk-negativ';
+
+        html += `<div class="azk-card">
+            <div class="azk-name">${escapeHtml(m.name)}</div>
+            <div class="azk-row"><span>Soll:</span><span>${formatZahl(sollStd)} Std.</span></div>
+            <div class="azk-row"><span>Ist:</span><span>${formatZahl(istStd)} Std.</span></div>
+            <div class="azk-bar-wrap"><div class="azk-bar" style="width:${Math.min(pctIst, 100)}%"></div>${pctIst > 100 ? '<div class="azk-bar-over" style="width:' + Math.min(pctIst - 100, 50) + '%"></div>' : ''}</div>
+            <div class="azk-row"><span>Monat:</span><span class="${saldo >= 0 ? 'azk-positiv' : 'azk-negativ'}">${saldo >= 0 ? '+' : ''}${formatZahl(saldo)} Std.</span></div>
+            <div class="azk-row azk-gesamt"><span>Gesamt-Saldo:</span><span class="${saldoClass}">${gesamtSaldo >= 0 ? '+' : ''}${formatZahl(gesamtSaldo)} Std.</span></div>
+        </div>`;
+    });
+
+    html += '</div>';
+    el.innerHTML = html;
+}
+
+// =============================================
+// EINSATZ-KONFLIKTERKENNUNG
+// =============================================
+function findeKonflikte() {
+    const konflikte = [];
+    const maEinsaetze = {};
+
+    einsaetze.filter(e => e.mitarbeiter && (e.status || 'geplant') !== 'storniert').forEach(e => {
+        const key = e.mitarbeiter + '_' + e.datum;
+        if (!maEinsaetze[key]) maEinsaetze[key] = [];
+        maEinsaetze[key].push(e);
+    });
+
+    Object.entries(maEinsaetze).forEach(([key, liste]) => {
+        if (liste.length < 2) return;
+
+        // Prüfe auf Überschneidungen
+        for (let i = 0; i < liste.length; i++) {
+            for (let j = i + 1; j < liste.length; j++) {
+                const a = liste[i], b = liste[j];
+                // Zeitüberschneidung prüfen
+                const aVon = a.zeitVon.replace(':', '');
+                const aBis = a.zeitBis.replace(':', '');
+                const bVon = b.zeitVon.replace(':', '');
+                const bBis = b.zeitBis.replace(':', '');
+
+                let ueberschneidung = false;
+                if (aBis <= aVon) {
+                    // Nachtschicht a: überschneidet fast alles am selben Tag
+                    ueberschneidung = true;
+                } else if (bBis <= bVon) {
+                    ueberschneidung = true;
+                } else {
+                    ueberschneidung = aVon < bBis && bVon < aBis;
+                }
+
+                if (ueberschneidung) {
+                    konflikte.push({
+                        ma: a.mitarbeiter,
+                        datum: a.datum,
+                        schichtA: `${a.zeitVon}-${a.zeitBis} (${a.objekt})`,
+                        schichtB: `${b.zeitVon}-${b.zeitBis} (${b.objekt})`
+                    });
+                }
+            }
+        }
+    });
+
+    return konflikte;
+}
+
+function renderKonflikte() {
+    const el = document.getElementById('konfliktAnzeige');
+    if (!el) return;
+
+    const konflikte = findeKonflikte();
+
+    if (konflikte.length === 0) {
+        el.innerHTML = '<p style="color:#48bb78;font-size:0.85rem">Keine Konflikte erkannt.</p>';
+        return;
+    }
+
+    let html = `<div class="konflikt-warn">${konflikte.length} Konflikt${konflikte.length > 1 ? 'e' : ''} erkannt:</div>`;
+    html += '<div class="konflikt-liste">';
+    konflikte.slice(0, 10).forEach(k => {
+        html += `<div class="konflikt-item">
+            <span class="konflikt-ma">${escapeHtml(k.ma)}</span>
+            <span class="konflikt-datum">${formatDatum(k.datum)}</span>
+            <span class="konflikt-detail">${escapeHtml(k.schichtA)} vs. ${escapeHtml(k.schichtB)}</span>
+        </div>`;
+    });
+    if (konflikte.length > 10) html += `<div class="konflikt-mehr">...und ${konflikte.length - 10} weitere</div>`;
+    html += '</div>';
+    el.innerHTML = html;
+}
+
+// =============================================
+// WOCHENTAGE-VERTEILUNG
+// =============================================
+function renderWochentageVerteilung(gefiltert) {
+    const el = document.getElementById('wochentageVerteilung');
+    if (!el) return;
+
+    const tage = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'];
+    const counts = [0, 0, 0, 0, 0, 0, 0];
+    const stunden = [0, 0, 0, 0, 0, 0, 0];
+
+    gefiltert.forEach(e => {
+        const d = new Date(e.datum);
+        const day = d.getDay();
+        counts[day]++;
+        stunden[day] += e.stunden;
+    });
+
+    const maxCount = Math.max(...counts, 1);
+    const maxStd = Math.max(...stunden, 1);
+
+    let html = '<div class="wt-chart">';
+    // Zeige Mo-So (verschiebe Sonntag ans Ende)
+    const reihenfolge = [1, 2, 3, 4, 5, 6, 0];
+    reihenfolge.forEach(i => {
+        const pctC = (counts[i] / maxCount) * 100;
+        const pctS = (stunden[i] / maxStd) * 100;
+        html += `<div class="wt-spalte">
+            <div class="wt-bars">
+                <div class="wt-bar wt-bar-cnt" style="height:${pctC}%" title="${counts[i]} Einsätze"></div>
+                <div class="wt-bar wt-bar-std" style="height:${pctS}%" title="${formatZahl(stunden[i])} Std."></div>
+            </div>
+            <div class="wt-label">${tage[i]}</div>
+            <div class="wt-value">${counts[i]}</div>
+        </div>`;
+    });
+    html += '</div>';
+    html += '<div class="wt-legende"><span class="wt-leg-item"><span class="wt-leg-dot wt-bar-cnt"></span> Einsätze</span><span class="wt-leg-item"><span class="wt-leg-dot wt-bar-std"></span> Stunden</span></div>';
+
+    el.innerHTML = html;
+}
+
+// =============================================
+// SCHICHTÜBERGABE-PROTOKOLL
+// =============================================
+document.getElementById('uebergabeForm').addEventListener('submit', function (e) {
+    e.preventDefault();
+
+    const ug = {
+        id: Date.now(),
+        datum: document.getElementById('ugDatum').value,
+        zeit: document.getElementById('ugZeit').value,
+        objekt: document.getElementById('ugObjekt').value.trim(),
+        abgebend: document.getElementById('ugAbgebend').value.trim(),
+        uebernehmend: document.getElementById('ugUebernehmend').value.trim(),
+        besonderheiten: document.getElementById('ugBesonderheiten').value.trim(),
+        schluessel: document.getElementById('ugSchluessel').checked,
+        funk: document.getElementById('ugFunk').checked,
+        rundgang: document.getElementById('ugRundgang').checked
+    };
+
+    if (!ug.datum || !ug.zeit || !ug.objekt || !ug.abgebend || !ug.uebernehmend) return;
+
+    uebergaben.push(ug);
+    localStorage.setItem('bbprotect_uebergaben', JSON.stringify(uebergaben));
+    renderUebergaben();
+    this.reset();
+    document.getElementById('ugDatum').valueAsDate = new Date();
+    const jetzt = new Date();
+    document.getElementById('ugZeit').value = `${String(jetzt.getHours()).padStart(2, '0')}:${String(jetzt.getMinutes()).padStart(2, '0')}`;
+});
+
+function renderUebergaben() {
+    const el = document.getElementById('uebergabeContent');
+    if (!el) return;
+
+    if (uebergaben.length === 0) {
+        el.innerHTML = '<p style="color:#a0aec0">Noch keine Übergabe-Protokolle.</p>';
+        return;
+    }
+
+    const sorted = [...uebergaben].sort((a, b) => (b.datum + b.zeit).localeCompare(a.datum + a.zeit));
+
+    let html = '<div class="ug-liste">';
+    sorted.slice(0, 20).forEach(ug => {
+        const checks = [];
+        if (ug.schluessel) checks.push('Schlüssel');
+        if (ug.funk) checks.push('Funk');
+        if (ug.rundgang) checks.push('Rundgang');
+
+        html += `<div class="ug-item">
+            <div class="ug-header">
+                <span class="ug-datum">${formatDatum(ug.datum)} ${ug.zeit}</span>
+                <span class="ug-objekt">${escapeHtml(ug.objekt)}</span>
+                <button class="btn-delete btn-small" onclick="loescheUebergabe(${ug.id})">X</button>
+            </div>
+            <div class="ug-body">
+                <span class="ug-ma">${escapeHtml(ug.abgebend)} &rarr; ${escapeHtml(ug.uebernehmend)}</span>
+                ${checks.length > 0 ? '<span class="ug-checks">' + checks.join(', ') + '</span>' : ''}
+            </div>
+            ${ug.besonderheiten ? '<div class="ug-notiz">' + escapeHtml(ug.besonderheiten) + '</div>' : ''}
+        </div>`;
+    });
+    html += '</div>';
+    el.innerHTML = html;
+}
+
+function loescheUebergabe(id) {
+    if (!confirm('Übergabe-Protokoll löschen?')) return;
+    uebergaben = uebergaben.filter(u => u.id !== id);
+    localStorage.setItem('bbprotect_uebergaben', JSON.stringify(uebergaben));
+    renderUebergaben();
+}
+
+// =============================================
 // INITIALISIERUNG
 // =============================================
 document.getElementById('datum').valueAsDate = new Date();
@@ -4153,7 +4510,11 @@ pruefeBenachrichtigungen();
 renderDokumente();
 renderUrlaubskonto();
 updateChecklisteObjekte();
+renderArbeitszeitkonto();
+renderUebergaben();
 document.getElementById('vfDatum').valueAsDate = new Date();
 document.getElementById('wbDatum').valueAsDate = new Date();
+document.getElementById('ugDatum').valueAsDate = new Date();
 const jetztInit = new Date();
 document.getElementById('wbZeit').value = `${String(jetztInit.getHours()).padStart(2, '0')}:${String(jetztInit.getMinutes()).padStart(2, '0')}`;
+document.getElementById('ugZeit').value = `${String(jetztInit.getHours()).padStart(2, '0')}:${String(jetztInit.getMinutes()).padStart(2, '0')}`;
