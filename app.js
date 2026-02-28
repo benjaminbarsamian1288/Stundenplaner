@@ -86,11 +86,11 @@ document.querySelectorAll('.nav-btn').forEach(btn => {
         this.classList.add('active');
         document.getElementById('tab-' + this.dataset.tab).classList.add('active');
 
-        if (this.dataset.tab === 'dashboard') updateDashboard();
-        if (this.dataset.tab === 'objekte') { renderObjekte(); renderVertraege(); renderObjektAuslastung(); updateChecklisteObjekte(); updateObjektHistorieSelect(); updateObjektKontakteSelect(); renderObjektKontakte(); updateObjektAnweisungenSelect(); renderObjektAnweisungen(); }
+        if (this.dataset.tab === 'dashboard') { updateDashboard(); renderEinsatzChronik(); }
+        if (this.dataset.tab === 'objekte') { renderObjekte(); renderVertraege(); renderObjektAuslastung(); updateChecklisteObjekte(); updateObjektHistorieSelect(); updateObjektKontakteSelect(); renderObjektKontakte(); updateObjektAnweisungenSelect(); renderObjektAnweisungen(); updateObjektKostenMonat(); renderObjektKostenanalyse(); }
         if (this.dataset.tab === 'kalender') { renderKalender(); renderDienstplan(); renderJahresuebersicht(); }
         if (this.dataset.tab === 'abrechnung') { updateAbrechnung(); updateLohnvorschauSelects(); renderDuplikatCheck(); }
-        if (this.dataset.tab === 'mitarbeiter') { renderMitarbeiter(); renderDokumente(); renderUeberstunden(); renderKontaktliste(); renderUrlaubskonto(); renderArbeitszeitkonto(); renderQualMatrix(); updateSchichtHistorieSelect(); renderNotfallkontakte(); updateMAKalSelect(); renderVerfuegbarkeitWoche(); renderDoppelschichtWarnungen(); renderMALeistung(); }
+        if (this.dataset.tab === 'mitarbeiter') { renderMitarbeiter(); renderDokumente(); renderUeberstunden(); renderKontaktliste(); renderUrlaubskonto(); renderArbeitszeitkonto(); renderQualMatrix(); updateSchichtHistorieSelect(); renderNotfallkontakte(); updateMAKalSelect(); renderVerfuegbarkeitWoche(); renderDoppelschichtWarnungen(); renderMALeistung(); renderKrankenstatistik(); }
         if (this.dataset.tab === 'vorfaelle') { renderVorfaelle(); renderVorfallsStatistik(); }
         if (this.dataset.tab === 'wachbuch') { renderWachbuch(); renderUebergaben(); renderWachbuchStats(); }
         if (this.dataset.tab === 'einstellungen') { updateDatenStats(); updateSpeicherStats(); ladeEinstellungen(); renderAuditLog(); }
@@ -6464,6 +6464,245 @@ function renderDuplikatCheck() {
         </div>`;
     });
     html += '</div>';
+    el.innerHTML = html;
+}
+
+// =============================================
+// SCHICHTPLAN-DRUCKANSICHT (Wochenplan)
+// =============================================
+function druckeSchichtplan() {
+    const printArea = document.getElementById('printArea');
+    if (!printArea) return;
+
+    const montag = getMontag(dienstplanJahr, dienstplanKW);
+    const wochentage = ['Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag', 'Sonntag'];
+    const tage = [];
+    for (let i = 0; i < 7; i++) {
+        const d = new Date(montag);
+        d.setUTCDate(d.getUTCDate() + i);
+        tage.push(d.toISOString().split('T')[0]);
+    }
+
+    const einstName = einstellungen.firmenname || 'B.B. Protect';
+
+    let html = `<h2 style="margin-bottom:0.5rem">${escapeHtml(einstName)} - Schichtplan KW ${dienstplanKW} / ${dienstplanJahr}</h2>`;
+    html += `<p style="margin-bottom:1rem;color:#718096">Erstellt am ${formatDatum(new Date().toISOString().split('T')[0])}</p>`;
+
+    html += '<table style="width:100%;border-collapse:collapse;font-size:0.8rem">';
+    html += '<thead><tr style="background:#edf2f7"><th style="padding:0.4rem;border:1px solid #ccc">Tag</th><th style="padding:0.4rem;border:1px solid #ccc">Datum</th><th style="padding:0.4rem;border:1px solid #ccc">Objekt</th><th style="padding:0.4rem;border:1px solid #ccc">Mitarbeiter</th><th style="padding:0.4rem;border:1px solid #ccc">Von</th><th style="padding:0.4rem;border:1px solid #ccc">Bis</th><th style="padding:0.4rem;border:1px solid #ccc">Std.</th></tr></thead><tbody>';
+
+    tage.forEach((t, i) => {
+        const tagesE = einsaetze.filter(e => e.datum === t && e.status !== 'storniert').sort((a, b) => a.zeitVon.localeCompare(b.zeitVon));
+        if (tagesE.length === 0) {
+            html += `<tr><td style="padding:0.3rem;border:1px solid #ccc;font-weight:600">${wochentage[i]}</td><td style="padding:0.3rem;border:1px solid #ccc">${formatDatum(t)}</td><td colspan="5" style="padding:0.3rem;border:1px solid #ccc;color:#a0aec0">Keine Einsätze</td></tr>`;
+        } else {
+            tagesE.forEach((e, j) => {
+                html += `<tr><td style="padding:0.3rem;border:1px solid #ccc;font-weight:${j === 0 ? '600' : '400'}">${j === 0 ? wochentage[i] : ''}</td><td style="padding:0.3rem;border:1px solid #ccc">${j === 0 ? formatDatum(t) : ''}</td><td style="padding:0.3rem;border:1px solid #ccc">${escapeHtml(e.objekt)}</td><td style="padding:0.3rem;border:1px solid #ccc">${escapeHtml(e.mitarbeiter || '\u2014')}</td><td style="padding:0.3rem;border:1px solid #ccc">${e.zeitVon}</td><td style="padding:0.3rem;border:1px solid #ccc">${e.zeitBis}</td><td style="padding:0.3rem;border:1px solid #ccc">${formatZahl(e.stunden)}</td></tr>`;
+            });
+        }
+    });
+
+    html += '</tbody></table>';
+
+    // Abwesende MA
+    const abwesende = verfuegbarkeit.filter(v => {
+        return tage.some(t => v.von <= t && v.bis >= t);
+    });
+    if (abwesende.length > 0) {
+        html += '<div style="margin-top:1rem"><strong>Abwesende Mitarbeiter:</strong><ul style="margin-top:0.3rem">';
+        abwesende.forEach(v => {
+            html += `<li>${escapeHtml(v.mitarbeiter)} (${v.typ}: ${formatDatum(v.von)} - ${formatDatum(v.bis)})</li>`;
+        });
+        html += '</ul></div>';
+    }
+
+    printArea.innerHTML = html;
+    window.print();
+}
+
+// =============================================
+// KRANKENSTATISTIK
+// =============================================
+function renderKrankenstatistik() {
+    const el = document.getElementById('krankenStatsContent');
+    if (!el) return;
+
+    const krankEntries = verfuegbarkeit.filter(v => v.typ === 'krank');
+    if (krankEntries.length === 0) {
+        el.innerHTML = '<p style="color:#a0aec0">Keine Krankheitsdaten vorhanden.</p>';
+        return;
+    }
+
+    // Pro MA aggregieren
+    const maStats = {};
+    krankEntries.forEach(k => {
+        if (!maStats[k.mitarbeiter]) maStats[k.mitarbeiter] = { tage: 0, eintraege: 0 };
+        const von = new Date(k.von + 'T00:00:00');
+        const bis = new Date(k.bis + 'T00:00:00');
+        const diff = Math.ceil((bis - von) / (1000 * 60 * 60 * 24)) + 1;
+        maStats[k.mitarbeiter].tage += diff;
+        maStats[k.mitarbeiter].eintraege++;
+    });
+
+    const totalTage = Object.values(maStats).reduce((s, m) => s + m.tage, 0);
+    const maxTage = Math.max(...Object.values(maStats).map(m => m.tage), 1);
+
+    let html = '<div class="ks-summary">';
+    html += `<div class="ks-card"><div class="ks-val">${totalTage}</div><div class="ks-label">Krankheitstage gesamt</div></div>`;
+    html += `<div class="ks-card"><div class="ks-val">${krankEntries.length}</div><div class="ks-label">Krankmeldungen</div></div>`;
+    html += `<div class="ks-card"><div class="ks-val">${Object.keys(maStats).length}</div><div class="ks-label">Betroffene MA</div></div>`;
+    html += `<div class="ks-card"><div class="ks-val">${formatZahl(totalTage / Math.max(Object.keys(maStats).length, 1))}</div><div class="ks-label">Ø Tage/MA</div></div>`;
+    html += '</div>';
+
+    // Balkendiagramm pro MA
+    html += '<div style="margin-top:0.75rem">';
+    Object.entries(maStats).sort((a, b) => b[1].tage - a[1].tage).forEach(([ma, s]) => {
+        const pct = (s.tage / maxTage) * 100;
+        html += `<div class="stat-row"><span class="stat-row-label">${escapeHtml(ma)}</span><div class="stat-bar"><div class="stat-bar-fill" style="width:${pct}%;background:#e53e3e"></div></div><span class="stat-row-value">${s.tage} Tage (${s.eintraege}x)</span></div>`;
+    });
+    html += '</div>';
+
+    // Monatliche Verteilung
+    const monatVerteilung = {};
+    krankEntries.forEach(k => {
+        const m = k.von.substring(0, 7);
+        const von = new Date(k.von + 'T00:00:00');
+        const bis = new Date(k.bis + 'T00:00:00');
+        const diff = Math.ceil((bis - von) / (1000 * 60 * 60 * 24)) + 1;
+        monatVerteilung[m] = (monatVerteilung[m] || 0) + diff;
+    });
+
+    const sortedMonate = Object.keys(monatVerteilung).sort().slice(-6);
+    if (sortedMonate.length >= 2) {
+        const maxMon = Math.max(...sortedMonate.map(m => monatVerteilung[m]), 1);
+        html += '<div style="margin-top:0.75rem"><strong style="font-size:0.8rem">Monatliche Krankheitstage:</strong></div>';
+        html += '<div class="vfs-trend" style="margin-top:0.3rem">';
+        sortedMonate.forEach(m => {
+            const [j, mo] = m.split('-');
+            const pct = (monatVerteilung[m] / maxMon) * 100;
+            html += `<div class="vfs-trend-col"><div class="vfs-trend-bar" style="height:${pct}%;background:#e53e3e"></div><div class="vfs-trend-label">${MONATSNAMEN[parseInt(mo) - 1].substring(0, 3)}</div><div class="vfs-trend-val">${monatVerteilung[m]}</div></div>`;
+        });
+        html += '</div>';
+    }
+
+    el.innerHTML = html;
+}
+
+// =============================================
+// OBJEKT-KOSTENANALYSE
+// =============================================
+function renderObjektKostenanalyse() {
+    const el = document.getElementById('objektKostenContent');
+    if (!el) return;
+
+    const monatSel = document.getElementById('okAnalyseMonat');
+    const monat = monatSel ? monatSel.value : '';
+
+    let gefiltert = einsaetze.filter(e => e.status !== 'storniert');
+    if (monat) gefiltert = gefiltert.filter(e => e.datum.substring(0, 7) === monat);
+
+    if (gefiltert.length === 0) {
+        el.innerHTML = '<p style="color:#a0aec0">Keine Einsätze für diesen Zeitraum.</p>';
+        return;
+    }
+
+    // Gruppiere nach Objekt
+    const objMap = {};
+    gefiltert.forEach(e => {
+        if (!objMap[e.objekt]) objMap[e.objekt] = { stunden: 0, grundlohn: 0, zuschlaege: 0, gesamt: 0, einsaetze: 0, maSet: new Set() };
+        objMap[e.objekt].stunden += e.stunden;
+        objMap[e.objekt].grundlohn += e.grundlohn;
+        objMap[e.objekt].zuschlaege += e.zuschlagBetrag;
+        objMap[e.objekt].gesamt += e.gesamt;
+        objMap[e.objekt].einsaetze++;
+        if (e.mitarbeiter) objMap[e.objekt].maSet.add(e.mitarbeiter);
+    });
+
+    const totalGesamt = Object.values(objMap).reduce((s, o) => s + o.gesamt, 0);
+
+    let html = '<div class="oka-grid">';
+    Object.entries(objMap).sort((a, b) => b[1].gesamt - a[1].gesamt).forEach(([name, d]) => {
+        const anteil = totalGesamt > 0 ? (d.gesamt / totalGesamt * 100) : 0;
+        const kostenProStd = d.stunden > 0 ? d.gesamt / d.stunden : 0;
+
+        html += `<div class="oka-card">
+            <div class="oka-header"><strong>${escapeHtml(name)}</strong><span class="oka-anteil">${formatZahl(anteil)}%</span></div>
+            <div class="oka-bar" style="--anteil:${anteil}%"></div>
+            <div class="oka-stats">
+                <div class="oka-stat"><span>Einsätze</span><span>${d.einsaetze}</span></div>
+                <div class="oka-stat"><span>Stunden</span><span>${formatZahl(d.stunden)}</span></div>
+                <div class="oka-stat"><span>Grundlohn</span><span>${formatEuro(d.grundlohn)}</span></div>
+                <div class="oka-stat"><span>Zuschläge</span><span>${formatEuro(d.zuschlaege)}</span></div>
+                <div class="oka-stat"><span>Kosten/Std.</span><span>${formatEuro(kostenProStd)}</span></div>
+                <div class="oka-stat oka-total"><span>Gesamt</span><span>${formatEuro(d.gesamt)}</span></div>
+                <div class="oka-stat"><span>MA eingesetzt</span><span>${d.maSet.size}</span></div>
+            </div>
+        </div>`;
+    });
+    html += '</div>';
+
+    html += `<div class="oka-total-row"><strong>Gesamtkosten:</strong> ${formatEuro(totalGesamt)} | ${formatZahl(Object.values(objMap).reduce((s, o) => s + o.stunden, 0))} Stunden | ${gefiltert.length} Einsätze</div>`;
+
+    el.innerHTML = html;
+}
+
+function updateObjektKostenMonat() {
+    const sel = document.getElementById('okAnalyseMonat');
+    if (!sel) return;
+    const val = sel.value;
+    const monate = new Set();
+    einsaetze.forEach(e => monate.add(e.datum.substring(0, 7)));
+    sel.innerHTML = '<option value="">Alle Monate</option>';
+    [...monate].sort().reverse().forEach(m => {
+        const [j, mo] = m.split('-');
+        sel.innerHTML += `<option value="${m}" ${m === val ? 'selected' : ''}>${MONATSNAMEN[parseInt(mo) - 1]} ${j}</option>`;
+    });
+}
+
+// =============================================
+// EINSATZ-CHRONIK (Zeitstrahl)
+// =============================================
+function renderEinsatzChronik() {
+    const el = document.getElementById('chronikContent');
+    if (!el) return;
+
+    const anzahl = 20;
+    const sortiert = [...einsaetze].sort((a, b) => (b.datum + b.zeitVon).localeCompare(a.datum + a.zeitVon));
+    const letzteN = sortiert.slice(0, anzahl);
+
+    if (letzteN.length === 0) {
+        el.innerHTML = '<p style="color:#a0aec0">Keine Einsätze vorhanden.</p>';
+        return;
+    }
+
+    let html = '<div class="chronik-timeline">';
+    let letztesDatum = '';
+
+    letzteN.forEach(e => {
+        if (e.datum !== letztesDatum) {
+            letztesDatum = e.datum;
+            const d = new Date(e.datum + 'T12:00:00');
+            const wt = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'][d.getDay()];
+            html += `<div class="chronik-datum">${wt}, ${formatDatum(e.datum)}</div>`;
+        }
+
+        const statusCls = e.status ? 'status-' + e.status : '';
+        html += `<div class="chronik-eintrag">
+            <div class="chronik-zeit">${e.zeitVon}<br>${e.zeitBis}</div>
+            <div class="chronik-linie"></div>
+            <div class="chronik-inhalt ${statusCls}">
+                <div class="chronik-obj"><span class="obj-farbe" style="background:${getObjektFarbe(e.objekt)}"></span>${escapeHtml(e.objekt)}</div>
+                <div class="chronik-ma">${escapeHtml(e.mitarbeiter || 'Nicht zugewiesen')}</div>
+                <div class="chronik-detail">${formatZahl(e.stunden)} Std. | ${formatEuro(e.gesamt)}${e.pauseMinuten > 0 ? ' | Pause: ' + e.pauseMinuten + 'min' : ''}</div>
+            </div>
+        </div>`;
+    });
+
+    html += '</div>';
+    if (sortiert.length > anzahl) {
+        html += `<p style="color:#718096;font-size:0.75rem;margin-top:0.5rem">${sortiert.length - anzahl} weitere Einsätze...</p>`;
+    }
+
     el.innerHTML = html;
 }
 

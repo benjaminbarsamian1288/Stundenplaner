@@ -6288,3 +6288,237 @@ body.dark-mode .dup-info {
         max-width: 100%;
     }
 }
+
+/* =============================================
+   KRANKENSTATISTIK
+   ============================================= */
+.ks-summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+}
+
+.ks-card {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    padding: 0.5rem;
+    text-align: center;
+}
+
+body.dark-mode .ks-card {
+    background: #2d3748;
+    border-color: #4a5568;
+}
+
+.ks-val {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: #e53e3e;
+}
+
+body.dark-mode .ks-val {
+    color: #fc8181;
+}
+
+.ks-label {
+    font-size: 0.7rem;
+    color: #718096;
+}
+
+/* =============================================
+   OBJEKT-KOSTENANALYSE
+   ============================================= */
+.oka-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 0.75rem;
+}
+
+.oka-card {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 0.75rem;
+}
+
+body.dark-mode .oka-card {
+    background: #2d3748;
+    border-color: #4a5568;
+}
+
+.oka-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+.oka-anteil {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #3182ce;
+}
+
+body.dark-mode .oka-anteil {
+    color: #63b3ed;
+}
+
+.oka-bar {
+    height: 4px;
+    background: #edf2f7;
+    border-radius: 2px;
+    margin-bottom: 0.5rem;
+    position: relative;
+}
+
+.oka-bar::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 100%;
+    width: var(--anteil, 0);
+    background: #3182ce;
+    border-radius: 2px;
+}
+
+body.dark-mode .oka-bar {
+    background: #4a5568;
+}
+
+.oka-stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.15rem;
+}
+
+.oka-stat {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.75rem;
+    padding: 0.1rem 0;
+}
+
+.oka-total {
+    font-weight: 700;
+    border-top: 1px solid #e2e8f0;
+    padding-top: 0.3rem;
+    margin-top: 0.2rem;
+    grid-column: 1 / -1;
+}
+
+body.dark-mode .oka-total {
+    border-top-color: #4a5568;
+}
+
+.oka-total-row {
+    margin-top: 0.75rem;
+    padding: 0.5rem 0.75rem;
+    background: #edf2f7;
+    border-radius: 6px;
+    font-size: 0.8rem;
+}
+
+body.dark-mode .oka-total-row {
+    background: #2d3748;
+}
+
+/* =============================================
+   EINSATZ-CHRONIK (Zeitstrahl)
+   ============================================= */
+.chronik-timeline {
+    position: relative;
+    padding-left: 1rem;
+}
+
+.chronik-datum {
+    font-weight: 700;
+    font-size: 0.8rem;
+    padding: 0.5rem 0 0.3rem;
+    color: #2d3748;
+    border-bottom: 1px solid #e2e8f0;
+    margin-bottom: 0.4rem;
+}
+
+body.dark-mode .chronik-datum {
+    color: #e2e8f0;
+    border-bottom-color: #4a5568;
+}
+
+.chronik-eintrag {
+    display: flex;
+    gap: 0.5rem;
+    padding: 0.3rem 0;
+    align-items: stretch;
+}
+
+.chronik-zeit {
+    font-size: 0.7rem;
+    color: #718096;
+    min-width: 40px;
+    text-align: right;
+    line-height: 1.3;
+}
+
+body.dark-mode .chronik-zeit {
+    color: #a0aec0;
+}
+
+.chronik-linie {
+    width: 3px;
+    background: #3182ce;
+    border-radius: 1.5px;
+    flex-shrink: 0;
+}
+
+.chronik-inhalt {
+    flex: 1;
+    padding: 0.3rem 0.5rem;
+    background: #f7fafc;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    border-left: 2px solid #3182ce;
+}
+
+body.dark-mode .chronik-inhalt {
+    background: #2d3748;
+    border-left-color: #63b3ed;
+}
+
+.chronik-inhalt.status-storniert {
+    opacity: 0.5;
+    border-left-color: #e53e3e;
+}
+
+.chronik-obj {
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+}
+
+.chronik-ma {
+    color: #718096;
+}
+
+body.dark-mode .chronik-ma {
+    color: #a0aec0;
+}
+
+.chronik-detail {
+    font-size: 0.7rem;
+    color: #a0aec0;
+    margin-top: 0.15rem;
+}
+
+@media (max-width: 768px) {
+    .oka-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .ks-summary {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}

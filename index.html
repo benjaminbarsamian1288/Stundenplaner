@@ -319,6 +319,7 @@
                         <button class="btn-secondary btn-small" onclick="ladeWochenvorlage()">KW laden</button>
                         <button class="btn-secondary btn-small" onclick="kopiereKW()">KW kopieren</button>
                         <button class="btn-secondary btn-small" onclick="druckeDienstplan()">Drucken</button>
+                        <button class="btn-secondary btn-small" onclick="druckeSchichtplan()">Schichtplan</button>
                         <button class="btn-secondary" onclick="dienstplanNav(1)">&rarr;</button>
                     </div>
                 </div>
@@ -502,6 +503,13 @@
                     <div class="detail-card full-width">
                         <h3>Monatsziel-Fortschritt</h3>
                         <div id="fortschrittContent"></div>
+                    </div>
+                </div>
+
+                <div class="dashboard-details" style="margin-top:1rem">
+                    <div class="detail-card full-width">
+                        <h3>Einsatz-Chronik (letzte 20)</h3>
+                        <div id="chronikContent"></div>
                     </div>
                 </div>
             </section>
@@ -763,6 +771,18 @@
                     </div>
                 </div>
                 <div id="objektAnweisungenContent" style="margin-top:0.5rem"></div>
+            </section>
+
+            <section class="form-section">
+                <div class="list-header">
+                    <h2>Objekt-Kostenanalyse</h2>
+                    <div class="list-actions">
+                        <select id="okAnalyseMonat" onchange="renderObjektKostenanalyse()">
+                            <option value="">Alle Monate</option>
+                        </select>
+                    </div>
+                </div>
+                <div id="objektKostenContent"></div>
             </section>
         </div>
         <!-- TAB: Mitarbeiter -->
@@ -1040,6 +1060,13 @@
                     <h2>MA-Leistungs&uuml;bersicht</h2>
                 </div>
                 <div id="maLeistungContent"></div>
+            </section>
+
+            <section class="form-section">
+                <div class="list-header">
+                    <h2>Krankenstatistik</h2>
+                </div>
+                <div id="krankenStatsContent"></div>
             </section>
 
             <section class="form-section">
