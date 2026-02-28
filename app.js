@@ -7,6 +7,11 @@ let einsaetze = JSON.parse(localStorage.getItem('bbprotect_einsaetze') || '[]');
 let objekte = JSON.parse(localStorage.getItem('bbprotect_objekte') || '[]');
 let vorlagen = JSON.parse(localStorage.getItem('bbprotect_vorlagen') || '[]');
 let mitarbeiterListe_ = JSON.parse(localStorage.getItem('bbprotect_mitarbeiter') || '[]');
+let verfuegbarkeit = JSON.parse(localStorage.getItem('bbprotect_verfuegbarkeit') || '[]');
+
+// Sortierung
+let sortSpalte = 'datum';
+let sortRichtung = 1; // 1 = aufsteigend, -1 = absteigend
 
 // Kalender-State
 let kalenderJahr = new Date().getFullYear();
@@ -390,6 +395,16 @@ function detailItem(label, value) {
 // =============================================
 // EINSATZ-TABELLE
 // =============================================
+function sortiereNach(spalte) {
+    if (sortSpalte === spalte) {
+        sortRichtung *= -1;
+    } else {
+        sortSpalte = spalte;
+        sortRichtung = 1;
+    }
+    renderTabelle();
+}
+
 function renderTabelle() {
     const filterM = filterMonat.value;
     const filterO = filterObjekt.value;
@@ -398,7 +413,19 @@ function renderTabelle() {
     if (filterM) gefiltert = gefiltert.filter(e => e.datum.substring(0, 7) === filterM);
     if (filterO) gefiltert = gefiltert.filter(e => e.objekt === filterO);
 
-    gefiltert.sort((a, b) => a.datum.localeCompare(b.datum) || a.zeitVon.localeCompare(b.zeitVon));
+    // Sortierung
+    gefiltert.sort((a, b) => {
+        let cmp = 0;
+        switch (sortSpalte) {
+            case 'datum': cmp = a.datum.localeCompare(b.datum) || a.zeitVon.localeCompare(b.zeitVon); break;
+            case 'objekt': cmp = a.objekt.localeCompare(b.objekt); break;
+            case 'mitarbeiter': cmp = (a.mitarbeiter || '').localeCompare(b.mitarbeiter || ''); break;
+            case 'stunden': cmp = a.stunden - b.stunden; break;
+            case 'gesamt': cmp = a.gesamt - b.gesamt; break;
+            default: cmp = a.datum.localeCompare(b.datum);
+        }
+        return cmp * sortRichtung;
+    });
 
     einsatzBody.innerHTML = '';
 
@@ -626,7 +653,12 @@ function renderKalender() {
     const grid = document.getElementById('kalenderGrid');
     grid.innerHTML = '';
 
-    // Wochentag-Header
+    // Wochentag-Header (KW + Mo-So)
+    const kwHeader = document.createElement('div');
+    kwHeader.className = 'kalender-header-cell kw-header';
+    kwHeader.textContent = 'KW';
+    grid.appendChild(kwHeader);
+
     ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'].forEach(tag => {
         const cell = document.createElement('div');
         cell.className = 'kalender-header-cell';
@@ -645,12 +677,21 @@ function renderKalender() {
     // Einsätze für diesen Monat
     const monatsEinsaetze = einsaetze.filter(e => e.datum.substring(0, 7) === monatsStr);
 
+    // KW-Zelle für erste Zeile
+    const kw1Datum = new Date(kalenderJahr, kalenderMonat, 1);
+    const kwCell1 = document.createElement('div');
+    kwCell1.className = 'kalender-kw-cell';
+    kwCell1.textContent = 'KW ' + getKalenderWoche(kw1Datum);
+    grid.appendChild(kwCell1);
+
     // Leere Zellen vor dem 1.
     for (let i = 0; i < startWochentag; i++) {
         const cell = document.createElement('div');
         cell.className = 'kalender-cell empty';
         grid.appendChild(cell);
     }
+
+    let posInWoche = startWochentag;
 
     // Tage
     for (let tag = 1; tag <= tageImMonat; tag++) {
@@ -704,6 +745,17 @@ function renderKalender() {
         }
 
         grid.appendChild(cell);
+        posInWoche++;
+
+        // Neue Zeile: KW-Zelle einfügen
+        if (posInWoche === 7 && tag < tageImMonat) {
+            posInWoche = 0;
+            const nextDate = new Date(kalenderJahr, kalenderMonat, tag + 1);
+            const kwCell = document.createElement('div');
+            kwCell.className = 'kalender-kw-cell';
+            kwCell.textContent = 'KW ' + getKalenderWoche(nextDate);
+            grid.appendChild(kwCell);
+        }
     }
 }
 
@@ -1287,12 +1339,13 @@ function loescheMitarbeiter(index) {
 // =============================================
 function erstelleBackup() {
     const backup = {
-        version: 2,
+        version: 3,
         datum: new Date().toISOString(),
         einsaetze,
         objekte,
         vorlagen,
-        mitarbeiter: mitarbeiterListe_
+        mitarbeiter: mitarbeiterListe_,
+        verfuegbarkeit
     };
 
     const json = JSON.stringify(backup, null, 2);
@@ -1321,11 +1374,13 @@ function stelleWiederHer(event) {
             objekte = data.objekte || [];
             vorlagen = data.vorlagen || [];
             mitarbeiterListe_ = data.mitarbeiter || [];
+            verfuegbarkeit = data.verfuegbarkeit || [];
 
             speichern();
             localStorage.setItem('bbprotect_objekte', JSON.stringify(objekte));
             localStorage.setItem('bbprotect_vorlagen', JSON.stringify(vorlagen));
             localStorage.setItem('bbprotect_mitarbeiter', JSON.stringify(mitarbeiterListe_));
+            localStorage.setItem('bbprotect_verfuegbarkeit', JSON.stringify(verfuegbarkeit));
 
             renderTabelle();
             updateAlleFilter();
@@ -1352,11 +1407,13 @@ function loescheAlleDaten() {
     objekte = [];
     vorlagen = [];
     mitarbeiterListe_ = [];
+    verfuegbarkeit = [];
 
     localStorage.removeItem('bbprotect_einsaetze');
     localStorage.removeItem('bbprotect_objekte');
     localStorage.removeItem('bbprotect_vorlagen');
     localStorage.removeItem('bbprotect_mitarbeiter');
+    localStorage.removeItem('bbprotect_verfuegbarkeit');
 
     renderTabelle();
     updateAlleFilter();
@@ -1387,10 +1444,115 @@ function updateDatenStats() {
 }
 
 // =============================================
+// HEADER-SCHNELLSTATISTIK
+// =============================================
+function updateHeaderStats() {
+    const el = document.getElementById('headerStats');
+    if (!el) return;
+
+    const heute = new Date().toISOString().split('T')[0];
+    const heuteEinsaetze = einsaetze.filter(e => e.datum === heute);
+    const heuteStd = heuteEinsaetze.reduce((s, e) => s + e.stunden, 0);
+
+    // Diese Woche (Mo-So)
+    const now = new Date();
+    const montag = new Date(now);
+    const tag = montag.getDay();
+    const diff = tag === 0 ? 6 : tag - 1;
+    montag.setDate(montag.getDate() - diff);
+    montag.setHours(0, 0, 0, 0);
+    const sonntag = new Date(montag);
+    sonntag.setDate(sonntag.getDate() + 6);
+
+    const montagStr = montag.toISOString().split('T')[0];
+    const sonntagStr = sonntag.toISOString().split('T')[0];
+    const wocheEinsaetze = einsaetze.filter(e => e.datum >= montagStr && e.datum <= sonntagStr);
+    const wocheStd = wocheEinsaetze.reduce((s, e) => s + e.stunden, 0);
+    const wocheUmsatz = wocheEinsaetze.reduce((s, e) => s + e.gesamt, 0);
+
+    // Abwesende heute
+    const heuteAbwesend = verfuegbarkeit.filter(v => v.von <= heute && v.bis >= heute);
+
+    el.innerHTML = `
+        <span class="hs-item">Heute: <strong>${heuteEinsaetze.length}</strong> Einsätze / <strong>${formatZahl(heuteStd)}</strong> Std.</span>
+        <span class="hs-divider">|</span>
+        <span class="hs-item">Woche: <strong>${wocheEinsaetze.length}</strong> Einsätze / <strong>${formatZahl(wocheStd)}</strong> Std. / <strong>${formatEuro(wocheUmsatz)}</strong></span>
+        ${heuteAbwesend.length > 0 ? '<span class="hs-divider">|</span><span class="hs-item hs-warn">Abwesend: <strong>' + heuteAbwesend.map(v => escapeHtml(v.mitarbeiter)).join(', ') + '</strong></span>' : ''}
+    `;
+}
+
+// =============================================
+// VERFÜGBARKEIT (URLAUB/KRANK)
+// =============================================
+function verfuegbarkeitSpeichern() {
+    const ma = document.getElementById('verfMa').value;
+    const typ = document.getElementById('verfTyp').value;
+    const von = document.getElementById('verfVon').value;
+    const bis = document.getElementById('verfBis').value;
+    const notiz = document.getElementById('verfNotiz').value.trim();
+
+    if (!ma || !von || !bis) { alert('Bitte Mitarbeiter, Von und Bis ausfüllen.'); return; }
+    if (bis < von) { alert('Bis-Datum muss nach Von-Datum liegen.'); return; }
+
+    verfuegbarkeit.push({ id: Date.now(), mitarbeiter: ma, typ, von, bis, notiz });
+    localStorage.setItem('bbprotect_verfuegbarkeit', JSON.stringify(verfuegbarkeit));
+    renderVerfuegbarkeit();
+    updateHeaderStats();
+
+    document.getElementById('verfNotiz').value = '';
+}
+
+function loescheVerfuegbarkeit(id) {
+    verfuegbarkeit = verfuegbarkeit.filter(v => v.id !== id);
+    localStorage.setItem('bbprotect_verfuegbarkeit', JSON.stringify(verfuegbarkeit));
+    renderVerfuegbarkeit();
+    updateHeaderStats();
+}
+
+function renderVerfuegbarkeit() {
+    const body = document.getElementById('verfBody');
+    const empty = document.getElementById('verfEmpty');
+    if (!body) return;
+
+    body.innerHTML = '';
+    const aktive = verfuegbarkeit.filter(v => v.bis >= new Date().toISOString().split('T')[0]);
+    aktive.sort((a, b) => a.von.localeCompare(b.von));
+
+    if (aktive.length === 0) { empty.style.display = 'block'; return; }
+    empty.style.display = 'none';
+
+    const typLabels = { urlaub: 'Urlaub', krank: 'Krank', frei: 'Frei', fortbildung: 'Fortbildung' };
+
+    aktive.forEach(v => {
+        const tr = document.createElement('tr');
+        const typCls = v.typ === 'krank' ? 'verf-krank' : v.typ === 'urlaub' ? 'verf-urlaub' : 'verf-frei';
+        tr.innerHTML = `
+            <td>${escapeHtml(v.mitarbeiter)}</td>
+            <td><span class="verf-badge ${typCls}">${escapeHtml(typLabels[v.typ] || v.typ)}</span></td>
+            <td>${formatDatum(v.von)}</td>
+            <td>${formatDatum(v.bis)}</td>
+            <td>${escapeHtml(v.notiz || '\u2014')}</td>
+            <td><button class="btn-delete" onclick="loescheVerfuegbarkeit(${v.id})">X</button></td>
+        `;
+        body.appendChild(tr);
+    });
+}
+
+// =============================================
 // KONFLIKTERKENNUNG
 // =============================================
 function pruefeKonflikt(neuerEinsatz, editId) {
     if (!neuerEinsatz.mitarbeiter) return null;
+
+    // Verfügbarkeit prüfen
+    const abwesend = verfuegbarkeit.find(v =>
+        v.mitarbeiter === neuerEinsatz.mitarbeiter &&
+        v.von <= neuerEinsatz.datum && v.bis >= neuerEinsatz.datum
+    );
+    if (abwesend) {
+        const typLabels = { urlaub: 'Urlaub', krank: 'Krank', frei: 'Frei', fortbildung: 'Fortbildung' };
+        return `ABWESEND: ${neuerEinsatz.mitarbeiter} ist am ${formatDatum(neuerEinsatz.datum)} als "${typLabels[abwesend.typ] || abwesend.typ}" eingetragen.`;
+    }
 
     const [nvh, nvm] = neuerEinsatz.zeitVon.split(':').map(Number);
     const [nbh, nbm] = neuerEinsatz.zeitBis.split(':').map(Number);
@@ -1526,3 +1688,5 @@ updateDataLists();
 renderObjekte();
 renderVorlagen();
 renderMitarbeiter();
+renderVerfuegbarkeit();
+updateHeaderStats();

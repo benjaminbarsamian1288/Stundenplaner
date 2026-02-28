@@ -71,6 +71,76 @@ header .subtitle {
     display: block;
 }
 
+/* Header Stats */
+.header-stats {
+    background: #16213e;
+    color: #a0aec0;
+    padding: 0.4rem 2rem;
+    font-size: 0.8rem;
+    display: flex;
+    gap: 0.3rem;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.hs-item strong {
+    color: #fff;
+}
+
+.hs-divider {
+    color: #4a5568;
+    margin: 0 0.3rem;
+}
+
+.hs-warn {
+    color: #fc8181;
+}
+
+.hs-warn strong {
+    color: #fc8181;
+}
+
+/* Sortierbare Spalten */
+.sortierbar {
+    cursor: pointer;
+    user-select: none;
+    position: relative;
+}
+
+.sortierbar:hover {
+    background: #2d3748;
+}
+
+.sortierbar::after {
+    content: ' \u21C5';
+    font-size: 0.7rem;
+    opacity: 0.5;
+}
+
+/* Verfügbarkeit */
+.verf-badge {
+    display: inline-block;
+    padding: 0.15rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.verf-urlaub {
+    background: #ebf8ff;
+    color: #2b6cb0;
+}
+
+.verf-krank {
+    background: #fff5f5;
+    color: #c53030;
+}
+
+.verf-frei {
+    background: #f0fff4;
+    color: #276749;
+}
+
 main {
     max-width: 1100px;
     margin: 2rem auto;
@@ -801,8 +871,24 @@ tbody tr:hover {
 
 .kalender-grid {
     display: grid;
-    grid-template-columns: repeat(7, 1fr);
+    grid-template-columns: 40px repeat(7, 1fr);
     gap: 2px;
+}
+
+.kalender-kw-cell {
+    background: #edf2f7;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.65rem;
+    font-weight: 700;
+    color: #718096;
+    border-radius: 4px;
+    writing-mode: horizontal-tb;
+}
+
+.kw-header {
+    font-size: 0.65rem;
 }
 
 .kalender-header-cell {
@@ -1462,6 +1548,40 @@ body.dark-mode h2, body.dark-mode h3 {
     color: #c9d1d9;
 }
 
+body.dark-mode .header-stats {
+    background: #161b22;
+    color: #484f58;
+    border-bottom: 1px solid #21262d;
+}
+
+body.dark-mode .header-stats .hs-item strong {
+    color: #c9d1d9;
+}
+
+body.dark-mode .kalender-kw-cell {
+    background: #21262d;
+    color: #484f58;
+}
+
+body.dark-mode .sortierbar:hover {
+    background: #30363d;
+}
+
+body.dark-mode .verf-urlaub {
+    background: #0d2137;
+    color: #388bfd;
+}
+
+body.dark-mode .verf-krank {
+    background: #200d0d;
+    color: #f85149;
+}
+
+body.dark-mode .verf-frei {
+    background: #0d200d;
+    color: #3fb950;
+}
+
 footer {
     text-align: center;
     padding: 2rem 1rem;
@@ -1517,9 +1637,31 @@ footer {
         grid-template-columns: 1fr;
     }
 
+    .kalender-grid {
+        grid-template-columns: 28px repeat(7, 1fr);
+    }
+
+    .kalender-kw-cell {
+        font-size: 0.55rem;
+    }
+
     .kalender-cell {
         min-height: 60px;
         font-size: 0.7rem;
+    }
+
+    .header-stats {
+        padding: 0.3rem 1rem;
+        font-size: 0.7rem;
+    }
+
+    .hs-divider {
+        display: none;
+    }
+
+    .header-stats {
+        flex-direction: column;
+        gap: 0.1rem;
     }
 
     .kalender-einsatz {
