@@ -1309,6 +1309,311 @@ tbody tr:hover {
     text-align: center;
 }
 
+/* Vertragsverwaltung */
+.vertrag-details {
+    background: #f7fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 0.75rem;
+    margin-top: 0.75rem;
+}
+
+.vertrag-details summary {
+    cursor: pointer;
+    font-weight: 600;
+    color: #1a1a2e;
+    font-size: 0.9rem;
+}
+
+.vertraege-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 0.75rem;
+}
+
+.vertrag-card {
+    background: #f7fafc;
+    border-radius: 8px;
+    padding: 0.75rem;
+    border: 1px solid #e2e8f0;
+}
+
+.vertrag-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.4rem;
+}
+
+.vertrag-card-header strong {
+    font-size: 0.95rem;
+}
+
+.vertrag-status-badge {
+    display: inline-block;
+    padding: 0.1rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    font-weight: 700;
+}
+
+.vertrag-status-badge.vs-aktiv {
+    background: #f0fff4;
+    color: #276749;
+}
+
+.vertrag-status-badge.vs-auslaufend {
+    background: #fffff0;
+    color: #d69e2e;
+}
+
+.vertrag-status-badge.vs-gekuendigt {
+    background: #fff5f5;
+    color: #c53030;
+}
+
+.vertrag-status-badge.vs-ruhend {
+    background: #f7fafc;
+    color: #718096;
+}
+
+.vertrag-detail {
+    font-size: 0.8rem;
+    color: #718096;
+    margin-bottom: 0.15rem;
+}
+
+.vertrag-detail span {
+    font-weight: 600;
+    color: #4a5568;
+}
+
+.vertrag-warn {
+    display: inline-block;
+    padding: 0.05rem 0.3rem;
+    border-radius: 3px;
+    font-size: 0.65rem;
+    font-weight: 700;
+}
+
+.vertrag-warn.abgelaufen {
+    background: #fff5f5;
+    color: #c53030;
+}
+
+.vertrag-warn.bald {
+    background: #fffff0;
+    color: #d69e2e;
+}
+
+.vertrag-stunden {
+    margin-top: 0.4rem;
+}
+
+.vertrag-std-bar-bg {
+    background: #e2e8f0;
+    border-radius: 4px;
+    height: 6px;
+    margin-bottom: 0.2rem;
+}
+
+.vertrag-std-bar {
+    background: linear-gradient(90deg, #38a169, #48bb78);
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.3s;
+}
+
+.vertrag-stunden span {
+    font-size: 0.75rem;
+    color: #718096;
+}
+
+/* Mitarbeiter-Dokumente */
+.dok-ma-gruppe {
+    margin-bottom: 0.75rem;
+}
+
+.dok-ma-name {
+    font-weight: 700;
+    font-size: 0.9rem;
+    margin-bottom: 0.3rem;
+    padding-bottom: 0.2rem;
+    border-bottom: 2px solid #e2e8f0;
+}
+
+.dok-liste {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+}
+
+.dok-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.4rem 0.6rem;
+    border-radius: 6px;
+    background: #f7fafc;
+    border-left: 3px solid #38a169;
+}
+
+.dok-item.dok-abgelaufen {
+    border-left-color: #c53030;
+    background: #fff5f5;
+}
+
+.dok-item.dok-bald {
+    border-left-color: #d69e2e;
+    background: #fffff0;
+}
+
+.dok-item-info {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+    flex-wrap: wrap;
+    font-size: 0.8rem;
+}
+
+.dok-typ {
+    font-weight: 600;
+    color: #1a1a2e;
+}
+
+.dok-datum {
+    color: #718096;
+}
+
+.dok-status {
+    font-weight: 700;
+    font-size: 0.7rem;
+    padding: 0.1rem 0.3rem;
+    border-radius: 3px;
+}
+
+.dok-status.dok-abgelaufen {
+    background: #c53030;
+    color: #fff;
+}
+
+.dok-status.dok-bald {
+    background: #d69e2e;
+    color: #fff;
+}
+
+.dok-notiz {
+    color: #a0aec0;
+    font-style: italic;
+}
+
+/* MA-Leistungsübersicht */
+.ma-leistung-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+
+.mal-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.3rem 0;
+    border-bottom: 1px solid #f0f2f5;
+}
+
+.mal-rang {
+    width: 30px;
+    text-align: center;
+    flex-shrink: 0;
+}
+
+.rang-badge {
+    display: inline-block;
+    width: 22px;
+    height: 22px;
+    line-height: 22px;
+    border-radius: 50%;
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-align: center;
+}
+
+.rang-badge.rang-1 {
+    background: #ecc94b;
+    color: #1a1a2e;
+}
+
+.rang-badge.rang-2 {
+    background: #a0aec0;
+    color: #1a1a2e;
+}
+
+.rang-badge.rang-3 {
+    background: #c17a3e;
+    color: #fff;
+}
+
+.mal-name {
+    width: 130px;
+    font-weight: 600;
+    font-size: 0.85rem;
+    flex-shrink: 0;
+}
+
+.mal-bar-bg {
+    flex: 1;
+    height: 8px;
+    background: #e2e8f0;
+    border-radius: 4px;
+    min-width: 60px;
+}
+
+.mal-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #1a1a2e, #2d3748);
+    border-radius: 4px;
+    transition: width 0.3s;
+}
+
+.mal-stats {
+    display: flex;
+    gap: 0.6rem;
+    font-size: 0.75rem;
+    color: #718096;
+    flex-wrap: wrap;
+    flex-shrink: 0;
+}
+
+.mal-stats strong {
+    color: #1a1a2e;
+}
+
+/* Dienstplan Schnellerfassung */
+.dp-klickbar {
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.dp-klickbar:hover {
+    background: #f0fff4 !important;
+}
+
+.dp-plus {
+    display: block;
+    text-align: center;
+    font-size: 1rem;
+    color: #a0aec0;
+    font-weight: 700;
+    cursor: pointer;
+    line-height: 30px;
+    transition: color 0.15s;
+}
+
+.dp-plus:hover {
+    color: #38a169;
+}
+
 /* =============================================
    DARK MODE
    ============================================= */
@@ -2686,6 +2991,101 @@ body.dark-mode .wb-text {
     color: #c9d1d9;
 }
 
+body.dark-mode .vertrag-details {
+    background: #0d1117;
+    border-color: #30363d;
+}
+
+body.dark-mode .vertrag-details summary {
+    color: #c9d1d9;
+}
+
+body.dark-mode .vertrag-card {
+    background: #0d1117;
+    border-color: #21262d;
+}
+
+body.dark-mode .vertrag-card-header strong {
+    color: #c9d1d9;
+}
+
+body.dark-mode .vertrag-status-badge.vs-aktiv {
+    background: #0d200d;
+    color: #3fb950;
+}
+
+body.dark-mode .vertrag-status-badge.vs-auslaufend {
+    background: #1c1a0d;
+    color: #d29922;
+}
+
+body.dark-mode .vertrag-status-badge.vs-gekuendigt {
+    background: #200d0d;
+    color: #f85149;
+}
+
+body.dark-mode .vertrag-status-badge.vs-ruhend {
+    background: #21262d;
+    color: #8b949e;
+}
+
+body.dark-mode .vertrag-std-bar-bg {
+    background: #21262d;
+}
+
+body.dark-mode .dok-ma-name {
+    color: #c9d1d9;
+    border-bottom-color: #30363d;
+}
+
+body.dark-mode .dok-item {
+    background: #0d1117;
+}
+
+body.dark-mode .dok-item.dok-abgelaufen {
+    background: #200d0d;
+}
+
+body.dark-mode .dok-item.dok-bald {
+    background: #1c1a0d;
+}
+
+body.dark-mode .dok-typ {
+    color: #c9d1d9;
+}
+
+body.dark-mode .mal-bar-bg {
+    background: #21262d;
+}
+
+body.dark-mode .mal-bar {
+    background: linear-gradient(90deg, #1f6feb, #388bfd);
+}
+
+body.dark-mode .mal-name {
+    color: #c9d1d9;
+}
+
+body.dark-mode .mal-stats strong {
+    color: #c9d1d9;
+}
+
+body.dark-mode .mal-row {
+    border-bottom-color: #21262d;
+}
+
+body.dark-mode .dp-klickbar:hover {
+    background: #0d200d !important;
+}
+
+body.dark-mode .dp-plus {
+    color: #484f58;
+}
+
+body.dark-mode .dp-plus:hover {
+    color: #3fb950;
+}
+
 footer {
     text-align: center;
     padding: 2rem 1rem;
@@ -2843,5 +3243,27 @@ footer {
         flex-direction: column;
         align-items: flex-start;
         gap: 0.3rem;
+    }
+
+    .vertraege-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .mal-row {
+        flex-wrap: wrap;
+    }
+
+    .mal-name {
+        width: 100%;
+    }
+
+    .mal-stats {
+        width: 100%;
+    }
+
+    .dok-item-info {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.15rem;
     }
 }

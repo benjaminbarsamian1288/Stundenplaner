@@ -267,7 +267,10 @@
                 <div class="dienstplan-header">
                     <button class="btn-secondary" onclick="dienstplanNav(-1)">&larr;</button>
                     <h2 id="dienstplanTitel">KW 9 / 2026</h2>
-                    <button class="btn-secondary" onclick="dienstplanNav(1)">&rarr;</button>
+                    <div>
+                        <button class="btn-secondary btn-small" onclick="druckeDienstplan()">Drucken</button>
+                        <button class="btn-secondary" onclick="dienstplanNav(1)">&rarr;</button>
+                    </div>
                 </div>
                 <div class="dienstplan-grid" id="dienstplanGrid"></div>
             </section>
@@ -374,6 +377,13 @@
                         <div id="monatsVergleich"></div>
                     </div>
                 </div>
+
+                <div class="dashboard-details">
+                    <div class="detail-card full-width">
+                        <h3>Mitarbeiter-Leistungs&uuml;bersicht</h3>
+                        <div id="maLeistung"></div>
+                    </div>
+                </div>
             </section>
         </div>
 
@@ -402,7 +412,46 @@
                             <input type="text" id="objektAnsprechpartner" placeholder="Name / Telefon">
                         </div>
                     </div>
-                    <button type="submit" class="btn-primary">Objekt speichern</button>
+                    <details class="vertrag-details">
+                        <summary>Vertragsdaten (optional)</summary>
+                        <div class="form-row" style="margin-top:0.75rem">
+                            <div class="form-group">
+                                <label for="objektVertragNr">Vertragsnummer</label>
+                                <input type="text" id="objektVertragNr" placeholder="z.B. V-2026-001">
+                            </div>
+                            <div class="form-group">
+                                <label for="objektAuftraggeber">Auftraggeber</label>
+                                <input type="text" id="objektAuftraggeber" placeholder="Firmenname">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="objektVertragStart">Vertragsbeginn</label>
+                                <input type="date" id="objektVertragStart">
+                            </div>
+                            <div class="form-group">
+                                <label for="objektVertragEnde">Vertragsende</label>
+                                <input type="date" id="objektVertragEnde">
+                            </div>
+                            <div class="form-group">
+                                <label for="objektMonatsstunden">Monatsstunden (Soll)</label>
+                                <input type="number" id="objektMonatsstunden" step="1" min="0" placeholder="z.B. 240">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="objektVertragStatus">Vertragsstatus</label>
+                                <select id="objektVertragStatus">
+                                    <option value="">Kein Vertrag</option>
+                                    <option value="aktiv">Aktiv</option>
+                                    <option value="auslaufend">Auslaufend</option>
+                                    <option value="gekuendigt">Gek&uuml;ndigt</option>
+                                    <option value="ruhend">Ruhend</option>
+                                </select>
+                            </div>
+                        </div>
+                    </details>
+                    <button type="submit" class="btn-primary" style="margin-top:0.75rem">Objekt speichern</button>
                 </form>
             </section>
 
@@ -423,6 +472,14 @@
                     </table>
                 </div>
                 <p class="empty-message" id="objekteEmpty">Noch keine Objekte gespeichert.</p>
+            </section>
+
+            <section class="form-section">
+                <div class="list-header">
+                    <h2>Vertrags&uuml;bersicht</h2>
+                </div>
+                <div id="vertraegeContent"></div>
+                <p class="empty-message" id="vertraegeEmpty">Keine Objekte mit Vertragsdaten vorhanden.</p>
             </section>
 
             <section class="form-section">
@@ -606,6 +663,48 @@
                     </table>
                 </div>
                 <p class="empty-message" id="verfEmpty">Keine Abwesenheiten eingetragen.</p>
+            </section>
+
+            <section class="form-section">
+                <div class="list-header">
+                    <h2>Mitarbeiter-Dokumente</h2>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="dokMa">Mitarbeiter</label>
+                        <input type="text" id="dokMa" list="mitarbeiterListe" placeholder="Name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="dokTyp">Dokumenttyp</label>
+                        <select id="dokTyp">
+                            <option value="fuehrungszeugnis">F&uuml;hrungszeugnis</option>
+                            <option value="erstehilfe">Erste-Hilfe-Kurs</option>
+                            <option value="brandschutz">Brandschutzhelfer</option>
+                            <option value="datenschutz">Datenschutzunterweisung</option>
+                            <option value="arbeitssicherheit">Arbeitssicherheit</option>
+                            <option value="waffensachkunde">Waffensachkunde</option>
+                            <option value="fahrerlaubnis">Fahrerlaubnis</option>
+                            <option value="sonstiges">Sonstiges Dokument</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="dokAusgestellt">Ausgestellt am</label>
+                        <input type="date" id="dokAusgestellt">
+                    </div>
+                    <div class="form-group">
+                        <label for="dokGueltigBis">G&uuml;ltig bis</label>
+                        <input type="date" id="dokGueltigBis">
+                    </div>
+                    <div class="form-group">
+                        <label for="dokNotiz">Notiz</label>
+                        <input type="text" id="dokNotiz" placeholder="z.B. Nr., Aussteller">
+                    </div>
+                </div>
+                <button type="button" class="btn-primary" onclick="dokumentSpeichern()">Dokument eintragen</button>
+                <div id="dokumenteContent" style="margin-top:1rem"></div>
+                <p class="empty-message" id="dokumenteEmpty">Keine Dokumente eingetragen.</p>
             </section>
 
             <section class="form-section">

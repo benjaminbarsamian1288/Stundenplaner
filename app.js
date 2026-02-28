@@ -10,6 +10,7 @@ let mitarbeiterListe_ = JSON.parse(localStorage.getItem('bbprotect_mitarbeiter')
 let verfuegbarkeit = JSON.parse(localStorage.getItem('bbprotect_verfuegbarkeit') || '[]');
 let vorfaelle = JSON.parse(localStorage.getItem('bbprotect_vorfaelle') || '[]');
 let wachbuch = JSON.parse(localStorage.getItem('bbprotect_wachbuch') || '[]');
+let dokumente = JSON.parse(localStorage.getItem('bbprotect_dokumente') || '[]');
 
 // Jahresübersicht-State
 let jahresJahr = new Date().getFullYear();
@@ -67,10 +68,10 @@ document.querySelectorAll('.nav-btn').forEach(btn => {
         document.getElementById('tab-' + this.dataset.tab).classList.add('active');
 
         if (this.dataset.tab === 'dashboard') updateDashboard();
-        if (this.dataset.tab === 'objekte') { renderObjekte(); renderObjektAuslastung(); }
+        if (this.dataset.tab === 'objekte') { renderObjekte(); renderVertraege(); renderObjektAuslastung(); }
         if (this.dataset.tab === 'kalender') { renderKalender(); renderDienstplan(); renderJahresuebersicht(); }
         if (this.dataset.tab === 'abrechnung') updateAbrechnung();
-        if (this.dataset.tab === 'mitarbeiter') { renderMitarbeiter(); renderUeberstunden(); renderKontaktliste(); }
+        if (this.dataset.tab === 'mitarbeiter') { renderMitarbeiter(); renderDokumente(); renderUeberstunden(); renderKontaktliste(); }
         if (this.dataset.tab === 'vorfaelle') renderVorfaelle();
         if (this.dataset.tab === 'wachbuch') renderWachbuch();
         if (this.dataset.tab === 'einstellungen') updateDatenStats();
@@ -1004,6 +1005,9 @@ function updateDashboard() {
 
     // Monatsvergleich
     renderMonatsVergleich(filterM);
+
+    // MA-Leistungsübersicht
+    renderMALeistung(filterM);
 }
 
 function renderMonatsVergleich(aktuellerMonat) {
@@ -1063,6 +1067,7 @@ function renderMonatsVergleich(aktuellerMonat) {
     html += '</div>';
 
     el.innerHTML = html;
+}
 
 function renderBarStats(elementId, daten, keyFn) {
     const map = {};
@@ -1095,15 +1100,22 @@ document.getElementById('objektForm').addEventListener('submit', function (e) {
     const adresse = document.getElementById('objektAdresse').value.trim();
     const stundensatz = parseFloat(document.getElementById('objektStundensatz').value) || 0;
     const ansprechpartner = document.getElementById('objektAnsprechpartner').value.trim();
+    const vertragNr = document.getElementById('objektVertragNr').value.trim();
+    const auftraggeber = document.getElementById('objektAuftraggeber').value.trim();
+    const vertragStart = document.getElementById('objektVertragStart').value;
+    const vertragEnde = document.getElementById('objektVertragEnde').value;
+    const monatsstunden = parseFloat(document.getElementById('objektMonatsstunden').value) || 0;
+    const vertragStatus = document.getElementById('objektVertragStatus').value;
 
     if (!name) return;
 
     const idx = objekte.findIndex(o => o.name === name);
-    const obj = { name, adresse, stundensatz, ansprechpartner };
+    const obj = { name, adresse, stundensatz, ansprechpartner, vertragNr, auftraggeber, vertragStart, vertragEnde, monatsstunden, vertragStatus };
     if (idx !== -1) objekte[idx] = obj; else objekte.push(obj);
 
     localStorage.setItem('bbprotect_objekte', JSON.stringify(objekte));
     renderObjekte();
+    renderVertraege();
     updateDataLists();
     this.reset();
 });
@@ -1118,8 +1130,14 @@ function renderObjekte() {
 
     objekte.forEach((o, i) => {
         const tr = document.createElement('tr');
+        let vertragInfo = '';
+        if (o.vertragStatus) {
+            const cls = 'vs-' + o.vertragStatus;
+            vertragInfo = `<br><span class="vertrag-status-badge ${cls}">${escapeHtml(VERTRAG_STATUS[o.vertragStatus] || o.vertragStatus)}</span>`;
+            if (o.vertragNr) vertragInfo += ` <small>${escapeHtml(o.vertragNr)}</small>`;
+        }
         tr.innerHTML = `
-            <td>${escapeHtml(o.name)}</td>
+            <td>${escapeHtml(o.name)}${vertragInfo}</td>
             <td>${escapeHtml(o.adresse || '\u2014')}</td>
             <td>${o.stundensatz ? formatEuro(o.stundensatz) + '/Std.' : '\u2014'}</td>
             <td>${escapeHtml(o.ansprechpartner || '\u2014')}</td>
@@ -1461,7 +1479,7 @@ function loescheMitarbeiter(index) {
 // =============================================
 function erstelleBackup() {
     const backup = {
-        version: 5,
+        version: 6,
         datum: new Date().toISOString(),
         einsaetze,
         objekte,
@@ -1469,7 +1487,8 @@ function erstelleBackup() {
         mitarbeiter: mitarbeiterListe_,
         verfuegbarkeit,
         vorfaelle,
-        wachbuch
+        wachbuch,
+        dokumente
     };
 
     const json = JSON.stringify(backup, null, 2);
@@ -1501,6 +1520,7 @@ function stelleWiederHer(event) {
             verfuegbarkeit = data.verfuegbarkeit || [];
             vorfaelle = data.vorfaelle || [];
             wachbuch = data.wachbuch || [];
+            dokumente = data.dokumente || [];
 
             speichern();
             localStorage.setItem('bbprotect_objekte', JSON.stringify(objekte));
@@ -1509,6 +1529,7 @@ function stelleWiederHer(event) {
             localStorage.setItem('bbprotect_verfuegbarkeit', JSON.stringify(verfuegbarkeit));
             localStorage.setItem('bbprotect_vorfaelle', JSON.stringify(vorfaelle));
             localStorage.setItem('bbprotect_wachbuch', JSON.stringify(wachbuch));
+            localStorage.setItem('bbprotect_dokumente', JSON.stringify(dokumente));
 
             renderTabelle();
             updateAlleFilter();
@@ -1538,6 +1559,7 @@ function loescheAlleDaten() {
     verfuegbarkeit = [];
     vorfaelle = [];
     wachbuch = [];
+    dokumente = [];
 
     localStorage.removeItem('bbprotect_einsaetze');
     localStorage.removeItem('bbprotect_objekte');
@@ -1546,6 +1568,7 @@ function loescheAlleDaten() {
     localStorage.removeItem('bbprotect_verfuegbarkeit');
     localStorage.removeItem('bbprotect_vorfaelle');
     localStorage.removeItem('bbprotect_wachbuch');
+    localStorage.removeItem('bbprotect_dokumente');
 
     renderTabelle();
     updateAlleFilter();
@@ -1571,6 +1594,7 @@ function updateDatenStats() {
             <div class="daten-stat"><strong>${vorlagen.length}</strong><span>Vorlagen</span></div>
             <div class="daten-stat"><strong>${vorfaelle.length}</strong><span>Vorfälle</span></div>
             <div class="daten-stat"><strong>${wachbuch.length}</strong><span>Wachbuch</span></div>
+            <div class="daten-stat"><strong>${dokumente.length}</strong><span>Dokumente</span></div>
             <div class="daten-stat"><strong>${formatZahl(totalStd)}</strong><span>Stunden gesamt</span></div>
             <div class="daten-stat"><strong>${formatEuro(totalGesamt)}</strong><span>Umsatz gesamt</span></div>
         </div>
@@ -2054,7 +2078,10 @@ function renderDienstplan() {
                 cellContent += `<div class="dp-einsatz ${hatNacht ? 'dp-nacht' : 'dp-tag'}">${e.zeitVon}-${e.zeitBis}</div>`;
             });
 
-            if (!cellContent) cellClass += ' dp-leer';
+            if (!cellContent) {
+                cellClass += ' dp-leer dp-klickbar';
+                cellContent = `<span class="dp-plus" onclick="schnellerfassungDienstplan('${escapeHtml(name).replace(/'/g, "\\'")}','${datum}')" title="Einsatz erstellen">+</span>`;
+            }
 
             html += `<div class="${cellClass}">${cellContent}</div>`;
         });
@@ -2294,6 +2321,40 @@ function pruefeBenachrichtigungen() {
                 meldungen.push({
                     typ: 'warnung',
                     text: `Qualifikation von ${m.name} (${QUAL_LABELS[m.qualifikation] || m.qualifikation}) läuft am ${formatDatum(m.qualAblauf)} ab.`
+                });
+            }
+        }
+    });
+
+    // Ablaufende Dokumente
+    dokumente.forEach(d => {
+        if (d.gueltigBis) {
+            if (d.gueltigBis < heute) {
+                meldungen.push({
+                    typ: 'fehler',
+                    text: `Dokument "${DOK_TYPEN[d.typ] || d.typ}" von ${d.mitarbeiter} ist abgelaufen (${formatDatum(d.gueltigBis)})!`
+                });
+            } else if (d.gueltigBis <= in30) {
+                meldungen.push({
+                    typ: 'warnung',
+                    text: `Dokument "${DOK_TYPEN[d.typ] || d.typ}" von ${d.mitarbeiter} läuft am ${formatDatum(d.gueltigBis)} ab.`
+                });
+            }
+        }
+    });
+
+    // Auslaufende Verträge
+    objekte.forEach(o => {
+        if (o.vertragEnde && o.vertragStatus === 'aktiv') {
+            if (o.vertragEnde < heute) {
+                meldungen.push({
+                    typ: 'fehler',
+                    text: `Vertrag für "${o.name}" ist am ${formatDatum(o.vertragEnde)} abgelaufen!`
+                });
+            } else if (o.vertragEnde <= in30) {
+                meldungen.push({
+                    typ: 'warnung',
+                    text: `Vertrag für "${o.name}" läuft am ${formatDatum(o.vertragEnde)} ab.`
                 });
             }
         }
@@ -2618,6 +2679,24 @@ function druckeKontaktliste() {
 // =============================================
 // WACHBUCH
 // =============================================
+const DOK_TYPEN = {
+    fuehrungszeugnis: 'Führungszeugnis',
+    erstehilfe: 'Erste-Hilfe-Kurs',
+    brandschutz: 'Brandschutzhelfer',
+    datenschutz: 'Datenschutzunterweisung',
+    arbeitssicherheit: 'Arbeitssicherheit',
+    waffensachkunde: 'Waffensachkunde',
+    fahrerlaubnis: 'Fahrerlaubnis',
+    sonstiges: 'Sonstiges Dokument'
+};
+
+const VERTRAG_STATUS = {
+    aktiv: 'Aktiv',
+    auslaufend: 'Auslaufend',
+    gekuendigt: 'Gekündigt',
+    ruhend: 'Ruhend'
+};
+
 const WB_KATEGORIEN = {
     rundgang: 'Kontrollrundgang',
     schichtuebergabe: 'Schichtübergabe',
@@ -2764,6 +2843,293 @@ function druckeWachbuch() {
 }
 
 // =============================================
+// VERTRAGSÜBERSICHT
+// =============================================
+function renderVertraege() {
+    const el = document.getElementById('vertraegeContent');
+    const empty = document.getElementById('vertraegeEmpty');
+    if (!el) return;
+
+    const mitVertrag = objekte.filter(o => o.vertragStatus);
+
+    if (mitVertrag.length === 0) {
+        el.innerHTML = '';
+        empty.style.display = 'block';
+        return;
+    }
+    empty.style.display = 'none';
+
+    const heute = new Date().toISOString().split('T')[0];
+    const in30 = new Date();
+    in30.setDate(in30.getDate() + 30);
+    const in30Str = in30.toISOString().split('T')[0];
+
+    let html = '<div class="vertraege-grid">';
+    mitVertrag.forEach(o => {
+        const cls = 'vs-' + o.vertragStatus;
+        let laufzeitWarnung = '';
+        if (o.vertragEnde) {
+            if (o.vertragEnde < heute) {
+                laufzeitWarnung = '<span class="vertrag-warn abgelaufen">Abgelaufen</span>';
+            } else if (o.vertragEnde <= in30Str) {
+                laufzeitWarnung = '<span class="vertrag-warn bald">Läuft bald ab</span>';
+            }
+        }
+
+        // Monatsstunden vs. Ist
+        let stundenInfo = '';
+        if (o.monatsstunden > 0) {
+            const aktMonat = `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`;
+            const istStd = einsaetze.filter(e => e.objekt === o.name && e.datum.substring(0, 7) === aktMonat).reduce((s, e) => s + e.stunden, 0);
+            const pct = Math.min((istStd / o.monatsstunden) * 100, 100);
+            stundenInfo = `<div class="vertrag-stunden">
+                <div class="vertrag-std-bar-bg"><div class="vertrag-std-bar" style="width:${pct}%"></div></div>
+                <span>${formatZahl(istStd)} / ${formatZahl(o.monatsstunden)} Std.</span>
+            </div>`;
+        }
+
+        html += `<div class="vertrag-card">
+            <div class="vertrag-card-header">
+                <strong>${escapeHtml(o.name)}</strong>
+                <span class="vertrag-status-badge ${cls}">${escapeHtml(VERTRAG_STATUS[o.vertragStatus])}</span>
+            </div>
+            ${o.vertragNr ? '<div class="vertrag-detail"><span>Vertrag:</span> ' + escapeHtml(o.vertragNr) + '</div>' : ''}
+            ${o.auftraggeber ? '<div class="vertrag-detail"><span>Auftraggeber:</span> ' + escapeHtml(o.auftraggeber) + '</div>' : ''}
+            ${o.vertragStart || o.vertragEnde ? '<div class="vertrag-detail"><span>Laufzeit:</span> ' + (o.vertragStart ? formatDatum(o.vertragStart) : '?') + ' \u2013 ' + (o.vertragEnde ? formatDatum(o.vertragEnde) : 'unbefristet') + ' ' + laufzeitWarnung + '</div>' : ''}
+            ${stundenInfo}
+        </div>`;
+    });
+    html += '</div>';
+    el.innerHTML = html;
+}
+
+// =============================================
+// MITARBEITER-DOKUMENTE
+// =============================================
+function dokumentSpeichern() {
+    const ma = document.getElementById('dokMa').value.trim();
+    const typ = document.getElementById('dokTyp').value;
+    const ausgestellt = document.getElementById('dokAusgestellt').value;
+    const gueltigBis = document.getElementById('dokGueltigBis').value;
+    const notiz = document.getElementById('dokNotiz').value.trim();
+
+    if (!ma || !typ) { alert('Bitte Mitarbeiter und Dokumenttyp auswählen.'); return; }
+
+    dokumente.push({ id: Date.now(), mitarbeiter: ma, typ, ausgestellt, gueltigBis, notiz });
+    localStorage.setItem('bbprotect_dokumente', JSON.stringify(dokumente));
+    renderDokumente();
+
+    document.getElementById('dokAusgestellt').value = '';
+    document.getElementById('dokGueltigBis').value = '';
+    document.getElementById('dokNotiz').value = '';
+}
+
+function loescheDokument(id) {
+    if (!confirm('Dieses Dokument wirklich löschen?')) return;
+    dokumente = dokumente.filter(d => d.id !== id);
+    localStorage.setItem('bbprotect_dokumente', JSON.stringify(dokumente));
+    renderDokumente();
+}
+
+function renderDokumente() {
+    const el = document.getElementById('dokumenteContent');
+    const empty = document.getElementById('dokumenteEmpty');
+    if (!el) return;
+
+    if (dokumente.length === 0) {
+        el.innerHTML = '';
+        empty.style.display = 'block';
+        return;
+    }
+    empty.style.display = 'none';
+
+    const heute = new Date().toISOString().split('T')[0];
+    const in30 = new Date();
+    in30.setDate(in30.getDate() + 30);
+    const in30Str = in30.toISOString().split('T')[0];
+
+    // Gruppiere nach MA
+    const maMap = {};
+    dokumente.forEach(d => {
+        if (!maMap[d.mitarbeiter]) maMap[d.mitarbeiter] = [];
+        maMap[d.mitarbeiter].push(d);
+    });
+
+    let html = '';
+    Object.entries(maMap).sort((a, b) => a[0].localeCompare(b[0])).forEach(([name, docs]) => {
+        html += `<div class="dok-ma-gruppe">
+            <div class="dok-ma-name">${escapeHtml(name)}</div>
+            <div class="dok-liste">`;
+
+        docs.forEach(d => {
+            let statusCls = 'dok-ok';
+            let statusText = '';
+            if (d.gueltigBis) {
+                if (d.gueltigBis < heute) {
+                    statusCls = 'dok-abgelaufen';
+                    statusText = 'ABGELAUFEN';
+                } else if (d.gueltigBis <= in30Str) {
+                    statusCls = 'dok-bald';
+                    statusText = 'Läuft bald ab';
+                }
+            }
+
+            html += `<div class="dok-item ${statusCls}">
+                <div class="dok-item-info">
+                    <span class="dok-typ">${escapeHtml(DOK_TYPEN[d.typ] || d.typ)}</span>
+                    ${d.ausgestellt ? '<span class="dok-datum">Ausgestellt: ' + formatDatum(d.ausgestellt) + '</span>' : ''}
+                    ${d.gueltigBis ? '<span class="dok-datum">Gültig bis: ' + formatDatum(d.gueltigBis) + '</span>' : '<span class="dok-datum">Unbefristet</span>'}
+                    ${statusText ? '<span class="dok-status ' + statusCls + '">' + statusText + '</span>' : ''}
+                    ${d.notiz ? '<span class="dok-notiz">' + escapeHtml(d.notiz) + '</span>' : ''}
+                </div>
+                <button class="btn-delete btn-small" onclick="loescheDokument(${d.id})">X</button>
+            </div>`;
+        });
+
+        html += '</div></div>';
+    });
+
+    el.innerHTML = html;
+}
+
+// =============================================
+// DIENSTPLAN DRUCKEN
+// =============================================
+function druckeDienstplan() {
+    const montag = getMontag(dienstplanJahr, dienstplanKW);
+    const tage = [];
+    const tageLabels = ['Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag', 'Sonntag'];
+
+    for (let i = 0; i < 7; i++) {
+        const d = new Date(montag);
+        d.setUTCDate(d.getUTCDate() + i);
+        tage.push(d.toISOString().split('T')[0]);
+    }
+
+    const alleMa = new Set();
+    mitarbeiterListe_.forEach(m => alleMa.add(m.name));
+    einsaetze.forEach(e => {
+        if (e.mitarbeiter && tage.includes(e.datum)) alleMa.add(e.mitarbeiter);
+    });
+    const maList = Array.from(alleMa).sort();
+
+    if (maList.length === 0) { alert('Keine Mitarbeiter vorhanden.'); return; }
+
+    let html = printHeader(`Dienstplan KW ${dienstplanKW} / ${dienstplanJahr}`);
+    html += `<div class="print-meta">Zeitraum: ${formatDatum(tage[0])} \u2013 ${formatDatum(tage[6])}</div>`;
+    html += '<table><thead><tr><th>Mitarbeiter</th>';
+
+    tage.forEach((d, i) => {
+        const dt = new Date(d);
+        html += `<th>${tageLabels[i].substring(0, 2)} ${dt.getUTCDate()}.${dt.getUTCMonth() + 1}.</th>`;
+    });
+    html += '<th>Summe</th></tr></thead><tbody>';
+
+    let gesamtStd = 0;
+
+    maList.forEach(name => {
+        html += `<tr><td><strong>${escapeHtml(name)}</strong></td>`;
+        let maWocheStd = 0;
+
+        tage.forEach(datum => {
+            const tagesE = einsaetze.filter(e => e.mitarbeiter === name && e.datum === datum);
+            const abwesend = verfuegbarkeit.find(v => v.mitarbeiter === name && v.von <= datum && v.bis >= datum);
+
+            if (abwesend) {
+                const typLabels = { urlaub: 'U', krank: 'K', frei: 'F', fortbildung: 'FB' };
+                html += `<td style="text-align:center;color:#718096">${typLabels[abwesend.typ] || '?'}</td>`;
+            } else if (tagesE.length > 0) {
+                const std = tagesE.reduce((s, e) => s + e.stunden, 0);
+                maWocheStd += std;
+                html += `<td>${tagesE.map(e => e.zeitVon + '-' + e.zeitBis).join('<br>')}<br><small>${formatZahl(std)} Std.</small></td>`;
+            } else {
+                html += '<td style="text-align:center;color:#ccc">\u2014</td>';
+            }
+        });
+
+        gesamtStd += maWocheStd;
+        html += `<td><strong>${formatZahl(maWocheStd)}</strong></td></tr>`;
+    });
+
+    html += `</tbody><tfoot><tr class="total-row"><td colspan="${tage.length + 1}"><strong>GESAMT</strong></td><td><strong>${formatZahl(gesamtStd)} Std.</strong></td></tr></tfoot></table>`;
+    html += printFooter();
+
+    document.getElementById('printArea').innerHTML = html;
+    window.print();
+}
+
+// =============================================
+// MITARBEITER-LEISTUNGSÜBERSICHT
+// =============================================
+function renderMALeistung(filterM) {
+    const el = document.getElementById('maLeistung');
+    if (!el) return;
+
+    let gefiltert = einsaetze;
+    if (filterM) gefiltert = gefiltert.filter(e => e.datum.substring(0, 7) === filterM);
+
+    if (gefiltert.length === 0) {
+        el.innerHTML = '<p style="color:#a0aec0">Keine Einsatzdaten vorhanden.</p>';
+        return;
+    }
+
+    const maMap = {};
+    gefiltert.forEach(e => {
+        const name = e.mitarbeiter || 'Nicht zugewiesen';
+        if (!maMap[name]) maMap[name] = { stunden: 0, einsaetze: 0, umsatz: 0, nacht: 0, tage: new Set(), objekte: new Set() };
+        maMap[name].stunden += e.stunden;
+        maMap[name].einsaetze++;
+        maMap[name].umsatz += e.gesamt;
+        maMap[name].nacht += e.nachtStunden;
+        maMap[name].tage.add(e.datum);
+        maMap[name].objekte.add(e.objekt);
+    });
+
+    const sorted = Object.entries(maMap).sort((a, b) => b[1].stunden - a[1].stunden);
+    const maxStd = Math.max(...sorted.map(([, d]) => d.stunden), 1);
+
+    let html = '<div class="ma-leistung-grid">';
+    sorted.forEach(([name, data], i) => {
+        const pct = (data.stunden / maxStd) * 100;
+        const avgStdTag = data.tage.size > 0 ? (data.stunden / data.tage.size) : 0;
+        const nachtPct = data.stunden > 0 ? ((data.nacht / data.stunden) * 100) : 0;
+
+        let rangBadge = '';
+        if (i === 0) rangBadge = '<span class="rang-badge rang-1">1.</span>';
+        else if (i === 1) rangBadge = '<span class="rang-badge rang-2">2.</span>';
+        else if (i === 2) rangBadge = '<span class="rang-badge rang-3">3.</span>';
+
+        html += `<div class="mal-row">
+            <div class="mal-rang">${rangBadge}</div>
+            <div class="mal-name">${escapeHtml(name)}</div>
+            <div class="mal-bar-bg"><div class="mal-bar" style="width:${pct}%"></div></div>
+            <div class="mal-stats">
+                <span title="Stunden gesamt"><strong>${formatZahl(data.stunden)}</strong> Std.</span>
+                <span title="Einsätze">${data.einsaetze} Eins.</span>
+                <span title="Tage">${data.tage.size} Tage</span>
+                <span title="Objekte">${data.objekte.size} Obj.</span>
+                <span title="Nachtanteil">${nachtPct.toFixed(0)}% Nacht</span>
+                <span title="Durchschnitt pro Tag">\u00D8 ${formatZahl(avgStdTag)} Std./Tag</span>
+            </div>
+        </div>`;
+    });
+    html += '</div>';
+
+    el.innerHTML = html;
+}
+
+// =============================================
+// SCHNELLERFASSUNG AUS DIENSTPLAN
+// =============================================
+function schnellerfassungDienstplan(name, datum) {
+    wechsleZuTab('erfassung');
+    document.getElementById('datum').value = datum;
+    document.getElementById('mitarbeiter').value = name;
+    document.getElementById('einsatzFormSection').scrollIntoView({ behavior: 'smooth' });
+    updatePreview();
+}
+
+// =============================================
 // INITIALISIERUNG
 // =============================================
 document.getElementById('datum').valueAsDate = new Date();
@@ -2778,6 +3144,7 @@ renderMitarbeiter();
 renderVerfuegbarkeit();
 updateHeaderStats();
 pruefeBenachrichtigungen();
+renderDokumente();
 document.getElementById('vfDatum').valueAsDate = new Date();
 document.getElementById('wbDatum').valueAsDate = new Date();
 const jetztInit = new Date();
