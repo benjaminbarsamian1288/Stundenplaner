@@ -996,6 +996,9 @@ function updateDashboard() {
     document.getElementById('statZuschlaege').textContent = formatEuro(totalZuschlaege);
     document.getElementById('statMitarbeiter').textContent = mitarbeiterSet.size;
 
+    // KPI-Leiste
+    renderKPILeiste(gefiltert);
+
     // Objekt-Aufschlüsselung
     renderBarStats('objektStats', gefiltert, e => e.objekt);
     // Mitarbeiter-Aufschlüsselung
@@ -1141,11 +1144,14 @@ document.getElementById('objektForm').addEventListener('submit', function (e) {
     const vertragEnde = document.getElementById('objektVertragEnde').value;
     const monatsstunden = parseFloat(document.getElementById('objektMonatsstunden').value) || 0;
     const vertragStatus = document.getElementById('objektVertragStatus').value;
+    const mindestQual = document.getElementById('objektMindestQual').value;
+    const minMA = parseInt(document.getElementById('objektMinMA').value) || 0;
+    const anforderungen = document.getElementById('objektAnforderungen').value.trim();
 
     if (!name) return;
 
     const idx = objekte.findIndex(o => o.name === name);
-    const obj = { name, adresse, stundensatz, ansprechpartner, vertragNr, auftraggeber, vertragStart, vertragEnde, monatsstunden, vertragStatus };
+    const obj = { name, adresse, stundensatz, ansprechpartner, vertragNr, auftraggeber, vertragStart, vertragEnde, monatsstunden, vertragStatus, mindestQual, minMA, anforderungen };
     if (idx !== -1) objekte[idx] = obj; else objekte.push(obj);
 
     localStorage.setItem('bbprotect_objekte', JSON.stringify(objekte));
@@ -2233,7 +2239,11 @@ function zeigeTagesDetail(datumStr) {
                 <td>${formatZahl(e.stunden)}</td>
                 <td>${formatEuro(e.gesamt)}</td>
                 <td><button class="btn-edit btn-small" onclick="schliesseModal();bearbeiteEinsatz(${e.id})">Bearb.</button></td>
-            </tr>`;
+            </tr>
+            <tr><td colspan="6" style="padding:0.2rem 0.5rem;border:none">
+                ${renderEinsatzKommentare(e)}
+                <div class="ek-add"><input type="text" id="ek_${e.id}" class="ek-input" placeholder="Kommentar..." onkeydown="if(event.key==='Enter')einsatzKommentarHinzufuegen(${e.id})"><button class="btn-secondary btn-small" onclick="einsatzKommentarHinzufuegen(${e.id})">+</button></div>
+            </td></tr>`;
         });
 
         html += '</tbody></table></div>';
@@ -5023,6 +5033,133 @@ function loescheNotfallkontakt(id) {
     notfallkontakte = notfallkontakte.filter(nk => nk.id !== id);
     localStorage.setItem('bbprotect_notfallkontakte', JSON.stringify(notfallkontakte));
     renderNotfallkontakte();
+}
+
+// =============================================
+// SCHNELLAKTIONEN
+// =============================================
+function schnellNeuerEinsatz() {
+    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+    document.querySelector('[data-tab="erfassung"]').classList.add('active');
+    document.getElementById('tab-erfassung').classList.add('active');
+    document.getElementById('datum').valueAsDate = new Date();
+    document.getElementById('einsatzFormSection').scrollIntoView({ behavior: 'smooth' });
+}
+
+function schnellHeuteAnzeigen() {
+    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+    document.querySelector('[data-tab="kalender"]').classList.add('active');
+    document.getElementById('tab-kalender').classList.add('active');
+    kalenderJahr = new Date().getFullYear();
+    kalenderMonat = new Date().getMonth();
+    renderKalender();
+    // Zeige Tagesdetail für heute
+    const heute = new Date().toISOString().split('T')[0];
+    setTimeout(() => zeigeTagesDetail(heute), 200);
+}
+
+function schnellDienstplan() {
+    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+    document.querySelector('[data-tab="kalender"]').classList.add('active');
+    document.getElementById('tab-kalender').classList.add('active');
+    dienstplanKW = getKalenderWoche(new Date());
+    dienstplanJahr = new Date().getFullYear();
+    renderKalender();
+    renderDienstplan();
+}
+
+function schnellAbrechnung() {
+    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+    document.querySelector('[data-tab="abrechnung"]').classList.add('active');
+    document.getElementById('tab-abrechnung').classList.add('active');
+    updateAbrechnung();
+}
+
+// =============================================
+// KPI-LEISTE (Dashboard)
+// =============================================
+function renderKPILeiste(gefiltert) {
+    const el = document.getElementById('kpiLeiste');
+    if (!el) return;
+
+    const totalStd = gefiltert.reduce((s, e) => s + e.stunden, 0);
+    const totalUmsatz = gefiltert.reduce((s, e) => s + e.gesamt, 0);
+    const maSet = new Set(gefiltert.filter(e => e.mitarbeiter).map(e => e.mitarbeiter));
+
+    // Kosten pro Stunde
+    const kostenProStd = totalStd > 0 ? totalUmsatz / totalStd : 0;
+
+    // Durchschnittliche Schichtlänge
+    const avgSchicht = gefiltert.length > 0 ? totalStd / gefiltert.length : 0;
+
+    // Auslastung: Einsätze pro MA
+    const einsaetzeProMA = maSet.size > 0 ? gefiltert.length / maSet.size : 0;
+
+    // Stornoquote
+    const storniertCount = gefiltert.filter(e => (e.status || 'geplant') === 'storniert').length;
+    const stornoQuote = gefiltert.length > 0 ? (storniertCount / gefiltert.length * 100) : 0;
+
+    // Nachtschichtanteil
+    const nachtStd = gefiltert.reduce((s, e) => s + e.nachtStunden, 0);
+    const nachtAnteil = totalStd > 0 ? (nachtStd / totalStd * 100) : 0;
+
+    const kpis = [
+        { label: 'Kosten/Std.', value: formatEuro(kostenProStd), cls: '' },
+        { label: '\u00D8 Schichtl\u00E4nge', value: formatZahl(avgSchicht) + ' Std.', cls: '' },
+        { label: 'Einsätze/MA', value: formatZahl(einsaetzeProMA), cls: '' },
+        { label: 'Stornoquote', value: stornoQuote.toFixed(1) + '%', cls: stornoQuote > 10 ? 'kpi-warn' : '' },
+        { label: 'Nachtanteil', value: nachtAnteil.toFixed(1) + '%', cls: '' }
+    ];
+
+    let html = '';
+    kpis.forEach(k => {
+        html += `<div class="kpi-card ${k.cls}"><div class="kpi-value">${k.value}</div><div class="kpi-label">${k.label}</div></div>`;
+    });
+    el.innerHTML = html;
+}
+
+// =============================================
+// EINSATZ-KOMMENTARE
+// =============================================
+function einsatzKommentarHinzufuegen(id) {
+    const input = document.getElementById('ek_' + id);
+    if (!input) return;
+    const text = input.value.trim();
+    if (!text) return;
+
+    const e = einsaetze.find(x => x.id === id);
+    if (!e) return;
+
+    if (!e.kommentare) e.kommentare = [];
+    e.kommentare.push({
+        text,
+        zeit: new Date().toISOString(),
+        autor: 'Admin'
+    });
+
+    speichern();
+    input.value = '';
+    // Re-render wenn im Detail-Modal
+    const modal = document.getElementById('tagesModal');
+    if (modal && modal.style.display !== 'none') {
+        const datum = e.datum;
+        zeigeTagesDetail(datum);
+    }
+}
+
+function renderEinsatzKommentare(einsatz) {
+    if (!einsatz.kommentare || einsatz.kommentare.length === 0) return '';
+    let html = '<div class="ek-liste">';
+    einsatz.kommentare.forEach(k => {
+        const zeit = new Date(k.zeit);
+        html += `<div class="ek-item"><span class="ek-zeit">${zeit.toLocaleDateString('de-DE')} ${zeit.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })}</span> ${escapeHtml(k.text)}</div>`;
+    });
+    html += '</div>';
+    return html;
 }
 
 // =============================================

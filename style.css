@@ -4211,6 +4211,136 @@ body.dark-mode .nk-item {
     border-bottom-color: #21262d;
 }
 
+/* -- Schnellaktionen -- */
+.schnellaktionen {
+    display: flex;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.3rem 1rem;
+    flex-wrap: wrap;
+}
+
+.sa-btn {
+    background: #667eea;
+    color: #fff;
+    border: none;
+    padding: 0.3rem 0.75rem;
+    border-radius: 15px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.1s;
+}
+
+.sa-btn:hover {
+    background: #5a67d8;
+    transform: scale(1.05);
+}
+
+/* -- KPI-Leiste -- */
+.kpi-leiste {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    margin-bottom: 1rem;
+}
+
+.kpi-card {
+    flex: 1;
+    min-width: 100px;
+    background: #f0f5ff;
+    border: 1px solid #c3dafe;
+    border-radius: 8px;
+    padding: 0.5rem;
+    text-align: center;
+}
+
+.kpi-value {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #2b6cb0;
+}
+
+.kpi-label {
+    font-size: 0.7rem;
+    color: #718096;
+    margin-top: 0.1rem;
+}
+
+.kpi-warn {
+    border-color: #feb2b2;
+    background: #fff5f5;
+}
+
+.kpi-warn .kpi-value {
+    color: #c53030;
+}
+
+/* -- Einsatz-Kommentare -- */
+.ek-liste {
+    margin-bottom: 0.3rem;
+}
+
+.ek-item {
+    font-size: 0.7rem;
+    color: #4a5568;
+    padding: 0.15rem 0;
+    border-bottom: 1px dotted #e2e8f0;
+}
+
+.ek-zeit {
+    color: #a0aec0;
+    margin-right: 0.3rem;
+    font-size: 0.65rem;
+}
+
+.ek-add {
+    display: flex;
+    gap: 0.3rem;
+    margin-top: 0.2rem;
+}
+
+.ek-input {
+    flex: 1;
+    padding: 0.2rem 0.4rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 4px;
+    font-size: 0.7rem;
+}
+
+body.dark-mode .schnellaktionen .sa-btn {
+    background: #1f6feb;
+}
+
+body.dark-mode .kpi-card {
+    background: #0d2137;
+    border-color: #21415c;
+}
+
+body.dark-mode .kpi-value {
+    color: #388bfd;
+}
+
+body.dark-mode .kpi-warn {
+    background: #2d1215;
+    border-color: #6e2727;
+}
+
+body.dark-mode .kpi-warn .kpi-value {
+    color: #f85149;
+}
+
+body.dark-mode .ek-item {
+    color: #8b949e;
+    border-bottom-color: #21262d;
+}
+
+body.dark-mode .ek-input {
+    background: #0d1117;
+    border-color: #30363d;
+    color: #c9d1d9;
+}
+
 body.dark-mode .auto-plan {
     background: #0d1117;
     border-color: #30363d;
@@ -4905,5 +5035,27 @@ footer {
 
     .hm-cnt {
         font-size: 0.5rem;
+    }
+
+    .kpi-leiste {
+        gap: 0.3rem;
+    }
+
+    .kpi-card {
+        min-width: 70px;
+        padding: 0.3rem;
+    }
+
+    .kpi-value {
+        font-size: 0.85rem;
+    }
+
+    .schnellaktionen {
+        gap: 0.3rem;
+    }
+
+    .sa-btn {
+        font-size: 0.65rem;
+        padding: 0.25rem 0.5rem;
     }
 }

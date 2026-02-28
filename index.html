@@ -32,6 +32,13 @@
     </div>
     <div class="header-stats" id="headerStats"></div>
     <div class="benachrichtigungen" id="benachrichtigungen" style="display:none"></div>
+    <div class="schnellaktionen">
+        <button class="sa-btn" onclick="schnellNeuerEinsatz()">+ Einsatz</button>
+        <button class="sa-btn" onclick="schnellHeuteAnzeigen()">Heute</button>
+        <button class="sa-btn" onclick="schnellDienstplan()">Dienstplan</button>
+        <button class="sa-btn" onclick="schnellAbrechnung()">Abrechnung</button>
+        <button class="sa-btn" onclick="erstelleBackup()">Backup</button>
+    </div>
 
     <main>
         <!-- TAB: Erfassung -->
@@ -363,6 +370,8 @@
                     <select id="dashboardMonat"></select>
                 </div>
 
+                <div class="kpi-leiste" id="kpiLeiste"></div>
+
                 <div class="stats-grid">
                     <div class="stat-card">
                         <div class="stat-icon">&#128337;</div>
@@ -519,6 +528,31 @@
                                     <option value="gekuendigt">Gek&uuml;ndigt</option>
                                     <option value="ruhend">Ruhend</option>
                                 </select>
+                            </div>
+                        </div>
+                    </details>
+                    <details class="vertrag-details">
+                        <summary>Anforderungsprofil (optional)</summary>
+                        <div class="form-row" style="margin-top:0.75rem">
+                            <div class="form-group">
+                                <label for="objektMindestQual">Mindest-Qualifikation</label>
+                                <select id="objektMindestQual">
+                                    <option value="">Keine Anforderung</option>
+                                    <option value="unterrichtung">Unterrichtung &sect;34a</option>
+                                    <option value="34a">Sachkunde &sect;34a GewO</option>
+                                    <option value="fachkraft">Fachkraft f&uuml;r Schutz und Sicherheit</option>
+                                    <option value="meister">Meister f&uuml;r Schutz und Sicherheit</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="objektMinMA">Min. MA pro Schicht</label>
+                                <input type="number" id="objektMinMA" step="1" min="0" placeholder="z.B. 2">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="objektAnforderungen">Besondere Anforderungen</label>
+                                <input type="text" id="objektAnforderungen" placeholder="z.B. Ersthelfer, Brandschutz, Fahrerlaubnis">
                             </div>
                         </div>
                     </details>
