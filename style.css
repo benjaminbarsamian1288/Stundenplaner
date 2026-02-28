@@ -524,6 +524,347 @@ tbody tr:hover {
     background: #c53030;
 }
 
+/* Vorlagen */
+.vorlagen-section {
+    background: #fff;
+    border-radius: 10px;
+    padding: 1.2rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.vorlagen-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.75rem;
+}
+
+.vorlagen-header h2 {
+    margin-bottom: 0;
+}
+
+.vorlagen-grid {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.vorlage-card {
+    background: #f7fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 0.75rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.75rem;
+    min-width: 220px;
+    flex: 1;
+    max-width: 350px;
+}
+
+.vorlage-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    font-size: 0.85rem;
+}
+
+.vorlage-info strong {
+    font-size: 0.95rem;
+    color: #1a1a2e;
+}
+
+.vorlage-objekt {
+    color: #718096;
+}
+
+.vorlage-actions {
+    display: flex;
+    gap: 0.3rem;
+    flex-shrink: 0;
+}
+
+.vorlage-form {
+    background: #f7fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 1rem;
+    margin-top: 0.75rem;
+}
+
+.btn-small {
+    padding: 0.35rem 0.8rem;
+    font-size: 0.8rem;
+}
+
+/* Kalender */
+.kalender-section {
+    background: #fff;
+    border-radius: 10px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.kalender-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.kalender-header h2 {
+    margin-bottom: 0;
+}
+
+.kalender-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 2px;
+}
+
+.kalender-header-cell {
+    background: #1a1a2e;
+    color: #fff;
+    text-align: center;
+    padding: 0.5rem;
+    font-weight: 600;
+    font-size: 0.85rem;
+}
+
+.kalender-header-cell:first-child {
+    border-radius: 6px 0 0 0;
+}
+
+.kalender-header-cell:last-child {
+    border-radius: 0 6px 0 0;
+}
+
+.kalender-cell {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    min-height: 90px;
+    padding: 0.3rem;
+    font-size: 0.8rem;
+    position: relative;
+    transition: background 0.15s;
+}
+
+.kalender-cell:hover {
+    background: #f7fafc;
+}
+
+.kalender-cell.empty {
+    background: #f9fafb;
+    border-color: #f0f2f5;
+}
+
+.kalender-cell.heute {
+    border: 2px solid #1a1a2e;
+    background: #edf2f7;
+}
+
+.kalender-cell.wochenende {
+    background: #faf5ff;
+}
+
+.kalender-cell.feiertag-tag {
+    background: #fff5f5;
+}
+
+.kalender-tag-nr {
+    font-weight: 700;
+    font-size: 0.9rem;
+    margin-bottom: 0.2rem;
+    color: #1a1a2e;
+}
+
+.kalender-feiertag {
+    font-size: 0.65rem;
+    color: #c53030;
+    font-weight: 600;
+    margin-bottom: 0.2rem;
+}
+
+.kalender-einsatz {
+    padding: 0.2rem 0.3rem;
+    border-radius: 4px;
+    margin-bottom: 0.15rem;
+    cursor: pointer;
+    font-size: 0.7rem;
+    line-height: 1.2;
+}
+
+.kalender-einsatz.tag {
+    background: #ebf8ff;
+    border-left: 3px solid #2b6cb0;
+}
+
+.kalender-einsatz.nacht {
+    background: #2d3748;
+    color: #fff;
+    border-left: 3px solid #a0aec0;
+}
+
+.ke-zeit {
+    font-weight: 600;
+    display: block;
+}
+
+.ke-objekt {
+    display: block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.kalender-summe {
+    font-size: 0.7rem;
+    color: #718096;
+    font-weight: 600;
+    margin-top: 0.15rem;
+}
+
+.kalender-legende {
+    display: flex;
+    gap: 1.5rem;
+    margin-top: 1rem;
+    font-size: 0.8rem;
+    color: #718096;
+}
+
+.legende-item {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.legende-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 3px;
+    display: inline-block;
+}
+
+.legende-dot.tag {
+    background: #ebf8ff;
+    border-left: 3px solid #2b6cb0;
+}
+
+.legende-dot.nacht {
+    background: #2d3748;
+}
+
+.legende-dot.feiertag {
+    background: #fff5f5;
+    border: 1px solid #c53030;
+}
+
+/* Abrechnung */
+.abrechnung-section {
+    margin-bottom: 1.5rem;
+}
+
+.abrechnung-filter {
+    display: flex;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.abrechnung-filter select {
+    padding: 0.6rem 1rem;
+    border: 1px solid #cbd5e0;
+    border-radius: 6px;
+    font-size: 0.95rem;
+    font-weight: 600;
+}
+
+.abrechnung-card {
+    background: #fff;
+    border-radius: 10px;
+    padding: 1.2rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    margin-bottom: 1.5rem;
+}
+
+.abrechnung-header-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid #1a1a2e;
+}
+
+.abrechnung-header-info h3 {
+    margin-bottom: 0;
+    font-size: 1.2rem;
+}
+
+.abrechnung-zeitraum {
+    color: #718096;
+    font-size: 0.9rem;
+}
+
+.abrechnung-summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.abr-stat {
+    background: #f7fafc;
+    border-radius: 6px;
+    padding: 0.6rem;
+    text-align: center;
+}
+
+.abr-stat.total {
+    background: #1a1a2e;
+    color: #fff;
+}
+
+.abr-stat.total .abr-label {
+    color: #a0aec0;
+}
+
+.abr-label {
+    display: block;
+    font-size: 0.7rem;
+    color: #718096;
+    font-weight: 600;
+    margin-bottom: 0.15rem;
+}
+
+.abr-value {
+    font-size: 1rem;
+    font-weight: 700;
+}
+
+.abrechnung-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+}
+
+.abrechnung-table th {
+    background: #edf2f7;
+    color: #1a1a2e;
+    padding: 0.5rem;
+    text-align: left;
+    font-weight: 600;
+    font-size: 0.8rem;
+}
+
+.abrechnung-table td {
+    padding: 0.4rem 0.5rem;
+    border-bottom: 1px solid #e2e8f0;
+}
+
 /* Print */
 .print-area {
     display: none;
@@ -666,5 +1007,43 @@ footer {
 
     .dashboard-details {
         grid-template-columns: 1fr;
+    }
+
+    .kalender-cell {
+        min-height: 60px;
+        font-size: 0.7rem;
+    }
+
+    .kalender-einsatz {
+        font-size: 0.6rem;
+    }
+
+    .ke-objekt {
+        display: none;
+    }
+
+    .kalender-header-cell {
+        font-size: 0.7rem;
+        padding: 0.3rem;
+    }
+
+    .vorlagen-grid {
+        flex-direction: column;
+    }
+
+    .vorlage-card {
+        max-width: 100%;
+    }
+
+    .header-nav {
+        flex-wrap: wrap;
+    }
+
+    .abrechnung-filter {
+        flex-direction: column;
+    }
+
+    .abrechnung-summary {
+        grid-template-columns: repeat(2, 1fr);
     }
 }

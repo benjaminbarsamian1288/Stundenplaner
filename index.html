@@ -14,6 +14,8 @@
         </div>
         <nav class="header-nav">
             <button class="nav-btn active" data-tab="erfassung">Erfassung</button>
+            <button class="nav-btn" data-tab="kalender">Kalender</button>
+            <button class="nav-btn" data-tab="abrechnung">Abrechnung</button>
             <button class="nav-btn" data-tab="dashboard">Dashboard</button>
             <button class="nav-btn" data-tab="objekte">Objekte</button>
         </nav>
@@ -22,7 +24,50 @@
     <main>
         <!-- TAB: Erfassung -->
         <div class="tab-content active" id="tab-erfassung">
-            <section class="form-section">
+            <!-- Schichtvorlagen -->
+            <section class="vorlagen-section">
+                <div class="vorlagen-header">
+                    <h2>Schnellerfassung / Schichtvorlagen</h2>
+                    <button class="btn-secondary btn-small" onclick="toggleVorlagenForm()">+ Vorlage erstellen</button>
+                </div>
+                <div class="vorlagen-grid" id="vorlagenGrid">
+                    <p class="empty-message" id="vorlagenEmpty" style="padding:0.5rem">Noch keine Vorlagen. Erstelle eine f&uuml;r h&auml;ufige Schichten.</p>
+                </div>
+                <div class="vorlage-form" id="vorlageFormWrapper" style="display:none;">
+                    <form id="vorlageForm">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="vorlageBezeichnung">Bezeichnung</label>
+                                <input type="text" id="vorlageBezeichnung" placeholder="z.B. Tagschicht EKZ" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="vorlageObjekt">Objekt</label>
+                                <input type="text" id="vorlageObjekt" list="objektListe" placeholder="Einsatzort">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="vorlageVon">Zeit von</label>
+                                <input type="time" id="vorlageVon" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="vorlageBis">Zeit bis</label>
+                                <input type="time" id="vorlageBis" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="vorlageSatz">Stundensatz (&euro;)</label>
+                                <input type="number" id="vorlageSatz" step="0.01" min="0" placeholder="15.00">
+                            </div>
+                        </div>
+                        <div class="form-buttons">
+                            <button type="submit" class="btn-primary btn-small">Vorlage speichern</button>
+                            <button type="button" class="btn-secondary btn-small" onclick="toggleVorlagenForm()">Abbrechen</button>
+                        </div>
+                    </form>
+                </div>
+            </section>
+
+            <section class="form-section" id="einsatzFormSection">
                 <h2 id="formTitle">Neuen Einsatz erfassen</h2>
                 <form id="einsatzForm">
                     <input type="hidden" id="editId" value="">
@@ -95,7 +140,7 @@
                     </div>
 
                     <div class="form-buttons">
-                        <button type="submit" class="btn-primary" id="submitBtn">Einsatz hinzufügen</button>
+                        <button type="submit" class="btn-primary" id="submitBtn">Einsatz hinzuf&uuml;gen</button>
                         <button type="button" class="btn-secondary" id="cancelEditBtn" style="display:none;" onclick="cancelEdit()">Abbrechen</button>
                     </div>
                 </form>
@@ -108,7 +153,7 @@
 
             <section class="list-section">
                 <div class="list-header">
-                    <h2>Einsatzübersicht</h2>
+                    <h2>Einsatz&uuml;bersicht</h2>
                     <div class="list-actions">
                         <select id="filterMonat">
                             <option value="">Alle Monate</option>
@@ -136,8 +181,7 @@
                                 <th class="no-print">Aktionen</th>
                             </tr>
                         </thead>
-                        <tbody id="einsatzBody">
-                        </tbody>
+                        <tbody id="einsatzBody"></tbody>
                         <tfoot>
                             <tr class="total-row">
                                 <td colspan="5"><strong>Gesamt</strong></td>
@@ -154,10 +198,42 @@
             </section>
         </div>
 
+        <!-- TAB: Kalender -->
+        <div class="tab-content" id="tab-kalender">
+            <section class="kalender-section">
+                <div class="kalender-header">
+                    <button class="btn-secondary" onclick="kalenderNav(-1)">&larr; Vorherige</button>
+                    <h2 id="kalenderTitel">Februar 2026</h2>
+                    <button class="btn-secondary" onclick="kalenderNav(1)">Nächste &rarr;</button>
+                </div>
+                <div class="kalender-grid" id="kalenderGrid"></div>
+                <div class="kalender-legende">
+                    <span class="legende-item"><span class="legende-dot tag"></span> Tagschicht</span>
+                    <span class="legende-item"><span class="legende-dot nacht"></span> Nachtschicht</span>
+                    <span class="legende-item"><span class="legende-dot feiertag"></span> Feiertag</span>
+                </div>
+            </section>
+        </div>
+
+        <!-- TAB: Abrechnung -->
+        <div class="tab-content" id="tab-abrechnung">
+            <section class="abrechnung-section">
+                <h2>Mitarbeiter-Abrechnung</h2>
+                <div class="abrechnung-filter">
+                    <select id="abrechnungMonat"></select>
+                    <select id="abrechnungMitarbeiter">
+                        <option value="">Alle Mitarbeiter</option>
+                    </select>
+                    <button class="btn-secondary" onclick="druckeAbrechnung()">Abrechnung drucken</button>
+                </div>
+                <div id="abrechnungContent"></div>
+            </section>
+        </div>
+
         <!-- TAB: Dashboard -->
         <div class="tab-content" id="tab-dashboard">
             <section class="dashboard-section">
-                <h2>Monatsübersicht</h2>
+                <h2>Monats&uuml;bersicht</h2>
                 <div class="dashboard-filter">
                     <select id="dashboardMonat"></select>
                 </div>
@@ -265,7 +341,7 @@
         </div>
     </main>
 
-    <!-- Druckansicht (wird per JS befüllt) -->
+    <!-- Druckansicht -->
     <div id="printArea" class="print-area"></div>
 
     <footer>
